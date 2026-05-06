@@ -4,6 +4,8 @@ import {
   tagihanPencairanTable,
   kegiatanTable,
   pengajuanRabTable,
+  usersTable,
+  ormawaTable,
 } from "~~/server/db/schema";
 
 export default defineEventHandler(async (event) => {
@@ -19,7 +21,6 @@ export default defineEventHandler(async (event) => {
     const body = await readBody(event);
     const { keputusan, catatan } = body ?? {};
 
-    // keputusan: 'terverifikasi' | 'dikembalikan'
     if (!keputusan || !["terverifikasi", "dikembalikan"].includes(keputusan)) {
       throw createError({
         statusCode: 400,
@@ -34,9 +35,23 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    const user = event.context.user;
     const db = useDrizzle();
 
-    // Ambil tagihan + total RAB untuk validasi nominal
+    // ✅ Ambil fakultasId PPK yang sedang login
+    const [ppkData] = await db
+      .select({ fakultasId: usersTable.fakultasId })
+      .from(usersTable)
+      .where(eq(usersTable.users_id, user.id));
+
+    if (!ppkData?.fakultasId) {
+      throw createError({
+        statusCode: 403,
+        statusMessage: "PPK tidak memiliki data fakultas",
+      });
+    }
+
+    // ✅ Query tagihan + join ke ormawa untuk validasi fakultas
     const [tagihan] = await db
       .select({
         id: tagihanPencairanTable.id,
@@ -44,6 +59,7 @@ export default defineEventHandler(async (event) => {
         statusTagihan: tagihanPencairanTable.statusTagihan,
         tipeTagihan: tagihanPencairanTable.tipeTagihan,
         totalAnggaranRab: pengajuanRabTable.totalAnggaran,
+        ormawaFakultasId: ormawaTable.fakultasId, // ✅ untuk validasi akses
       })
       .from(tagihanPencairanTable)
       .innerJoin(
@@ -54,12 +70,25 @@ export default defineEventHandler(async (event) => {
         pengajuanRabTable,
         eq(kegiatanTable.pengajuanRabId, pengajuanRabTable.id),
       )
+      .innerJoin(
+        usersTable,
+        eq(pengajuanRabTable.usersId, usersTable.users_id),
+      )
+      .leftJoin(ormawaTable, eq(usersTable.ormawaId, ormawaTable.id))
       .where(eq(tagihanPencairanTable.id, id));
 
     if (!tagihan) {
       throw createError({
         statusCode: 404,
         statusMessage: "Tagihan pencairan tidak ditemukan",
+      });
+    }
+
+    // ✅ Validasi: ormawa harus se-fakultas dengan PPK
+    if (tagihan.ormawaFakultasId !== ppkData.fakultasId) {
+      throw createError({
+        statusCode: 403,
+        statusMessage: "Anda tidak memiliki akses untuk memverifikasi tagihan ini",
       });
     }
 
@@ -70,7 +99,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // Cek nominal tidak melebihi RAB — hanya block jika melebihi dan mau terverifikasi
+    // Cek nominal tidak melebihi RAB
     const nominalTagihan = Number(tagihan.nominal);
     const totalRab = Number(tagihan.totalAnggaranRab);
     if (keputusan === "terverifikasi" && nominalTagihan > totalRab) {
