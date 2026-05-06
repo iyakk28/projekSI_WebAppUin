@@ -94,5 +94,5 @@ export default defineEventHandler(async (event) => {
       statusMessage: "Gagal mengambil data pengajuan kegiatan",
       data: error,
     });
-  }
+  } 
 });
