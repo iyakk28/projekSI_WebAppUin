@@ -1,6 +1,12 @@
 import { eq } from "drizzle-orm";
 import { useDrizzle } from "~~/server/db";
-import { tagihanPencairanTable } from "~~/server/db/schema";
+import {
+  tagihanPencairanTable,
+  kegiatanTable,
+  pengajuanRabTable,
+  usersTable,
+  ormawaTable,
+} from "~~/server/db/schema";
 
 // Status yang boleh dikembalikan
 const STATUS_BISA_DIKEMBALIKAN = ["WAITING_PEMBAYARAN", "TERVERIFIKASI"];
@@ -25,21 +31,58 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    const user = event.context.user;
     const db = useDrizzle();
 
+    // ✅ Ambil fakultasId PPK yang sedang login
+    const [ppkData] = await db
+      .select({ fakultasId: usersTable.fakultasId })
+      .from(usersTable)
+      .where(eq(usersTable.users_id, user.id));
+
+    if (!ppkData?.fakultasId) {
+      throw createError({
+        statusCode: 403,
+        statusMessage: "PPK tidak memiliki data fakultas",
+      });
+    }
+
+    // ✅ Query tagihan sekaligus join ke ormawa untuk validasi fakultas
     const [tagihan] = await db
       .select({
         id: tagihanPencairanTable.id,
         statusTagihan: tagihanPencairanTable.statusTagihan,
         namaPenerima: tagihanPencairanTable.namaPenerima,
+        ormawaFakultasId: ormawaTable.fakultasId, // ✅ untuk validasi akses
       })
       .from(tagihanPencairanTable)
+      .innerJoin(
+        kegiatanTable,
+        eq(tagihanPencairanTable.kegiatanId, kegiatanTable.id),
+      )
+      .innerJoin(
+        pengajuanRabTable,
+        eq(kegiatanTable.pengajuanRabId, pengajuanRabTable.id),
+      )
+      .innerJoin(
+        usersTable,
+        eq(pengajuanRabTable.usersId, usersTable.users_id),
+      )
+      .leftJoin(ormawaTable, eq(usersTable.ormawaId, ormawaTable.id))
       .where(eq(tagihanPencairanTable.id, id));
 
     if (!tagihan) {
       throw createError({
         statusCode: 404,
         statusMessage: "Tagihan pencairan tidak ditemukan",
+      });
+    }
+
+    // ✅ Validasi: ormawa harus se-fakultas dengan PPK
+    if (tagihan.ormawaFakultasId !== ppkData.fakultasId) {
+      throw createError({
+        statusCode: 403,
+        statusMessage: "Anda tidak memiliki akses untuk mengembalikan tagihan ini",
       });
     }
 
