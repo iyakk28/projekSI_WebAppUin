@@ -1,36 +1,64 @@
-import { eq, sql, ne, inArray, notInArray } from "drizzle-orm";
-import { pengajuanRabTable } from "~~/server/db/schema";
-import { useDrizzle } from "~~/server/db";
+import { eq, sql, ne, and } from "drizzle-orm";
+import { pengajuanRabTable } from "~/server/db/schema";
+import { useDrizzle } from "~/server/db";
 
 export default defineEventHandler(async (event) => {
   try {
     const db = useDrizzle();
 
+    const user = event.context.user;
+    const fakultasId = user.fakultasId; // ambil fakultas dari PPK yang login
+
     const [total, menunggu, disetujui, revisi, ditolak] = await Promise.all([
       db
         .select({ count: sql<number>`count(*)` })
         .from(pengajuanRabTable)
-        .where(ne(pengajuanRabTable.status, "draft")),
+        .where(
+          and(
+            ne(pengajuanRabTable.status, "draft"),
+            eq(pengajuanRabTable.fakultasId, fakultasId),
+          ),
+        ),
 
       db
         .select({ count: sql<number>`count(*)` })
         .from(pengajuanRabTable)
-        .where(eq(pengajuanRabTable.status, "waiting_ppk")),
+        .where(
+          and(
+            eq(pengajuanRabTable.status, "waiting_ppk"),
+            eq(pengajuanRabTable.fakultasId, fakultasId),
+          ),
+        ),
 
       db
         .select({ count: sql<number>`count(*)` })
         .from(pengajuanRabTable)
-        .where(eq(pengajuanRabTable.status, "waiting_spi")),
+        .where(
+          and(
+            eq(pengajuanRabTable.status, "waiting_spi"),
+            eq(pengajuanRabTable.fakultasId, fakultasId),
+          ),
+        ),
 
       db
         .select({ count: sql<number>`count(*)` })
         .from(pengajuanRabTable)
-        .where(eq(pengajuanRabTable.status, "revisi_ppk")),
+        .where(
+          and(
+            eq(pengajuanRabTable.status, "revisi_ppk"),
+            eq(pengajuanRabTable.fakultasId, fakultasId),
+          ),
+        ),
 
       db
         .select({ count: sql<number>`count(*)` })
         .from(pengajuanRabTable)
-        .where(eq(pengajuanRabTable.status, "ditolak_spi")),
+        .where(
+          and(
+            eq(pengajuanRabTable.status, "ditolak_spi"),
+            eq(pengajuanRabTable.fakultasId, fakultasId),
+          ),
+        ),
     ]);
 
     return {
