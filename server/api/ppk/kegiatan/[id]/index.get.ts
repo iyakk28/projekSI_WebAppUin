@@ -119,5 +119,5 @@ export default defineEventHandler(async (event) => {
       statusMessage: "Gagal mengambil detail pengajuan",
       data: error,
     });
-  }
+  } 
 });
