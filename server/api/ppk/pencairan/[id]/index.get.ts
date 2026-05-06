@@ -19,7 +19,21 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    const user = event.context.user;
     const db = useDrizzle();
+
+    // ✅ Ambil fakultasId PPK yang sedang login
+    const [ppkData] = await db
+      .select({ fakultasId: usersTable.fakultasId })
+      .from(usersTable)
+      .where(eq(usersTable.users_id, user.id));
+
+    if (!ppkData?.fakultasId) {
+      throw createError({
+        statusCode: 403,
+        statusMessage: "PPK tidak memiliki data fakultas",
+      });
+    }
 
     // Detail tagihan lengkap
     const [tagihan] = await db
@@ -57,6 +71,7 @@ export default defineEventHandler(async (event) => {
         ormawaId: ormawaTable.id,
         ormawaName: ormawaTable.nama,
         ormawaKode: ormawaTable.kode,
+        ormawaFakultasId: ormawaTable.fakultasId, // ✅ untuk validasi akses
         // Pengaju
         pengajuNama: usersTable.fullName,
         pengajuEmail: usersTable.email,
@@ -81,6 +96,14 @@ export default defineEventHandler(async (event) => {
       throw createError({
         statusCode: 404,
         statusMessage: "Tagihan pencairan tidak ditemukan",
+      });
+    }
+
+    // ✅ Validasi: ormawa harus se-fakultas dengan PPK
+    if (tagihan.ormawaFakultasId !== ppkData.fakultasId) {
+      throw createError({
+        statusCode: 403,
+        statusMessage: "Anda tidak memiliki akses untuk melihat tagihan ini",
       });
     }
 
@@ -143,8 +166,7 @@ export default defineEventHandler(async (event) => {
         validasiNominal: {
           nominalTagihan: Number(tagihan.nominal),
           totalAnggaranRab: Number(tagihan.totalAnggaranRab),
-          selisih:
-            Number(tagihan.totalAnggaranRab) - Number(tagihan.nominal),
+          selisih: Number(tagihan.totalAnggaranRab) - Number(tagihan.nominal),
           statusValidasi:
             Number(tagihan.nominal) <= Number(tagihan.totalAnggaranRab)
               ? "VALID"
