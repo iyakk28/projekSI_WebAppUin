@@ -1,4 +1,4 @@
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, desc, sql, and } from "drizzle-orm";
 import { useDrizzle } from "~~/server/db";
 import {
   tagihanPencairanTable,
@@ -7,12 +7,37 @@ import {
   usersTable,
   ormawaTable,
   pembayaranTable,
+  fakultasTable, // pastikan ini ada di schema
 } from "~~/server/db/schema";
+import { decodeJwt } from "~~/server/utils/authentikasi";
+import { User } from "~~/server/interface/userInterface";
+import { nextTick } from "vue";
 
 export default defineEventHandler(async (event) => {
   try {
     const db = useDrizzle();
 
+    // ✅ Ambil user PPK yang sedang login (mengikuti pola foto)
+    const user = event.context.user as User;
+
+    // ✅ Ambil data PPK untuk mengetahui fakultasnya
+    const [ppkData] = await db
+      .select({
+        fakultasId: usersTable.fakultasId, // sesuaikan dengan kolom di schema kamu
+      })
+      .from(usersTable)
+      .where(eq(usersTable.users_id, user.id));
+
+    if (!ppkData?.fakultasId) {
+      throw createError({
+        statusCode: 403,
+        statusMessage: "PPK tidak memiliki data fakultas",
+      });
+    }
+
+    const fakultasId = ppkData.fakultasId;
+
+    // ✅ Query utama dengan filter fakultas
     const data = await db
       .select({
         // Tagihan
@@ -35,7 +60,7 @@ export default defineEventHandler(async (event) => {
         statusKegiatan: kegiatanTable.statusKegiatan,
         tanggalMulai: kegiatanTable.tanggalMulai,
         tanggalSelesai: kegiatanTable.tanggalSelesai,
-        // Pengajuan RAB (nama kegiatan & total RAB)
+        // Pengajuan RAB
         pengajuanId: pengajuanRabTable.id,
         judulKegiatan: pengajuanRabTable.judulKegiatan,
         totalAnggaranRab: pengajuanRabTable.totalAnggaran,
@@ -58,9 +83,11 @@ export default defineEventHandler(async (event) => {
         eq(pengajuanRabTable.usersId, usersTable.users_id),
       )
       .leftJoin(ormawaTable, eq(usersTable.ormawaId, ormawaTable.id))
+      // ✅ Filter: hanya ormawa yang se-fakultas dengan PPK
+      .where(eq(ormawaTable.fakultasId, fakultasId))
       .orderBy(desc(tagihanPencairanTable.createdAt));
 
-    // Ringkasan per status
+    // ✅ Summary juga difilter berdasarkan fakultas PPK
     const [summary] = await db
       .select({
         totalTagihan: sql<number>`COUNT(*)`,
@@ -69,7 +96,22 @@ export default defineEventHandler(async (event) => {
         totalSelesai: sql<number>`SUM(CASE WHEN ${tagihanPencairanTable.statusTagihan} = 'SELESAI' THEN 1 ELSE 0 END)`,
         totalDikembalikan: sql<number>`SUM(CASE WHEN ${tagihanPencairanTable.statusTagihan} = 'DIKEMBALIKAN' THEN 1 ELSE 0 END)`,
       })
-      .from(tagihanPencairanTable);
+      .from(tagihanPencairanTable)
+      .innerJoin(
+        kegiatanTable,
+        eq(tagihanPencairanTable.kegiatanId, kegiatanTable.id),
+      )
+      .innerJoin(
+        pengajuanRabTable,
+        eq(kegiatanTable.pengajuanRabId, pengajuanRabTable.id),
+      )
+      .innerJoin(
+        usersTable,
+        eq(pengajuanRabTable.usersId, usersTable.users_id),
+      )
+      .leftJoin(ormawaTable, eq(usersTable.ormawaId, ormawaTable.id))
+      // ✅ Filter summary juga harus se-fakultas
+      .where(eq(ormawaTable.fakultasId, fakultasId));
 
     return {
       success: true,
@@ -89,7 +131,6 @@ export default defineEventHandler(async (event) => {
         rekeningPenerima: row.rekeningPenerima,
         bankPenerima: row.bankPenerima,
         createdAt: row.createdAt,
-        // Field kondisional per tipe
         ...(row.tipeTagihan === "BARANG"
           ? { tokoNama: row.tokoNama, strukFileUrl: row.strukFileUrl }
           : { skNomor: row.skNomor, skFileUrl: row.skFileUrl }),
