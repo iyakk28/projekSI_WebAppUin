@@ -3,6 +3,10 @@ import { useDrizzle } from "~~/server/db";
 import {
   pengajuanRabTable,
   approvalLogTable,
+  usersTable,
+  ormawaTable,
+  programStudiTable,
+  fakultasTable,
 } from "~~/server/db/schema";
 
 // Mapping keputusan PPK ke statusEnum dan action approval_log
@@ -53,22 +57,39 @@ export default defineEventHandler(async (event) => {
     }
 
     const db = useDrizzle();
-    const user = event.context.user;
 
-    // Pastikan pengajuan ada dan statusnya memang waiting_ppk
+    // Ambil user PPK yang sedang login beserta fakultasnya
+    const user = event.context.user;
+    const fakultasId = user.fakultasId;
+
+    // Pastikan pengajuan ada, statusnya waiting_ppk,
+    // dan berasal dari ormawa se-fakultas PPK
     const [pengajuan] = await db
       .select({
         id: pengajuanRabTable.id,
         status: pengajuanRabTable.status,
         judulKegiatan: pengajuanRabTable.judulKegiatan,
+        pengajuanFakultasId: fakultasTable.id,
       })
       .from(pengajuanRabTable)
+      .innerJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.users_id))
+      .leftJoin(ormawaTable, eq(usersTable.ormawaId, ormawaTable.id))
+      .leftJoin(programStudiTable, eq(ormawaTable.prodiId, programStudiTable.id))
+      .leftJoin(fakultasTable, eq(programStudiTable.fakultasId, fakultasTable.id))
       .where(eq(pengajuanRabTable.id, id));
 
     if (!pengajuan) {
       throw createError({
         statusCode: 404,
         statusMessage: "Pengajuan tidak ditemukan",
+      });
+    }
+
+    // Validasi: PPK hanya boleh memproses pengajuan dari fakultasnya sendiri
+    if (pengajuan.pengajuanFakultasId !== fakultasId) {
+      throw createError({
+        statusCode: 403,
+        statusMessage: "Anda tidak memiliki akses untuk memproses pengajuan ini",
       });
     }
 
