@@ -5,6 +5,8 @@ import {
   usersTable,
   ormawaTable,
   approvalLogTable,
+  programStudiTable,
+  fakultasTable,
 } from "~~/server/db/schema";
 
 export default defineEventHandler(async (event) => {
@@ -18,6 +20,10 @@ export default defineEventHandler(async (event) => {
     }
 
     const db = useDrizzle();
+
+    // Ambil user PPK yang sedang login beserta fakultasnya
+    const user = event.context.user;
+    const fakultasId = user.fakultasId;
 
     // Ambil detail pengajuan beserta data pengaju dan ormawa
     const [pengajuan] = await db
@@ -43,16 +49,28 @@ export default defineEventHandler(async (event) => {
         ormawaName: ormawaTable.nama,
         ormawaKode: ormawaTable.kode,
         ormawaAnggaran: ormawaTable.totalAnggaran,
+        // Data fakultas (untuk validasi akses)
+        pengajuanFakultasId: fakultasTable.id,
       })
       .from(pengajuanRabTable)
       .innerJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.users_id))
       .leftJoin(ormawaTable, eq(usersTable.ormawaId, ormawaTable.id))
+      .leftJoin(programStudiTable, eq(ormawaTable.prodiId, programStudiTable.id))
+      .leftJoin(fakultasTable, eq(programStudiTable.fakultasId, fakultasTable.id))
       .where(eq(pengajuanRabTable.id, id));
 
     if (!pengajuan) {
       throw createError({
         statusCode: 404,
         statusMessage: "Pengajuan tidak ditemukan",
+      });
+    }
+
+    // Validasi: PPK hanya boleh akses pengajuan dari fakultasnya sendiri
+    if (pengajuan.pengajuanFakultasId !== fakultasId) {
+      throw createError({
+        statusCode: 403,
+        statusMessage: "Anda tidak memiliki akses ke pengajuan ini",
       });
     }
 
@@ -119,5 +137,5 @@ export default defineEventHandler(async (event) => {
       statusMessage: "Gagal mengambil detail pengajuan",
       data: error,
     });
-  } 
+  }
 });
