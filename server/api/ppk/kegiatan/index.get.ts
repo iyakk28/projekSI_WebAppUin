@@ -1,16 +1,23 @@
-import { eq, inArray, desc, sql } from "drizzle-orm";
+import { eq, inArray, desc, sql, and } from "drizzle-orm";
 import { useDrizzle } from "~~/server/db";
 import {
   pengajuanRabTable,
   usersTable,
   ormawaTable,
+  programStudiTable,
+  fakultasTable,
 } from "~~/server/db/schema";
 
 export default defineEventHandler(async (event) => {
   try {
     const db = useDrizzle();
 
+    // Ambil user PPK yang sedang login beserta fakultasnya
+    const user = event.context.user;
+    const fakultasId = user.fakultasId;
+
     // Ambil semua pengajuan yang statusnya masuk ke PPK
+    // dan berasal dari ormawa se-fakultas PPK
     const data = await db
       .select({
         id: pengajuanRabTable.id,
@@ -37,12 +44,17 @@ export default defineEventHandler(async (event) => {
       .from(pengajuanRabTable)
       .innerJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.users_id))
       .leftJoin(ormawaTable, eq(usersTable.ormawaId, ormawaTable.id))
+      .leftJoin(programStudiTable, eq(ormawaTable.prodiId, programStudiTable.id))
+      .leftJoin(fakultasTable, eq(programStudiTable.fakultasId, fakultasTable.id))
       .where(
-        inArray(pengajuanRabTable.status, ["waiting_ppk", "revisi_ppk"]),
+        and(
+          inArray(pengajuanRabTable.status, ["waiting_ppk", "revisi_ppk"]),
+          eq(fakultasTable.id, fakultasId),
+        ),
       )
       .orderBy(desc(pengajuanRabTable.createdAt));
 
-    // Hitung ringkasan per status untuk PPK
+    // Hitung ringkasan per status untuk PPK (juga difilter per fakultas)
     const [summary] = await db
       .select({
         totalMasuk: sql<number>`COUNT(*)`,
@@ -50,8 +62,15 @@ export default defineEventHandler(async (event) => {
         totalRevisiPPK: sql<number>`SUM(CASE WHEN ${pengajuanRabTable.status} = 'revisi_ppk' THEN 1 ELSE 0 END)`,
       })
       .from(pengajuanRabTable)
+      .innerJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.users_id))
+      .leftJoin(ormawaTable, eq(usersTable.ormawaId, ormawaTable.id))
+      .leftJoin(programStudiTable, eq(ormawaTable.prodiId, programStudiTable.id))
+      .leftJoin(fakultasTable, eq(programStudiTable.fakultasId, fakultasTable.id))
       .where(
-        inArray(pengajuanRabTable.status, ["waiting_ppk", "revisi_ppk"]),
+        and(
+          inArray(pengajuanRabTable.status, ["waiting_ppk", "revisi_ppk"]),
+          eq(fakultasTable.id, fakultasId),
+        ),
       );
 
     return {
@@ -94,5 +113,5 @@ export default defineEventHandler(async (event) => {
       statusMessage: "Gagal mengambil data pengajuan kegiatan",
       data: error,
     });
-  } 
+  }
 });
