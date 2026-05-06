@@ -12,7 +12,12 @@ export default defineEventHandler(async (event) => {
   try {
     const db = useDrizzle();
 
+    // Ambil user PPK yang sedang login beserta fakultasnya
+    const user = event.context.user;
+    const fakultasId = user.fakultasId;
+
     // Ambil semua ormawa beserta data prodi dan fakultas
+    // yang se-fakultas dengan PPK yang login
     const ormawaList = await db
       .select({
         ormawaId: ormawaTable.id,
@@ -66,11 +71,17 @@ export default defineEventHandler(async (event) => {
       })
       .from(ormawaTable)
       .innerJoin(programStudiTable, eq(ormawaTable.prodiId, programStudiTable.id))
-      .innerJoin(fakultasTable, eq(programStudiTable.fakultasId, fakultasTable.id))
+      .innerJoin(
+        fakultasTable,
+        and(
+          eq(programStudiTable.fakultasId, fakultasTable.id),
+          eq(fakultasTable.id, fakultasId), // filter hanya fakultas PPK
+        ),
+      )
       .orderBy(fakultasTable.id, ormawaTable.nama);
 
     // Kelompokkan per fakultas
-    const fakultasMap = new Map<
+    const fakultasMap = new Map
       number,
       {
         id: number;
@@ -90,7 +101,7 @@ export default defineEventHandler(async (event) => {
       fakultasMap.get(row.fakultasId)!.ormawa.push(row);
     }
 
-    // Hitung summary keseluruhan
+    // Hitung summary keseluruhan (hanya se-fakultas PPK)
     const totalAnggaranKeseluruhan = ormawaList.reduce(
       (sum, o) => sum + Number(o.totalAnggaranOrmawa),
       0,
@@ -137,4 +148,4 @@ export default defineEventHandler(async (event) => {
       data: error,
     });
   }
-}); 
+});
