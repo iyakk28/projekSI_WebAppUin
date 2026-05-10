@@ -744,11 +744,14 @@
     fd.append("fotoBarang", barangForm.value.fotoBarang);
     fd.append("fotoStruk", barangForm.value.fotoStruk);
     try {
-      await $fetch("/api/ormawa/dokumentasi/dokumentasiBarang", {
-        method: "POST",
-        body: fd,
-      });
-      // await fetchData();
+      const response = await $fetch(
+        "/api/ormawa/dokumentasi/dokumentasiBarang",
+        {
+          method: "POST",
+          body: fd,
+        },
+      );
+      console.log(response);
       barangForm.value = {
         namaToko: "",
         nomorRekeningToko: "",

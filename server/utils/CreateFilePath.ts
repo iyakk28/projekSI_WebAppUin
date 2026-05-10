@@ -10,6 +10,8 @@ export type Status =
   | "SedangBerlangsung"
   | "sedangDiAjukan"
   | "draft"
+  | "struk"
+  | "foto_barang"
   | "";
 
 const rootPath = join(cwd(), "uploads");
