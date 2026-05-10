@@ -56,13 +56,21 @@ export default defineEventHandler(async (event) => {
     // 4. Proses pemindahan file RAB
     const namaFileRab = path.basename(fileRabUrl);
     const pathSumberRab = path.resolve(process.cwd(), fileRabUrl);
-    const pathFolderTujuanRab = await createFilePath("Rab", "sedangDiAjukan");
+    const pathFolderTujuanRab = await createFilePath(
+      "file",
+      "Rab",
+      "sedangDiAjukan",
+    );
     const pathTujuanRab = path.join(pathFolderTujuanRab, namaFileRab);
 
     // 5. Proses pemindahan file TOR
     const namaFileTor = path.basename(fileTorUrl);
     const pathSumberTor = path.resolve(process.cwd(), fileTorUrl);
-    const pathFolderTujuanTor = await createFilePath("Tor", "sedangDiAjukan");
+    const pathFolderTujuanTor = await createFilePath(
+      "file",
+      "Tor",
+      "sedangDiAjukan",
+    );
     const pathTujuanTor = path.join(pathFolderTujuanTor, namaFileTor);
 
     // Lakukan pemindahan file secara asinkron

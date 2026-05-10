@@ -140,7 +140,7 @@
               name="heroicons:shopping-bag"
               class="w-5 h-5 text-[#d1a82a]"
             />
-            Upload Barang (Foto Barang + Struk)
+            Upload Barang
           </h3>
           <form @submit.prevent="submitBarang" class="space-y-4">
             <div>
@@ -508,6 +508,40 @@
       </div>
     </div>
   </div>
+  <!-- POPUP NOTIFIKASI SUKSES (di tengah) -->
+  <Teleport to="body">
+    <div
+      v-if="popupVisible"
+      class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm transition-all duration-300"
+      @click.self="closePopup"
+    >
+      <div
+        class="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full mx-4 transform transition-all duration-300 animate-popup"
+      >
+        <div class="flex flex-col items-center text-center">
+          <!-- Ikon sukses animasi -->
+          <div
+            class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4 animate-bounce-in"
+          >
+            <Icon
+              name="heroicons:check-circle"
+              class="w-10 h-10 text-green-500"
+            />
+          </div>
+
+          <h3 class="text-xl font-bold text-slate-800 mb-2">Berhasil!</h3>
+          <p class="text-slate-600 mb-6">{{ popupMessage }}</p>
+
+          <button
+            @click="closePopup"
+            class="px-6 py-2 bg-[#3b5988] hover:bg-[#2d4570] text-white rounded-xl font-medium transition duration-200 shadow-md hover:shadow-lg"
+          >
+            Tutup
+          </button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
@@ -521,7 +555,8 @@
     const id = route.params.id;
     return id ? parseInt(id as string) : null;
   });
-
+  const popupVisible = ref(false);
+  const popupMessage = ref("");
   const loading = ref(false);
   const kegiatan = ref<any>(null);
 
@@ -652,13 +687,18 @@
     fd.append("deskripsi", dokumentasiForm.value.deskripsi);
     fd.append("file", dokumentasiForm.value.file);
     try {
-      await $fetch("/api/dokumentasi", { method: "POST", body: fd });
-      await fetchData();
+      await $fetch("/api/ormawa/dokumentasi/dokumentasiBarang", {
+        method: "POST",
+        body: fd,
+      });
+      // await fetchData();
       dokumentasiForm.value = { deskripsi: "", file: null };
     } catch (err) {
       alert("Gagal upload");
     } finally {
       dokumentasiUploading.value = false;
+      popupMessage.value = "berhasil Mengupload dokumentasi kegiatan";
+      popupVisible.value = true;
     }
   };
 
@@ -704,8 +744,11 @@
     fd.append("fotoBarang", barangForm.value.fotoBarang);
     fd.append("fotoStruk", barangForm.value.fotoStruk);
     try {
-      await $fetch("/api/barang", { method: "POST", body: fd });
-      await fetchData();
+      await $fetch("/api/ormawa/dokumentasi/dokumentasiBarang", {
+        method: "POST",
+        body: fd,
+      });
+      // await fetchData();
       barangForm.value = {
         namaToko: "",
         nomorRekeningToko: "",
@@ -717,6 +760,8 @@
       alert("Gagal upload barang");
     } finally {
       barangUploading.value = false;
+      popupMessage.value = "berhasil Mengupload dokumentasi kegiatan";
+      popupVisible.value = true;
     }
   };
 
@@ -768,8 +813,11 @@
     fd.append("npwp", jasaForm.value.npwp);
     fd.append("ktp", jasaForm.value.ktp);
     try {
-      await $fetch("/api/jasa", { method: "POST", body: fd });
-      await fetchData();
+      await $fetch("/api/ormawa/dokumentasi/dokumentasiJasa", {
+        method: "POST",
+        body: fd,
+      });
+      // await fetchData();
       jasaForm.value = {
         namaPenyedia: "",
         nomorRekening: "",
@@ -784,6 +832,8 @@
       alert("Gagal upload jasa");
     } finally {
       jasaUploading.value = false;
+      popupMessage.value = "berhasil Mengupload dokumentasi kegiatan";
+      popupVisible.value = true;
     }
   };
 
@@ -802,8 +852,48 @@
       alert("Gagal hapus");
     }
   };
-
+  const closePopup = () => {
+    popupVisible.value = false;
+  };
   const goBack = () => router.back();
 
   onMounted(() => {});
 </script>
+<style scoped>
+  @keyframes popupZoom {
+    0% {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes bounceIn {
+    0% {
+      opacity: 0;
+      transform: scale(0.3);
+    }
+    50% {
+      opacity: 0.8;
+      transform: scale(1.05);
+    }
+    80% {
+      transform: scale(0.95);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .animate-popup {
+    animation: popupZoom 0.2s ease-out;
+  }
+
+  .animate-bounce-in {
+    animation: bounceIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+</style>
