@@ -5,6 +5,7 @@ import {
   varchar,
   date,
   timestamp,
+  mysqlEnum,
 } from "drizzle-orm/mysql-core";
 import { pengajuanRabTable } from "./pengajuanRabSchema";
 
@@ -13,11 +14,13 @@ export const kegiatanTable = mysqlTable("kegiatan", {
   pengajuanRabId: int("pengajuan_rab_id")
     .notNull()
     .references(() => pengajuanRabTable.id, { onDelete: "cascade" }),
-  statusKegiatan: varchar("status_kegiatan", { length: 50 }).default(
+  statusKegiatan: mysqlEnum("status_kegiatan", [
     "BELUM_DILAKSANAKAN",
-  ),
-  tanggalMulai: date("tanggal_mulai", { mode: "string" }),
-  tanggalSelesai: date("tanggal_selesai", { mode: "string" }),
+    "SEDANG_DILAKSANAKAN",
+    "SELESAI",
+  ])
+    .notNull()
+    .default("BELUM_DILAKSANAKAN"),
   createdAt: timestamp("created_at", { mode: "string" }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { mode: "string" }).defaultNow().notNull(),
 });

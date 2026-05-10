@@ -687,7 +687,7 @@
     fd.append("deskripsi", dokumentasiForm.value.deskripsi);
     fd.append("file", dokumentasiForm.value.file);
     try {
-      await $fetch("/api/ormawa/dokumentasi/dokumentasiBarang", {
+      await $fetch("/api/ormawa/dokumentasi/dokumentasiKegiatan", {
         method: "POST",
         body: fd,
       });
