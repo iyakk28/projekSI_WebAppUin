@@ -61,7 +61,7 @@ export default defineEventHandler(async (event) => {
     kegiatanId: Number(kegiatanId),
     deskripsi,
     tipeDokumen: "BARANG",
-    fileUrl: "",
+    fileUrl: `${fotoBarangPath};${strukPath}`,
     uploadedBy: user.id,
     namaToko,
     nomorRekeningToko,
