@@ -547,18 +547,16 @@
 <script setup lang="ts">
   import { ref, computed, onMounted } from "vue";
   import { useRoute, useRouter } from "vue-router";
+  import { useKegiatanStore } from "~/stores/ormawa/uploadDokumen";
 
   const route = useRoute();
   const router = useRouter();
+  const kegiatanStore = useKegiatanStore();
 
   const kegiatanId = computed(() => {
     const id = route.params.id;
     return id ? parseInt(id as string) : null;
   });
-  const popupVisible = ref(false);
-  const popupMessage = ref("");
-  const loading = ref(false);
-  const kegiatan = ref<any>(null);
 
   const activeTab = ref("dokumentasi");
   const tabs = [
@@ -571,10 +569,19 @@
     { key: "jasa", label: "Upload Jasa", icon: "heroicons:user-group" },
   ];
 
-  // Data list
-  const dokumentasiList = ref<any[]>([]);
-  const barangList = ref<any[]>([]);
-  const jasaList = ref<any[]>([]);
+  // Data dari store (pastikan store memiliki state dan getter yang sesuai)
+  const loading = computed(() => kegiatanStore.loading);
+  const kegiatan = computed(() => kegiatanStore.kegiatan);
+  const dokumentasiList = computed(() => kegiatanStore.dokumentasiList);
+  const barangList = computed(() => kegiatanStore.barangList);
+  const jasaList = computed(() => kegiatanStore.jasaList);
+  const popupVisible = computed(() => kegiatanStore.popupVisible);
+  const popupMessage = computed(() => kegiatanStore.popupMessage);
+  const dokumentasiUploading = computed(
+    () => kegiatanStore.dokumentasiUploading,
+  );
+  const barangUploading = computed(() => kegiatanStore.barangUploading);
+  const jasaUploading = computed(() => kegiatanStore.jasaUploading);
 
   const allUploads = computed(() => {
     const docs = dokumentasiList.value.map((d) => ({
@@ -598,11 +605,8 @@
     );
   });
 
-  // Form Dokumentasi
+  // Form state
   const dokumentasiForm = ref({ deskripsi: "", file: null as File | null });
-  const dokumentasiUploading = ref(false);
-
-  // Form Barang (dua file)
   const barangForm = ref({
     namaToko: "",
     nomorRekeningToko: "",
@@ -610,9 +614,6 @@
     fotoBarang: null as File | null,
     fotoStruk: null as File | null,
   });
-  const barangUploading = ref(false);
-
-  // Form Jasa (banyak file)
   const jasaForm = ref({
     namaPenyedia: "",
     nomorRekening: "",
@@ -623,7 +624,6 @@
     npwp: null as File | null,
     ktp: null as File | null,
   });
-  const jasaUploading = ref(false);
 
   // Helper functions
   const formatTanggal = (dateStr: string) => {
@@ -662,69 +662,202 @@
     return `ml-1 px-2 py-0.5 rounded-full text-xs ${classes[status] || "bg-slate-100"}`;
   };
 
-  // Fetch data
-
-  const refreshData = () => null;
-
-  // Dokumentasi
-  const handleDokumentasiFileChange = (e: Event) => {
-    const target = e.target as HTMLInputElement;
-    if (target.files?.[0]) {
-      if (target.files[0].size > 10 * 1024 * 1024) {
-        alert("Maks 10MB");
-        target.value = "";
-        return;
-      }
-      dokumentasiForm.value.file = target.files[0];
+  // Handler file untuk dokumentasi
+  const handleDokumentasiFileChange = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    if (!target.files || target.files.length === 0) {
+      alert("Tidak ada file yang dipilih");
+      return;
     }
+    const file = target.files[0];
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Ukuran file maksimal 10MB");
+      target.value = "";
+      return;
+    }
+    const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
+    if (!allowedTypes.includes(file.type)) {
+      alert("Format file harus JPG, PNG, atau PDF");
+      target.value = "";
+      return;
+    }
+    dokumentasiForm.value.file = file;
+    console.log("File berhasil dipilih:", file.name, file.size, file.type);
   };
+
+  // Handler file untuk barang
+  const handleBarangFotoChange = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    if (!target.files || target.files.length === 0) {
+      alert("Tidak ada file yang dipilih");
+      return;
+    }
+    const file = target.files[0];
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Ukuran file maksimal 10MB");
+      target.value = "";
+      return;
+    }
+    const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
+    if (!allowedTypes.includes(file.type)) {
+      alert("Format file harus JPG, PNG, atau PDF");
+      target.value = "";
+      return;
+    }
+    barangForm.value.fotoBarang = file;
+    console.log("Foto Barang dipilih:", file.name, file.size, file.type);
+  };
+
+  const handleBarangStrukChange = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    if (!target.files || target.files.length === 0) {
+      alert("Tidak ada file yang dipilih");
+      return;
+    }
+    const file = target.files[0];
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Ukuran file maksimal 10MB");
+      target.value = "";
+      return;
+    }
+    const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
+    if (!allowedTypes.includes(file.type)) {
+      alert("Format file harus JPG, PNG, atau PDF");
+      target.value = "";
+      return;
+    }
+    barangForm.value.fotoStruk = file;
+    console.log("Foto Struk dipilih:", file.name, file.size, file.type);
+  };
+
+  // Handler file untuk jasa
+  const handleJasaSKChange = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    if (!target.files || target.files.length === 0) {
+      alert("Tidak ada file yang dipilih");
+      return;
+    }
+    const file = target.files[0];
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Ukuran file maksimal 10MB");
+      target.value = "";
+      return;
+    }
+    const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
+    if (!allowedTypes.includes(file.type)) {
+      alert("Format file harus JPG, PNG, atau PDF");
+      target.value = "";
+      return;
+    }
+    jasaForm.value.sk = file;
+    console.log("File SK dipilih:", file.name, file.size, file.type);
+  };
+
+  const handleJasaSPMTChange = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    if (!target.files || target.files.length === 0) {
+      alert("Tidak ada file yang dipilih");
+      return;
+    }
+    const file = target.files[0];
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Ukuran file maksimal 10MB");
+      target.value = "";
+      return;
+    }
+    const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
+    if (!allowedTypes.includes(file.type)) {
+      alert("Format file harus JPG, PNG, atau PDF");
+      target.value = "";
+      return;
+    }
+    jasaForm.value.spmt = file;
+    console.log("File SPMT dipilih:", file.name, file.size, file.type);
+  };
+
+  const handleJasaAmprahChange = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    if (!target.files || target.files.length === 0) {
+      alert("Tidak ada file yang dipilih");
+      return;
+    }
+    const file = target.files[0];
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Ukuran file maksimal 10MB");
+      target.value = "";
+      return;
+    }
+    const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
+    if (!allowedTypes.includes(file.type)) {
+      alert("Format file harus JPG, PNG, atau PDF");
+      target.value = "";
+      return;
+    }
+    jasaForm.value.amprah = file;
+    console.log("File Amprah dipilih:", file.name, file.size, file.type);
+  };
+
+  const handleJasaNPWPChange = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    if (!target.files || target.files.length === 0) {
+      alert("Tidak ada file yang dipilih");
+      return;
+    }
+    const file = target.files[0];
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Ukuran file maksimal 10MB");
+      target.value = "";
+      return;
+    }
+    const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
+    if (!allowedTypes.includes(file.type)) {
+      alert("Format file harus JPG, PNG, atau PDF");
+      target.value = "";
+      return;
+    }
+    jasaForm.value.npwp = file;
+    console.log("File NPWP dipilih:", file.name, file.size, file.type);
+  };
+
+  const handleJasaKTPChange = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    if (!target.files || target.files.length === 0) {
+      alert("Tidak ada file yang dipilih");
+      return;
+    }
+    const file = target.files[0];
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Ukuran file maksimal 10MB");
+      target.value = "";
+      return;
+    }
+    const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
+    if (!allowedTypes.includes(file.type)) {
+      alert("Format file harus JPG, PNG, atau PDF");
+      target.value = "";
+      return;
+    }
+    jasaForm.value.ktp = file;
+    console.log("File KTP dipilih:", file.name, file.size, file.type);
+  };
+
+  // Submit functions
   const submitDokumentasi = async () => {
     if (!dokumentasiForm.value.deskripsi || !dokumentasiForm.value.file)
       return alert("Lengkapi deskripsi dan file");
-    dokumentasiUploading.value = true;
     const fd = new FormData();
     fd.append("kegiatanId", String(kegiatanId.value));
     fd.append("deskripsi", dokumentasiForm.value.deskripsi);
     fd.append("file", dokumentasiForm.value.file);
-    try {
-      await $fetch("/api/ormawa/dokumentasi/dokumentasiKegiatan", {
-        method: "POST",
-        body: fd,
-      });
-      // await fetchData();
-      dokumentasiForm.value = { deskripsi: "", file: null };
-    } catch (err) {
-      alert("Gagal upload");
-    } finally {
-      dokumentasiUploading.value = false;
-      popupMessage.value = "berhasil Mengupload dokumentasi kegiatan";
-      popupVisible.value = true;
-    }
+    await kegiatanStore.submitDokumentasi(fd);
+    dokumentasiForm.value = { deskripsi: "", file: null };
+    // Reset input file secara visual
+    const fileInput = document.querySelector(
+      'input[type="file"]',
+    ) as HTMLInputElement;
+    if (fileInput) fileInput.value = "";
   };
 
-  // Barang
-  const handleBarangFotoChange = (e: Event) => {
-    const target = e.target as HTMLInputElement;
-    if (target.files?.[0]) {
-      if (target.files[0].size > 10 * 1024 * 1024) {
-        alert("Maks 10MB");
-        target.value = "";
-        return;
-      }
-      barangForm.value.fotoBarang = target.files[0];
-    }
-  };
-  const handleBarangStrukChange = (e: Event) => {
-    const target = e.target as HTMLInputElement;
-    if (target.files?.[0]) {
-      if (target.files[0].size > 10 * 1024 * 1024) {
-        alert("Maks 10MB");
-        target.value = "";
-        return;
-      }
-      barangForm.value.fotoStruk = target.files[0];
-    }
-  };
   const submitBarang = async () => {
     if (
       !barangForm.value.namaToko ||
@@ -735,7 +868,6 @@
     ) {
       return alert("Semua field dan file wajib diisi");
     }
-    barangUploading.value = true;
     const fd = new FormData();
     fd.append("kegiatanId", String(kegiatanId.value));
     fd.append("namaToko", barangForm.value.namaToko);
@@ -743,52 +875,25 @@
     fd.append("namaPemilikRekening", barangForm.value.namaPemilikRekening);
     fd.append("fotoBarang", barangForm.value.fotoBarang);
     fd.append("fotoStruk", barangForm.value.fotoStruk);
-    try {
-      const response = await $fetch(
-        "/api/ormawa/dokumentasi/dokumentasiBarang",
-        {
-          method: "POST",
-          body: fd,
-        },
-      );
-      console.log(response);
-      barangForm.value = {
-        namaToko: "",
-        nomorRekeningToko: "",
-        namaPemilikRekening: "",
-        fotoBarang: null,
-        fotoStruk: null,
-      };
-    } catch (err) {
-      alert("Gagal upload barang");
-    } finally {
-      barangUploading.value = false;
-      popupMessage.value = "berhasil Mengupload dokumentasi kegiatan";
-      popupVisible.value = true;
-    }
+    await kegiatanStore.submitBarang(fd);
+    barangForm.value = {
+      namaToko: "",
+      nomorRekeningToko: "",
+      namaPemilikRekening: "",
+      fotoBarang: null,
+      fotoStruk: null,
+    };
+    // Reset file inputs
+    const fotoBarangInput = document.querySelector(
+      'input[accept="image/*,application/pdf"]',
+    ) as HTMLInputElement;
+    if (fotoBarangInput) fotoBarangInput.value = "";
+    const fotoStrukInput = document.querySelectorAll(
+      'input[accept="image/*,application/pdf"]',
+    )[1] as HTMLInputElement;
+    if (fotoStrukInput) fotoStrukInput.value = "";
   };
 
-  // Jasa
-  const handleJasaSKChange = (e: Event) => {
-    const t = e.target as HTMLInputElement;
-    if (t.files?.[0]) jasaForm.value.sk = t.files[0];
-  };
-  const handleJasaSPMTChange = (e: Event) => {
-    const t = e.target as HTMLInputElement;
-    if (t.files?.[0]) jasaForm.value.spmt = t.files[0];
-  };
-  const handleJasaAmprahChange = (e: Event) => {
-    const t = e.target as HTMLInputElement;
-    if (t.files?.[0]) jasaForm.value.amprah = t.files[0];
-  };
-  const handleJasaNPWPChange = (e: Event) => {
-    const t = e.target as HTMLInputElement;
-    if (t.files?.[0]) jasaForm.value.npwp = t.files[0];
-  };
-  const handleJasaKTPChange = (e: Event) => {
-    const t = e.target as HTMLInputElement;
-    if (t.files?.[0]) jasaForm.value.ktp = t.files[0];
-  };
   const submitJasa = async () => {
     if (
       !jasaForm.value.namaPenyedia ||
@@ -800,11 +905,8 @@
       !jasaForm.value.npwp ||
       !jasaForm.value.ktp
     ) {
-      return alert(
-        "Semua field dan file (SK, SPMT, Amprah, NPWP, KTP) wajib diisi",
-      );
+      return alert("Semua field dan file wajib diisi");
     }
-    jasaUploading.value = true;
     const fd = new FormData();
     fd.append("kegiatanId", String(kegiatanId.value));
     fd.append("namaPenyedia", jasaForm.value.namaPenyedia);
@@ -815,53 +917,42 @@
     fd.append("amprah", jasaForm.value.amprah);
     fd.append("npwp", jasaForm.value.npwp);
     fd.append("ktp", jasaForm.value.ktp);
-    try {
-      await $fetch("/api/ormawa/dokumentasi/dokumentasiJasa", {
-        method: "POST",
-        body: fd,
-      });
-      // await fetchData();
-      jasaForm.value = {
-        namaPenyedia: "",
-        nomorRekening: "",
-        namaPemilikRekening: "",
-        sk: null,
-        spmt: null,
-        amprah: null,
-        npwp: null,
-        ktp: null,
-      };
-    } catch (err) {
-      alert("Gagal upload jasa");
-    } finally {
-      jasaUploading.value = false;
-      popupMessage.value = "berhasil Mengupload dokumentasi kegiatan";
-      popupVisible.value = true;
+    await kegiatanStore.submitJasa(fd);
+    jasaForm.value = {
+      namaPenyedia: "",
+      nomorRekening: "",
+      namaPemilikRekening: "",
+      sk: null,
+      spmt: null,
+      amprah: null,
+      npwp: null,
+      ktp: null,
+    };
+    // Reset all file inputs (bisa dengan querySelectorAll)
+    const fileInputs = document.querySelectorAll('input[type="file"]');
+    fileInputs.forEach((input) => (input.value = ""));
+  };
+
+  // Delete dan helper lainnya
+  const deleteUpload = async (item: any) => {
+    if (!confirm(`Hapus ${item.jenisLabel} ini?`)) return;
+    await kegiatanStore.deleteUpload(item);
+  };
+
+  const refreshData = () => {
+    if (kegiatanId.value) {
+      kegiatanStore.fetchDokumentasi(kegiatanId.value);
+      kegiatanStore.fetchBarang(kegiatanId.value);
+      kegiatanStore.fetchJasa(kegiatanId.value);
     }
   };
 
-  // Hapus
-  const deleteUpload = async (item: any) => {
-    if (!confirm(`Hapus ${item.jenisLabel} ini?`)) return;
-    try {
-      if (item.jenis === "dokumentasi")
-        await $fetch(`/api/dokumentasi/${item.id}`, { method: "DELETE" });
-      else if (item.jenis === "barang")
-        await $fetch(`/api/barang/${item.id}`, { method: "DELETE" });
-      else if (item.jenis === "jasa")
-        await $fetch(`/api/jasa/${item.id}`, { method: "DELETE" });
-      await fetchData();
-    } catch (err) {
-      alert("Gagal hapus");
-    }
-  };
-  const closePopup = () => {
-    popupVisible.value = false;
-  };
+  const closePopup = () => kegiatanStore.closePopup();
   const goBack = () => router.back();
 
   onMounted(() => {});
 </script>
+
 <style scoped>
   @keyframes popupZoom {
     0% {
