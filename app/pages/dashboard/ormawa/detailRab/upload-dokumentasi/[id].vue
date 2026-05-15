@@ -950,7 +950,9 @@
   const closePopup = () => kegiatanStore.closePopup();
   const goBack = () => router.back();
 
-  onMounted(() => {});
+  onMounted(async () => {
+    await kegiatanStore.fetchAllUploads(kegiatanId.value);
+  });
 </script>
 
 <style scoped>

@@ -1,54 +1,43 @@
-// stores/kegiatan.ts
+// stores/ormawa/uploadDokumen.ts
 import { defineStore } from "pinia";
 
 export const useKegiatanStore = defineStore("kegiatan", {
   state: () => ({
+    kegiatan: null as any, // info kegiatan
     dokumentasiList: [] as any[],
     barangList: [] as any[],
     jasaList: [] as any[],
     loading: false,
+    dokumentasiUploading: false,
+    barangUploading: false,
+    jasaUploading: false,
     popupMessage: "",
     popupVisible: false,
   }),
 
   actions: {
-    async fetchDokumentasi(kegiatanId: number) {
+    async fetchAllUploads(kegiatanId: number) {
       this.loading = true;
       try {
-        const data = await $fetch(`/api/ormawa/dokumentasi/${kegiatanId}`);
-        this.dokumentasiList = data;
+        const response = await $fetch(
+          `/api/ormawa/dokumentasi/getAllDokumentasi`,
+          {
+            body: { kegiatanId },
+            method: "post",
+          },
+        );
+        console.log(response);
+        this.kegiatan = response;
       } catch (err) {
-        alert("Gagal fetch dokumentasi");
-      } finally {
-        this.loading = false;
-      }
-    },
-
-    async fetchBarang(kegiatanId: number) {
-      this.loading = true;
-      try {
-        const data = await $fetch(`/api/ormawa/barang/${kegiatanId}`);
-        this.barangList = data;
-      } catch (err) {
-        alert("Gagal fetch barang");
-      } finally {
-        this.loading = false;
-      }
-    },
-
-    async fetchJasa(kegiatanId: number) {
-      this.loading = true;
-      try {
-        const data = await $fetch(`/api/ormawa/jasa/${kegiatanId}`);
-        this.jasaList = data;
-      } catch (err) {
-        alert("Gagal fetch jasa");
+        console.error(err);
+        alert("Gagal memuat data kegiatan");
       } finally {
         this.loading = false;
       }
     },
 
     async submitDokumentasi(fd: FormData) {
+      this.dokumentasiUploading = true;
       try {
         await $fetch("/api/ormawa/dokumentasi/dokumentasiKegiatan", {
           method: "POST",
@@ -56,12 +45,18 @@ export const useKegiatanStore = defineStore("kegiatan", {
         });
         this.popupMessage = "Berhasil mengupload dokumentasi kegiatan";
         this.popupVisible = true;
+        // Refresh data setelah sukses
+        const kegiatanId = fd.get("kegiatanId") as string;
+        if (kegiatanId) await this.fetchAllUploads(parseInt(kegiatanId));
       } catch {
         alert("Gagal upload dokumentasi");
+      } finally {
+        this.dokumentasiUploading = false;
       }
     },
 
     async submitBarang(fd: FormData) {
+      this.barangUploading = true;
       try {
         await $fetch("/api/ormawa/dokumentasi/dokumentasiBarang", {
           method: "POST",
@@ -69,12 +64,17 @@ export const useKegiatanStore = defineStore("kegiatan", {
         });
         this.popupMessage = "Berhasil mengupload barang";
         this.popupVisible = true;
+        const kegiatanId = fd.get("kegiatanId") as string;
+        if (kegiatanId) await this.fetchAllUploads(parseInt(kegiatanId));
       } catch {
         alert("Gagal upload barang");
+      } finally {
+        this.barangUploading = false;
       }
     },
 
     async submitJasa(fd: FormData) {
+      this.jasaUploading = true;
       try {
         await $fetch("/api/ormawa/dokumentasi/dokumentasiJasa", {
           method: "POST",
@@ -82,8 +82,12 @@ export const useKegiatanStore = defineStore("kegiatan", {
         });
         this.popupMessage = "Berhasil mengupload jasa";
         this.popupVisible = true;
+        const kegiatanId = fd.get("kegiatanId") as string;
+        if (kegiatanId) await this.fetchAllUploads(parseInt(kegiatanId));
       } catch {
         alert("Gagal upload jasa");
+      } finally {
+        this.jasaUploading = false;
       }
     },
 
@@ -98,6 +102,8 @@ export const useKegiatanStore = defineStore("kegiatan", {
 
         this.popupMessage = `Berhasil hapus ${item.jenisLabel}`;
         this.popupVisible = true;
+        // Refresh data setelah hapus
+        if (this.kegiatan?.id) await this.fetchAllUploads(this.kegiatan.id);
       } catch {
         alert("Gagal hapus");
       }
