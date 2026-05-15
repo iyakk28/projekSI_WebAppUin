@@ -347,164 +347,10 @@
         </div>
 
         <!-- ========== RIWAYAT UPLOAD (GABUNGAN) ========== -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-          <div class="flex items-center justify-between mb-4">
-            <h3
-              class="text-md font-semibold text-slate-900 flex items-center gap-2"
-            >
-              <Icon
-                name="heroicons:folder-open"
-                class="w-5 h-5 text-[#d1a82a]"
-              />
-              Riwayat Upload
-              <span
-                class="ml-2 text-xs bg-slate-100 px-2 py-0.5 rounded-full"
-                >{{ allUploads.length }}</span
-              >
-            </h3>
-            <button
-              @click="refreshData"
-              class="text-sm text-[#3b5988] hover:underline"
-            >
-              Refresh
-            </button>
-          </div>
 
-          <div
-            v-if="allUploads.length === 0"
-            class="text-center py-8 text-slate-500"
-          >
-            <Icon
-              name="heroicons:document"
-              class="w-12 h-12 mx-auto mb-2 text-slate-300"
-            />
-            <p>Belum ada upload apapun.</p>
-          </div>
-
-          <div v-else class="space-y-3">
-            <div
-              v-for="item in allUploads"
-              :key="item.id"
-              class="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-wrap items-start justify-between gap-3"
-            >
-              <div class="flex-1">
-                <div class="flex items-center flex-wrap gap-2 mb-1">
-                  <span
-                    class="text-xs font-semibold px-2 py-0.5 rounded-full"
-                    :class="{
-                      'bg-blue-100 text-blue-700': item.jenis === 'dokumentasi',
-                      'bg-green-100 text-green-700': item.jenis === 'barang',
-                      'bg-purple-100 text-purple-700': item.jenis === 'jasa',
-                    }"
-                  >
-                    {{ item.jenisLabel }}
-                  </span>
-                  <span class="text-xs text-slate-500">{{
-                    formatDate(item.createdAt)
-                  }}</span>
-                </div>
-                <!-- Deskripsi umum -->
-                <p class="text-sm text-slate-600">
-                  <span class="font-medium">Deskripsi:</span>
-                  {{ item.deskripsi || "-" }}
-                </p>
-                <!-- Info Barang -->
-                <template v-if="item.jenis === 'barang'">
-                  <p class="text-sm text-slate-600">
-                    <span class="font-medium">Toko:</span> {{ item.namaToko }}
-                  </p>
-                  <p class="text-sm text-slate-600">
-                    <span class="font-medium">Rekening:</span>
-                    {{ item.nomorRekeningToko }} a.n.
-                    {{ item.namaPemilikRekening }}
-                  </p>
-                  <div class="flex gap-3 mt-1">
-                    <a
-                      :href="item.fotoBarangUrl"
-                      target="_blank"
-                      class="text-xs text-[#3b5988] hover:underline flex items-center gap-1"
-                    >
-                      <Icon name="heroicons:photo" class="w-3 h-3" /> Lihat Foto
-                      Barang
-                    </a>
-                    <a
-                      :href="item.fotoStrukUrl"
-                      target="_blank"
-                      class="text-xs text-[#3b5988] hover:underline flex items-center gap-1"
-                    >
-                      <Icon name="heroicons:receipt-percent" class="w-3 h-3" />
-                      Lihat Struk
-                    </a>
-                  </div>
-                </template>
-                <!-- Info Jasa -->
-                <template v-if="item.jenis === 'jasa'">
-                  <p class="text-sm text-slate-600">
-                    <span class="font-medium">Penyedia:</span>
-                    {{ item.namaPenyedia }}
-                  </p>
-                  <p class="text-sm text-slate-600">
-                    <span class="font-medium">Rekening:</span>
-                    {{ item.nomorRekening }} a.n. {{ item.namaPemilikRekening }}
-                  </p>
-                  <div class="flex flex-wrap gap-3 mt-1">
-                    <a
-                      v-if="item.skUrl"
-                      :href="item.skUrl"
-                      target="_blank"
-                      class="text-xs text-[#3b5988] hover:underline flex items-center gap-1"
-                      >SK</a
-                    >
-                    <a
-                      v-if="item.spmtUrl"
-                      :href="item.spmtUrl"
-                      target="_blank"
-                      class="text-xs text-[#3b5988] hover:underline flex items-center gap-1"
-                      >SPMT</a
-                    >
-                    <a
-                      v-if="item.amprahUrl"
-                      :href="item.amprahUrl"
-                      target="_blank"
-                      class="text-xs text-[#3b5988] hover:underline flex items-center gap-1"
-                      >Amprah</a
-                    >
-                    <a
-                      v-if="item.npwpUrl"
-                      :href="item.npwpUrl"
-                      target="_blank"
-                      class="text-xs text-[#3b5988] hover:underline flex items-center gap-1"
-                      >NPWP</a
-                    >
-                    <a
-                      v-if="item.ktpUrl"
-                      :href="item.ktpUrl"
-                      target="_blank"
-                      class="text-xs text-[#3b5988] hover:underline flex items-center gap-1"
-                      >KTP</a
-                    >
-                  </div>
-                </template>
-                <!-- Untuk dokumentasi biasa -->
-                <a
-                  v-if="item.jenis === 'dokumentasi' && item.fileUrl"
-                  :href="item.fileUrl"
-                  target="_blank"
-                  class="text-xs text-[#3b5988] hover:underline flex items-center gap-1 mt-1"
-                >
-                  <Icon name="heroicons:eye" class="w-3 h-3" /> Lihat File
-                </a>
-              </div>
-              <button
-                @click="deleteUpload(item)"
-                class="text-red-500 hover:text-red-700 p-1 transition"
-                title="Hapus"
-              >
-                <Icon name="heroicons:trash" class="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-        </div>
+        <ormawa-dokumentasi-list-component
+          :kegiatan-id="kegiatanId"
+        ></ormawa-dokumentasi-list-component>
       </div>
     </div>
   </div>
@@ -951,7 +797,9 @@
   const goBack = () => router.back();
 
   onMounted(async () => {
-    await kegiatanStore.fetchAllUploads(kegiatanId.value);
+    if (kegiatanId.value) {
+      await kegiatanStore.fetchAllUploads(kegiatanId.value);
+    }
   });
 </script>
 

@@ -5,8 +5,8 @@ import { dokumentasiKegiatanTable } from "~~/server/db/schema";
 export default defineEventHandler(async (event) => {
   try {
     const body = await readBody(event);
-    const { kegiatanId } = body;
-
+    const { kegiatanId, page, row } = body;
+    console.log(page, row);
     if (!kegiatanId) {
       throw createError({
         statusCode: 400,
@@ -24,7 +24,9 @@ export default defineEventHandler(async (event) => {
         createAt: dokumentasiKegiatanTable.createdAt,
       })
       .from(dokumentasiKegiatanTable)
-      .where(eq(dokumentasiKegiatanTable.kegiatanId, kegiatanId));
+      .where(eq(dokumentasiKegiatanTable.kegiatanId, kegiatanId))
+      .limit(row)
+      .offset(page);
 
     return {
       success: true,
