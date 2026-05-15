@@ -18,7 +18,11 @@ export default defineEventHandler(async (event) => {
     const db = useDrizzle();
 
     const allDokumentasi = await db
-      .select()
+      .select({
+        deskripsi: dokumentasiKegiatanTable.deskripsi,
+        tipeDokumen: dokumentasiKegiatanTable.tipeDokumen,
+        createAt: dokumentasiKegiatanTable.createdAt,
+      })
       .from(dokumentasiKegiatanTable)
       .where(eq(dokumentasiKegiatanTable.kegiatanId, kegiatanId));
 

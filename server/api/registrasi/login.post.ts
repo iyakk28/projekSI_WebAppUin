@@ -5,7 +5,7 @@ import { User } from "../../interface/userInterface";
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
   const { id_users, password, remember } = body;
-  console.log(body);
+
   try {
     const user = await useDrizzle().query.usersTable.findFirst({
       where: eq(usersTable.users_id, id_users),
@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
         },
       });
     }
-    console.log(user);
+
     if (user.passwordHash !== password) {
       return {
         success: false,
