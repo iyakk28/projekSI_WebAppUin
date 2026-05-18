@@ -81,14 +81,14 @@ export default defineEventHandler(async (event) => {
       .orderBy(fakultasTable.id, ormawaTable.nama);
 
     // Kelompokkan per fakultas
-    const fakultasMap = new Map
-      number,
-      {
-        id: number;
-        nama: string;
-        ormawa: typeof ormawaList;
-      }
-    >();
+   const fakultasMap = new Map<
+  number,
+  {
+    id: number;
+    nama: string;
+    ormawa: typeof ormawaList;
+  }
+>();
 
     for (const row of ormawaList) {
       if (!fakultasMap.has(row.fakultasId)) {

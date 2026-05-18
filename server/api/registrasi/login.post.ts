@@ -33,8 +33,11 @@ export default defineEventHandler(async (event) => {
       username: user.fullName,
       email: user.email,
       fakultas: user.fakultasId || null,
-      ormawa: user.ormawaId || null,
       prodi: user.prodiId || null,
+      ormawa: user.ormawaId || null,
+      fakultasId: user.fakultasId || null,
+      prodiId: user.prodiId || null,
+      ormawaId: user.ormawaId || null,
     };
     const token = createJwt(payload);
 

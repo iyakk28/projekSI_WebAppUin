@@ -1,6 +1,6 @@
 import { eq, sql, ne, and } from "drizzle-orm";
-import { pengajuanRabTable } from "~/server/db/schema";
-import { useDrizzle } from "~/server/db";
+import { pengajuanRabTable, usersTable } from "~~/server/db/schema";
+import { useDrizzle } from "~~/server/db";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -13,50 +13,55 @@ export default defineEventHandler(async (event) => {
       db
         .select({ count: sql<number>`count(*)` })
         .from(pengajuanRabTable)
+        .innerJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.users_id))
         .where(
           and(
             ne(pengajuanRabTable.status, "draft"),
-            eq(pengajuanRabTable.fakultasId, fakultasId),
+            eq(usersTable.fakultasId, fakultasId),
           ),
         ),
 
       db
         .select({ count: sql<number>`count(*)` })
         .from(pengajuanRabTable)
+        .innerJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.users_id))
         .where(
           and(
             eq(pengajuanRabTable.status, "waiting_ppk"),
-            eq(pengajuanRabTable.fakultasId, fakultasId),
+            eq(usersTable.fakultasId, fakultasId),
           ),
         ),
 
       db
         .select({ count: sql<number>`count(*)` })
         .from(pengajuanRabTable)
+        .innerJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.users_id))
         .where(
           and(
             eq(pengajuanRabTable.status, "waiting_spi"),
-            eq(pengajuanRabTable.fakultasId, fakultasId),
+            eq(usersTable.fakultasId, fakultasId),
           ),
         ),
 
       db
         .select({ count: sql<number>`count(*)` })
         .from(pengajuanRabTable)
+        .innerJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.users_id))
         .where(
           and(
             eq(pengajuanRabTable.status, "revisi_ppk"),
-            eq(pengajuanRabTable.fakultasId, fakultasId),
+            eq(usersTable.fakultasId, fakultasId),
           ),
         ),
 
       db
         .select({ count: sql<number>`count(*)` })
         .from(pengajuanRabTable)
+        .innerJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.users_id))
         .where(
           and(
             eq(pengajuanRabTable.status, "ditolak_spi"),
-            eq(pengajuanRabTable.fakultasId, fakultasId),
+            eq(usersTable.fakultasId, fakultasId),
           ),
         ),
     ]);
