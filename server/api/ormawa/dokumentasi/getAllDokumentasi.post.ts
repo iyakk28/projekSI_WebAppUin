@@ -1,5 +1,5 @@
 import { useDrizzle } from "~~/server/db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { dokumentasiKegiatanTable } from "~~/server/db/schema";
 
 export default defineEventHandler(async (event) => {
@@ -17,20 +17,38 @@ export default defineEventHandler(async (event) => {
 
     const db = useDrizzle();
 
+    // 1. Hitung total data untuk pagination
+    const totalResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(dokumentasiKegiatanTable)
+      .where(eq(dokumentasiKegiatanTable.kegiatanId, kegiatanId));
+    
+    const total = Number(totalResult[0]?.count || 0);
+
+    // 2. Ambil data dengan limit dan offset yang benar
+    const currentPage = Number(page) || 1;
+    const itemsPerPage = Number(row) || 5;
+    const offset = (currentPage - 1) * itemsPerPage;
+
     const allDokumentasi = await db
       .select({
+        id: dokumentasiKegiatanTable.id,
         deskripsi: dokumentasiKegiatanTable.deskripsi,
         tipeDokumen: dokumentasiKegiatanTable.tipeDokumen,
         createAt: dokumentasiKegiatanTable.createdAt,
       })
       .from(dokumentasiKegiatanTable)
       .where(eq(dokumentasiKegiatanTable.kegiatanId, kegiatanId))
-      .limit(row)
-      .offset(page);
+      .limit(itemsPerPage)
+      .offset(offset);
 
     return {
       success: true,
       data: allDokumentasi,
+      total: total,
+      page: currentPage,
+      row: itemsPerPage,
+      totalPages: Math.ceil(total / itemsPerPage)
     };
   } catch (error: any) {
     console.error("Error fetching dokumentasi:", error);

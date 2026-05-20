@@ -1,7 +1,4 @@
 <template>
-  <div>Current Page: {{ store.currentPage }}</div>
-  <div>Per Page: {{ store.perPage }}</div>
-
   <div
     class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden"
   >
@@ -32,7 +29,10 @@
     </div>
 
     <!-- Loading State -->
-    <div v-if="store.loading" class="flex justify-center items-center py-12">
+    <div
+      v-if="fetcher.loading"
+      class="flex justify-center items-center py-12"
+    >
       <div class="flex flex-col items-center gap-3">
         <Icon
           name="heroicons:arrow-path"
@@ -87,7 +87,6 @@
             </th>
           </tr>
         </thead>
-
         <tbody class="divide-y divide-slate-100">
           <tr
             v-for="(doc, idx) in filteredDocumentations"
@@ -97,7 +96,7 @@
             <td
               class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900"
             >
-              {{ (store.currentPage - 1) * store.perPage + idx + 1 }}
+              {{ (fetcher.currentPage - 1) * fetcher.perPage + idx + 1 }}
             </td>
             <td class="px-6 py-4">
               <p class="text-sm text-slate-900 font-medium">
@@ -149,18 +148,17 @@
 
     <!-- Pagination Controls -->
     <div
-      v-if="store.totalItems > 0"
       class="px-6 py-4 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
     >
       <div class="text-sm text-slate-500">
         Menampilkan {{ startIndex + 1 }} - {{ endIndex }} dari
-        {{ store.totalItems }} dokumentasi
+        {{ fetcher.totalItems }} dokumentasi
       </div>
       <div class="flex items-center gap-3">
         <div class="flex items-center gap-2">
           <span class="text-sm text-slate-500">Tampil</span>
           <select
-            :value="store.perPage"
+            :value="fetcher.perPage"
             @change="changePerPage"
             class="px-2 py-1 border border-slate-200 rounded-lg text-sm"
           >
@@ -174,17 +172,18 @@
         <div class="flex gap-1">
           <button
             @click="prevPage"
-            :disabled="store.currentPage <= 1"
+            :disabled="fetcher.currentPage <= 1"
             class="px-3 py-1 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Icon name="heroicons:chevron-left" class="w-4 h-4" />
           </button>
           <span class="px-3 py-1 text-sm">
-            Halaman {{ store.currentPage }} dari {{ store.totalPages || 1 }}
+            Halaman {{ fetcher.currentPage }} dari
+            {{ fetcher.totalPages || 1 }}
           </span>
           <button
             @click="nextPage"
-            :disabled="store.currentPage >= store.totalPages"
+            :disabled="fetcher.currentPage >= fetcher.totalPages"
             class="px-3 py-1 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Icon name="heroicons:chevron-right" class="w-4 h-4" />
@@ -359,11 +358,16 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, computed, watch } from "vue";
-  import { useKegiatanStore } from "~/stores/ormawa/uploadDokumen";
+  import { ref, computed, onMounted, watch } from "vue";
+  import { useDokumentasiStore } from "~/stores/ormawa/allDokumen";
 
-  const store = useKegiatanStore();
-  const { currentPage, perPage } = store;
+  const props = defineProps({
+    kegiatanId: { type: Number, required: true },
+  });
+
+  const fetcher = useDokumentasiStore();
+
+  // State lokal
   const searchQuery = ref("");
   const showViewModal = ref(false);
   const showEditModal = ref(false);
@@ -378,16 +382,9 @@
     tipeDokumen: "",
   });
 
-  const props = defineProps({
-    kegiatanId: {
-      type: Number,
-      required: true,
-    },
-  });
-
-  // Filter client-side pada data halaman saat ini
+  // Computed
   const filteredDocumentations = computed(() => {
-    let docs = store.dokumentasiList;
+    let docs = fetcher.dokumentasiList;
     if (searchQuery.value) {
       docs = docs.filter(
         (doc: any) =>
@@ -402,11 +399,14 @@
     return docs;
   });
 
-  const startIndex = computed(() => (store.currentPage - 1) * store.perPage);
+  const startIndex = computed(
+    () => (fetcher.currentPage - 1) * fetcher.perPage,
+  );
   const endIndex = computed(
     () => startIndex.value + filteredDocumentations.value.length,
   );
 
+  // Helper formatting
   const formatDate = (dateString: string | Date | null) => {
     if (!dateString) return "-";
     return new Date(dateString).toLocaleDateString("id-ID", {
@@ -420,6 +420,8 @@
 
   const getTipeDocumenBadgeClass = (tipe: string) => {
     const baseClass = "px-3 py-1 rounded-full text-xs font-medium border";
+    if (!tipe) return `${baseClass} bg-slate-50 text-slate-700 border-slate-200`;
+    
     switch (tipe.toLowerCase()) {
       case "foto":
         return `${baseClass} bg-blue-50 text-blue-700 border-blue-200`;
@@ -434,26 +436,26 @@
     }
   };
 
-  // Pagination methods
+  // Pagination handlers
   const changePerPage = async (event: Event) => {
     const target = event.target as HTMLSelectElement;
     const newLimit = parseInt(target.value, 10);
-    await store.changePerPage(props.kegiatanId, newLimit);
+    await fetcher.changePerPage(props.kegiatanId, newLimit);
   };
 
   const prevPage = async () => {
-    if (store.currentPage > 1) {
-      await store.changePage(props.kegiatanId, store.currentPage - 1);
+    if (fetcher.currentPage > 1) {
+      await fetcher.changePage(props.kegiatanId, fetcher.currentPage - 1);
     }
   };
 
   const nextPage = async () => {
-    if (store.currentPage < store.totalPages) {
-      await store.changePage(props.kegiatanId, store.currentPage + 1);
+    if (fetcher.currentPage < fetcher.totalPages) {
+      await fetcher.changePage(props.kegiatanId, fetcher.currentPage + 1);
     }
   };
 
-  // CRUD handlers
+  // CRUD
   const handleView = (doc: any) => {
     selectedDoc.value = doc;
     showViewModal.value = true;
@@ -473,23 +475,21 @@
       showPopupNotification("Semua field harus diisi", "error");
       return;
     }
-
     try {
-      // Sesuaikan endpoint API dengan backend Anda
-      await $fetch(`/api/dokumentasi/${selectedDoc.value.id}`, {
-        method: "PUT",
+      await $fetch(`/api/ormawa/dokumentasi/dokumentasi`, {
+        method: "PATCH",
         body: {
+          id: selectedDoc.value.id,
           deskripsi: editForm.value.deskripsi,
           tipeDokumen: editForm.value.tipeDokumen,
         },
       });
       showPopupNotification("Dokumentasi berhasil diperbarui", "success");
       showEditModal.value = false;
-      // Refresh data dari server
-      await store.fetchAllUploads(
+      await fetcher.refreshDokumentasi(
         props.kegiatanId,
-        store.currentPage,
-        store.perPage,
+        fetcher.currentPage,
+        fetcher.perPage,
       );
     } catch (error) {
       showPopupNotification("Gagal memperbarui dokumentasi", "error");
@@ -503,15 +503,16 @@
 
   const submitDelete = async () => {
     try {
-      await $fetch(`/api/dokumentasi/${selectedDoc.value.id}`, {
+      await $fetch(`/api/ormawa/dokumentasi/dokumentasi`, {
         method: "DELETE",
+        body: { id: selectedDoc.value.id }
       });
       showPopupNotification("Dokumentasi berhasil dihapus", "success");
       showDeleteConfirm.value = false;
-      await store.fetchAllUploads(
+      await fetcher.refreshDokumentasi(
         props.kegiatanId,
-        store.currentPage,
-        store.perPage,
+        fetcher.currentPage,
+        fetcher.perPage,
       );
     } catch (error) {
       showPopupNotification("Gagal menghapus dokumentasi", "error");
@@ -530,7 +531,25 @@
     }, 3000);
   };
 
-  // Ambil data awal saat kegiatanId berubah atau komponen dipasang
+  // Lifecycle
+  onMounted(async () => {
+    if (props.kegiatanId) {
+      await fetcher.fetchDokumentasi(
+        props.kegiatanId,
+        fetcher.currentPage,
+        fetcher.perPage,
+      );
+    }
+  });
+
+  watch(
+    () => props.kegiatanId,
+    async (newId, oldId) => {
+      if (newId !== oldId && newId) {
+        await fetcher.refreshDokumentasi(newId, 1, fetcher.perPage);
+      }
+    },
+  );
 </script>
 
 <style scoped>

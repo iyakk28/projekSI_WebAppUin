@@ -1,0 +1,44 @@
+import { useDrizzle } from "~~/server/db";
+import { eq } from "drizzle-orm";
+import { dokumentasiKegiatanTable } from "~~/server/db/schema";
+import { unlink } from "node:fs/promises";
+
+export default defineEventHandler(async (event) => {
+  const db = useDrizzle();
+  const body = await readBody(event);
+  const { id } = body;
+
+  if (!id) {
+    throw createError({ statusCode: 400, message: "ID wajib disertakan" });
+  }
+
+  // 1. Cari data untuk hapus file fisik
+  const results = await db
+    .select()
+    .from(dokumentasiKegiatanTable)
+    .where(eq(dokumentasiKegiatanTable.id, Number(id)))
+    .limit(1);
+    
+  const doc = results[0];
+
+  if (!doc) {
+    throw createError({ statusCode: 404, message: "Dokumentasi tidak ditemukan" });
+  }
+
+  // 2. Hapus file fisik jika ada
+  if (doc.fileUrl) {
+    try {
+      await unlink(doc.fileUrl);
+    } catch (e) {
+      console.error("Gagal menghapus file:", e);
+    }
+  }
+
+  // 3. Hapus record dari database
+  await db.delete(dokumentasiKegiatanTable).where(eq(dokumentasiKegiatanTable.id, Number(id)));
+
+  return {
+    success: true,
+    message: "Dokumentasi berhasil dihapus",
+  };
+});
