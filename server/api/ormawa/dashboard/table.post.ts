@@ -29,7 +29,10 @@ export default defineEventHandler(async (event) => {
       username: usersTable.fullName,
     })
     .from(pengajuanRabTable)
-    .innerJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.id));
+    .innerJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.id))
+    .where(eq(pengajuanRabTable.usersId, user.id)) // Filter berdasarkan user
+    .limit(limit) // Batas per halaman
+    .offset(offset); // Lompatan halaman
 
   // Hitung total data user
   const total = await db

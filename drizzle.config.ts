@@ -9,7 +9,7 @@ export default defineConfig({
     host: "localhost", // alamat server MySQL
     port: 3306, // port default MySQL
     user: "root", // username MySQL
-    password: "admin1234", // password MySQL
+    password: "Admin1234", // password MySQL
     database: "e_administrasi", // nama database yang kamu buat
   },
 });

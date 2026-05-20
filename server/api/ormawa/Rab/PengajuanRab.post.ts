@@ -119,9 +119,8 @@ export default defineEventHandler(async (event) => {
     // Penentuan subfolder berdasarkan status
     const subFolder = statusRaw === "draft" ? "draft" : "sedangDiAjukan";
 
-    // Create direktori tujuan menggunakan createFilePath
-    const uploadBaseDirRab = await createFilePath("Rab", subFolder);
-    const uploadBaseDirTor = await createFilePath("Tor", subFolder);
+    const uploadBaseDirRab = await createFilePath("file", "Rab", subFolder);
+    const uploadBaseDirTor = await createFilePath("file", "Tor", subFolder);
 
     const timestamp = Date.now();
 

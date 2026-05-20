@@ -140,7 +140,7 @@
               name="heroicons:shopping-bag"
               class="w-5 h-5 text-[#d1a82a]"
             />
-            Upload Barang (Foto Barang + Struk)
+            Upload Barang
           </h3>
           <form @submit.prevent="submitBarang" class="space-y-4">
             <div>
@@ -347,183 +347,62 @@
         </div>
 
         <!-- ========== RIWAYAT UPLOAD (GABUNGAN) ========== -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-          <div class="flex items-center justify-between mb-4">
-            <h3
-              class="text-md font-semibold text-slate-900 flex items-center gap-2"
-            >
-              <Icon
-                name="heroicons:folder-open"
-                class="w-5 h-5 text-[#d1a82a]"
-              />
-              Riwayat Upload
-              <span
-                class="ml-2 text-xs bg-slate-100 px-2 py-0.5 rounded-full"
-                >{{ allUploads.length }}</span
-              >
-            </h3>
-            <button
-              @click="refreshData"
-              class="text-sm text-[#3b5988] hover:underline"
-            >
-              Refresh
-            </button>
-          </div>
 
-          <div
-            v-if="allUploads.length === 0"
-            class="text-center py-8 text-slate-500"
-          >
-            <Icon
-              name="heroicons:document"
-              class="w-12 h-12 mx-auto mb-2 text-slate-300"
-            />
-            <p>Belum ada upload apapun.</p>
-          </div>
-
-          <div v-else class="space-y-3">
-            <div
-              v-for="item in allUploads"
-              :key="item.id"
-              class="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-wrap items-start justify-between gap-3"
-            >
-              <div class="flex-1">
-                <div class="flex items-center flex-wrap gap-2 mb-1">
-                  <span
-                    class="text-xs font-semibold px-2 py-0.5 rounded-full"
-                    :class="{
-                      'bg-blue-100 text-blue-700': item.jenis === 'dokumentasi',
-                      'bg-green-100 text-green-700': item.jenis === 'barang',
-                      'bg-purple-100 text-purple-700': item.jenis === 'jasa',
-                    }"
-                  >
-                    {{ item.jenisLabel }}
-                  </span>
-                  <span class="text-xs text-slate-500">{{
-                    formatDate(item.createdAt)
-                  }}</span>
-                </div>
-                <!-- Deskripsi umum -->
-                <p class="text-sm text-slate-600">
-                  <span class="font-medium">Deskripsi:</span>
-                  {{ item.deskripsi || "-" }}
-                </p>
-                <!-- Info Barang -->
-                <template v-if="item.jenis === 'barang'">
-                  <p class="text-sm text-slate-600">
-                    <span class="font-medium">Toko:</span> {{ item.namaToko }}
-                  </p>
-                  <p class="text-sm text-slate-600">
-                    <span class="font-medium">Rekening:</span>
-                    {{ item.nomorRekeningToko }} a.n.
-                    {{ item.namaPemilikRekening }}
-                  </p>
-                  <div class="flex gap-3 mt-1">
-                    <a
-                      :href="item.fotoBarangUrl"
-                      target="_blank"
-                      class="text-xs text-[#3b5988] hover:underline flex items-center gap-1"
-                    >
-                      <Icon name="heroicons:photo" class="w-3 h-3" /> Lihat Foto
-                      Barang
-                    </a>
-                    <a
-                      :href="item.fotoStrukUrl"
-                      target="_blank"
-                      class="text-xs text-[#3b5988] hover:underline flex items-center gap-1"
-                    >
-                      <Icon name="heroicons:receipt-percent" class="w-3 h-3" />
-                      Lihat Struk
-                    </a>
-                  </div>
-                </template>
-                <!-- Info Jasa -->
-                <template v-if="item.jenis === 'jasa'">
-                  <p class="text-sm text-slate-600">
-                    <span class="font-medium">Penyedia:</span>
-                    {{ item.namaPenyedia }}
-                  </p>
-                  <p class="text-sm text-slate-600">
-                    <span class="font-medium">Rekening:</span>
-                    {{ item.nomorRekening }} a.n. {{ item.namaPemilikRekening }}
-                  </p>
-                  <div class="flex flex-wrap gap-3 mt-1">
-                    <a
-                      v-if="item.skUrl"
-                      :href="item.skUrl"
-                      target="_blank"
-                      class="text-xs text-[#3b5988] hover:underline flex items-center gap-1"
-                      >SK</a
-                    >
-                    <a
-                      v-if="item.spmtUrl"
-                      :href="item.spmtUrl"
-                      target="_blank"
-                      class="text-xs text-[#3b5988] hover:underline flex items-center gap-1"
-                      >SPMT</a
-                    >
-                    <a
-                      v-if="item.amprahUrl"
-                      :href="item.amprahUrl"
-                      target="_blank"
-                      class="text-xs text-[#3b5988] hover:underline flex items-center gap-1"
-                      >Amprah</a
-                    >
-                    <a
-                      v-if="item.npwpUrl"
-                      :href="item.npwpUrl"
-                      target="_blank"
-                      class="text-xs text-[#3b5988] hover:underline flex items-center gap-1"
-                      >NPWP</a
-                    >
-                    <a
-                      v-if="item.ktpUrl"
-                      :href="item.ktpUrl"
-                      target="_blank"
-                      class="text-xs text-[#3b5988] hover:underline flex items-center gap-1"
-                      >KTP</a
-                    >
-                  </div>
-                </template>
-                <!-- Untuk dokumentasi biasa -->
-                <a
-                  v-if="item.jenis === 'dokumentasi' && item.fileUrl"
-                  :href="item.fileUrl"
-                  target="_blank"
-                  class="text-xs text-[#3b5988] hover:underline flex items-center gap-1 mt-1"
-                >
-                  <Icon name="heroicons:eye" class="w-3 h-3" /> Lihat File
-                </a>
-              </div>
-              <button
-                @click="deleteUpload(item)"
-                class="text-red-500 hover:text-red-700 p-1 transition"
-                title="Hapus"
-              >
-                <Icon name="heroicons:trash" class="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-        </div>
+        <ormawa-dokumentasi-list-component
+          :kegiatan-id="kegiatanId"
+        ></ormawa-dokumentasi-list-component>
       </div>
     </div>
   </div>
+  <!-- POPUP NOTIFIKASI SUKSES (di tengah) -->
+  <Teleport to="body">
+    <div
+      v-if="popupVisible"
+      class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm transition-all duration-300"
+      @click.self="closePopup"
+    >
+      <div
+        class="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full mx-4 transform transition-all duration-300 animate-popup"
+      >
+        <div class="flex flex-col items-center text-center">
+          <!-- Ikon sukses animasi -->
+          <div
+            class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4 animate-bounce-in"
+          >
+            <Icon
+              name="heroicons:check-circle"
+              class="w-10 h-10 text-green-500"
+            />
+          </div>
+
+          <h3 class="text-xl font-bold text-slate-800 mb-2">Berhasil!</h3>
+          <p class="text-slate-600 mb-6">{{ popupMessage }}</p>
+
+          <button
+            @click="closePopup"
+            class="px-6 py-2 bg-[#3b5988] hover:bg-[#2d4570] text-white rounded-xl font-medium transition duration-200 shadow-md hover:shadow-lg"
+          >
+            Tutup
+          </button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
   import { ref, computed, onMounted } from "vue";
   import { useRoute, useRouter } from "vue-router";
+  import { useKegiatanStore } from "~/stores/ormawa/uploadDokumen";
 
   const route = useRoute();
   const router = useRouter();
+  const kegiatanStore = useKegiatanStore();
 
   const kegiatanId = computed(() => {
     const id = route.params.id;
     return id ? parseInt(id as string) : null;
   });
-
-  const loading = ref(false);
-  const kegiatan = ref<any>(null);
 
   const activeTab = ref("dokumentasi");
   const tabs = [
@@ -536,10 +415,19 @@
     { key: "jasa", label: "Upload Jasa", icon: "heroicons:user-group" },
   ];
 
-  // Data list
-  const dokumentasiList = ref<any[]>([]);
-  const barangList = ref<any[]>([]);
-  const jasaList = ref<any[]>([]);
+  // Data dari store (pastikan store memiliki state dan getter yang sesuai)
+  const loading = computed(() => kegiatanStore.loading);
+  const kegiatan = computed(() => kegiatanStore.kegiatan);
+  const dokumentasiList = computed(() => kegiatanStore.dokumentasiList);
+  const barangList = computed(() => kegiatanStore.barangList);
+  const jasaList = computed(() => kegiatanStore.jasaList);
+  const popupVisible = computed(() => kegiatanStore.popupVisible);
+  const popupMessage = computed(() => kegiatanStore.popupMessage);
+  const dokumentasiUploading = computed(
+    () => kegiatanStore.dokumentasiUploading,
+  );
+  const barangUploading = computed(() => kegiatanStore.barangUploading);
+  const jasaUploading = computed(() => kegiatanStore.jasaUploading);
 
   const allUploads = computed(() => {
     const docs = dokumentasiList.value.map((d) => ({
@@ -563,11 +451,8 @@
     );
   });
 
-  // Form Dokumentasi
+  // Form state
   const dokumentasiForm = ref({ deskripsi: "", file: null as File | null });
-  const dokumentasiUploading = ref(false);
-
-  // Form Barang (dua file)
   const barangForm = ref({
     namaToko: "",
     nomorRekeningToko: "",
@@ -575,9 +460,6 @@
     fotoBarang: null as File | null,
     fotoStruk: null as File | null,
   });
-  const barangUploading = ref(false);
-
-  // Form Jasa (banyak file)
   const jasaForm = ref({
     namaPenyedia: "",
     nomorRekening: "",
@@ -588,7 +470,6 @@
     npwp: null as File | null,
     ktp: null as File | null,
   });
-  const jasaUploading = ref(false);
 
   // Helper functions
   const formatTanggal = (dateStr: string) => {
@@ -627,64 +508,202 @@
     return `ml-1 px-2 py-0.5 rounded-full text-xs ${classes[status] || "bg-slate-100"}`;
   };
 
-  // Fetch data
-
-  const refreshData = () => null;
-
-  // Dokumentasi
-  const handleDokumentasiFileChange = (e: Event) => {
-    const target = e.target as HTMLInputElement;
-    if (target.files?.[0]) {
-      if (target.files[0].size > 10 * 1024 * 1024) {
-        alert("Maks 10MB");
-        target.value = "";
-        return;
-      }
-      dokumentasiForm.value.file = target.files[0];
+  // Handler file untuk dokumentasi
+  const handleDokumentasiFileChange = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    if (!target.files || target.files.length === 0) {
+      alert("Tidak ada file yang dipilih");
+      return;
     }
+    const file = target.files[0];
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Ukuran file maksimal 10MB");
+      target.value = "";
+      return;
+    }
+    const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
+    if (!allowedTypes.includes(file.type)) {
+      alert("Format file harus JPG, PNG, atau PDF");
+      target.value = "";
+      return;
+    }
+    dokumentasiForm.value.file = file;
+    console.log("File berhasil dipilih:", file.name, file.size, file.type);
   };
+
+  // Handler file untuk barang
+  const handleBarangFotoChange = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    if (!target.files || target.files.length === 0) {
+      alert("Tidak ada file yang dipilih");
+      return;
+    }
+    const file = target.files[0];
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Ukuran file maksimal 10MB");
+      target.value = "";
+      return;
+    }
+    const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
+    if (!allowedTypes.includes(file.type)) {
+      alert("Format file harus JPG, PNG, atau PDF");
+      target.value = "";
+      return;
+    }
+    barangForm.value.fotoBarang = file;
+    console.log("Foto Barang dipilih:", file.name, file.size, file.type);
+  };
+
+  const handleBarangStrukChange = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    if (!target.files || target.files.length === 0) {
+      alert("Tidak ada file yang dipilih");
+      return;
+    }
+    const file = target.files[0];
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Ukuran file maksimal 10MB");
+      target.value = "";
+      return;
+    }
+    const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
+    if (!allowedTypes.includes(file.type)) {
+      alert("Format file harus JPG, PNG, atau PDF");
+      target.value = "";
+      return;
+    }
+    barangForm.value.fotoStruk = file;
+    console.log("Foto Struk dipilih:", file.name, file.size, file.type);
+  };
+
+  // Handler file untuk jasa
+  const handleJasaSKChange = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    if (!target.files || target.files.length === 0) {
+      alert("Tidak ada file yang dipilih");
+      return;
+    }
+    const file = target.files[0];
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Ukuran file maksimal 10MB");
+      target.value = "";
+      return;
+    }
+    const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
+    if (!allowedTypes.includes(file.type)) {
+      alert("Format file harus JPG, PNG, atau PDF");
+      target.value = "";
+      return;
+    }
+    jasaForm.value.sk = file;
+    console.log("File SK dipilih:", file.name, file.size, file.type);
+  };
+
+  const handleJasaSPMTChange = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    if (!target.files || target.files.length === 0) {
+      alert("Tidak ada file yang dipilih");
+      return;
+    }
+    const file = target.files[0];
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Ukuran file maksimal 10MB");
+      target.value = "";
+      return;
+    }
+    const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
+    if (!allowedTypes.includes(file.type)) {
+      alert("Format file harus JPG, PNG, atau PDF");
+      target.value = "";
+      return;
+    }
+    jasaForm.value.spmt = file;
+    console.log("File SPMT dipilih:", file.name, file.size, file.type);
+  };
+
+  const handleJasaAmprahChange = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    if (!target.files || target.files.length === 0) {
+      alert("Tidak ada file yang dipilih");
+      return;
+    }
+    const file = target.files[0];
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Ukuran file maksimal 10MB");
+      target.value = "";
+      return;
+    }
+    const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
+    if (!allowedTypes.includes(file.type)) {
+      alert("Format file harus JPG, PNG, atau PDF");
+      target.value = "";
+      return;
+    }
+    jasaForm.value.amprah = file;
+    console.log("File Amprah dipilih:", file.name, file.size, file.type);
+  };
+
+  const handleJasaNPWPChange = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    if (!target.files || target.files.length === 0) {
+      alert("Tidak ada file yang dipilih");
+      return;
+    }
+    const file = target.files[0];
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Ukuran file maksimal 10MB");
+      target.value = "";
+      return;
+    }
+    const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
+    if (!allowedTypes.includes(file.type)) {
+      alert("Format file harus JPG, PNG, atau PDF");
+      target.value = "";
+      return;
+    }
+    jasaForm.value.npwp = file;
+    console.log("File NPWP dipilih:", file.name, file.size, file.type);
+  };
+
+  const handleJasaKTPChange = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    if (!target.files || target.files.length === 0) {
+      alert("Tidak ada file yang dipilih");
+      return;
+    }
+    const file = target.files[0];
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Ukuran file maksimal 10MB");
+      target.value = "";
+      return;
+    }
+    const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
+    if (!allowedTypes.includes(file.type)) {
+      alert("Format file harus JPG, PNG, atau PDF");
+      target.value = "";
+      return;
+    }
+    jasaForm.value.ktp = file;
+    console.log("File KTP dipilih:", file.name, file.size, file.type);
+  };
+
+  // Submit functions
   const submitDokumentasi = async () => {
     if (!dokumentasiForm.value.deskripsi || !dokumentasiForm.value.file)
       return alert("Lengkapi deskripsi dan file");
-    dokumentasiUploading.value = true;
     const fd = new FormData();
     fd.append("kegiatanId", String(kegiatanId.value));
     fd.append("deskripsi", dokumentasiForm.value.deskripsi);
     fd.append("file", dokumentasiForm.value.file);
-    try {
-      await $fetch("/api/dokumentasi", { method: "POST", body: fd });
-      await fetchData();
-      dokumentasiForm.value = { deskripsi: "", file: null };
-    } catch (err) {
-      alert("Gagal upload");
-    } finally {
-      dokumentasiUploading.value = false;
-    }
+    await kegiatanStore.submitDokumentasi(fd);
+    dokumentasiForm.value = { deskripsi: "", file: null };
+    // Reset input file secara visual
+    const fileInput = document.querySelector(
+      'input[type="file"]',
+    ) as HTMLInputElement;
+    if (fileInput) fileInput.value = "";
   };
 
-  // Barang
-  const handleBarangFotoChange = (e: Event) => {
-    const target = e.target as HTMLInputElement;
-    if (target.files?.[0]) {
-      if (target.files[0].size > 10 * 1024 * 1024) {
-        alert("Maks 10MB");
-        target.value = "";
-        return;
-      }
-      barangForm.value.fotoBarang = target.files[0];
-    }
-  };
-  const handleBarangStrukChange = (e: Event) => {
-    const target = e.target as HTMLInputElement;
-    if (target.files?.[0]) {
-      if (target.files[0].size > 10 * 1024 * 1024) {
-        alert("Maks 10MB");
-        target.value = "";
-        return;
-      }
-      barangForm.value.fotoStruk = target.files[0];
-    }
-  };
   const submitBarang = async () => {
     if (
       !barangForm.value.namaToko ||
@@ -695,7 +714,6 @@
     ) {
       return alert("Semua field dan file wajib diisi");
     }
-    barangUploading.value = true;
     const fd = new FormData();
     fd.append("kegiatanId", String(kegiatanId.value));
     fd.append("namaToko", barangForm.value.namaToko);
@@ -703,44 +721,25 @@
     fd.append("namaPemilikRekening", barangForm.value.namaPemilikRekening);
     fd.append("fotoBarang", barangForm.value.fotoBarang);
     fd.append("fotoStruk", barangForm.value.fotoStruk);
-    try {
-      await $fetch("/api/barang", { method: "POST", body: fd });
-      await fetchData();
-      barangForm.value = {
-        namaToko: "",
-        nomorRekeningToko: "",
-        namaPemilikRekening: "",
-        fotoBarang: null,
-        fotoStruk: null,
-      };
-    } catch (err) {
-      alert("Gagal upload barang");
-    } finally {
-      barangUploading.value = false;
-    }
+    await kegiatanStore.submitBarang(fd);
+    barangForm.value = {
+      namaToko: "",
+      nomorRekeningToko: "",
+      namaPemilikRekening: "",
+      fotoBarang: null,
+      fotoStruk: null,
+    };
+    // Reset file inputs
+    const fotoBarangInput = document.querySelector(
+      'input[accept="image/*,application/pdf"]',
+    ) as HTMLInputElement;
+    if (fotoBarangInput) fotoBarangInput.value = "";
+    const fotoStrukInput = document.querySelectorAll(
+      'input[accept="image/*,application/pdf"]',
+    )[1] as HTMLInputElement;
+    if (fotoStrukInput) fotoStrukInput.value = "";
   };
 
-  // Jasa
-  const handleJasaSKChange = (e: Event) => {
-    const t = e.target as HTMLInputElement;
-    if (t.files?.[0]) jasaForm.value.sk = t.files[0];
-  };
-  const handleJasaSPMTChange = (e: Event) => {
-    const t = e.target as HTMLInputElement;
-    if (t.files?.[0]) jasaForm.value.spmt = t.files[0];
-  };
-  const handleJasaAmprahChange = (e: Event) => {
-    const t = e.target as HTMLInputElement;
-    if (t.files?.[0]) jasaForm.value.amprah = t.files[0];
-  };
-  const handleJasaNPWPChange = (e: Event) => {
-    const t = e.target as HTMLInputElement;
-    if (t.files?.[0]) jasaForm.value.npwp = t.files[0];
-  };
-  const handleJasaKTPChange = (e: Event) => {
-    const t = e.target as HTMLInputElement;
-    if (t.files?.[0]) jasaForm.value.ktp = t.files[0];
-  };
   const submitJasa = async () => {
     if (
       !jasaForm.value.namaPenyedia ||
@@ -752,11 +751,8 @@
       !jasaForm.value.npwp ||
       !jasaForm.value.ktp
     ) {
-      return alert(
-        "Semua field dan file (SK, SPMT, Amprah, NPWP, KTP) wajib diisi",
-      );
+      return alert("Semua field dan file wajib diisi");
     }
-    jasaUploading.value = true;
     const fd = new FormData();
     fd.append("kegiatanId", String(kegiatanId.value));
     fd.append("namaPenyedia", jasaForm.value.namaPenyedia);
@@ -767,43 +763,81 @@
     fd.append("amprah", jasaForm.value.amprah);
     fd.append("npwp", jasaForm.value.npwp);
     fd.append("ktp", jasaForm.value.ktp);
-    try {
-      await $fetch("/api/jasa", { method: "POST", body: fd });
-      await fetchData();
-      jasaForm.value = {
-        namaPenyedia: "",
-        nomorRekening: "",
-        namaPemilikRekening: "",
-        sk: null,
-        spmt: null,
-        amprah: null,
-        npwp: null,
-        ktp: null,
-      };
-    } catch (err) {
-      alert("Gagal upload jasa");
-    } finally {
-      jasaUploading.value = false;
-    }
+    await kegiatanStore.submitJasa(fd);
+    jasaForm.value = {
+      namaPenyedia: "",
+      nomorRekening: "",
+      namaPemilikRekening: "",
+      sk: null,
+      spmt: null,
+      amprah: null,
+      npwp: null,
+      ktp: null,
+    };
+    // Reset all file inputs (bisa dengan querySelectorAll)
+    const fileInputs = document.querySelectorAll('input[type="file"]');
+    fileInputs.forEach((input) => (input.value = ""));
   };
 
-  // Hapus
+  // Delete dan helper lainnya
   const deleteUpload = async (item: any) => {
     if (!confirm(`Hapus ${item.jenisLabel} ini?`)) return;
-    try {
-      if (item.jenis === "dokumentasi")
-        await $fetch(`/api/dokumentasi/${item.id}`, { method: "DELETE" });
-      else if (item.jenis === "barang")
-        await $fetch(`/api/barang/${item.id}`, { method: "DELETE" });
-      else if (item.jenis === "jasa")
-        await $fetch(`/api/jasa/${item.id}`, { method: "DELETE" });
-      await fetchData();
-    } catch (err) {
-      alert("Gagal hapus");
+    await kegiatanStore.deleteUpload(item);
+  };
+
+  const refreshData = () => {
+    if (kegiatanId.value) {
+      kegiatanStore.fetchDokumentasi(kegiatanId.value);
+      kegiatanStore.fetchBarang(kegiatanId.value);
+      kegiatanStore.fetchJasa(kegiatanId.value);
     }
   };
 
+  const closePopup = () => kegiatanStore.closePopup();
   const goBack = () => router.back();
 
-  onMounted(() => {});
+  onMounted(async () => {
+    if (kegiatanId.value) {
+      await kegiatanStore.fetchAllUploads(kegiatanId.value);
+    }
+  });
 </script>
+
+<style scoped>
+  @keyframes popupZoom {
+    0% {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes bounceIn {
+    0% {
+      opacity: 0;
+      transform: scale(0.3);
+    }
+    50% {
+      opacity: 0.8;
+      transform: scale(1.05);
+    }
+    80% {
+      transform: scale(0.95);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .animate-popup {
+    animation: popupZoom 0.2s ease-out;
+  }
+
+  .animate-bounce-in {
+    animation: bounceIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+</style>

@@ -8,13 +8,12 @@ export default function routingAuth(
 ) {
   const router = useRouter();
   const defaultPath = `/dashboard/${role}`;
-  console.log(pathSekarang, pathTujuan);
+
   const allowedPaths = Array.isArray(aksesPath) ? aksesPath : [aksesPath];
   if (allowedPaths.includes(pathTujuan)) {
     return;
   }
   if (pathSekarang.toString().trim() === defaultPath.toString().trim()) {
-    console.log("path pathSekarang == defaultPath");
     return;
   } else {
     return defaultPath;
