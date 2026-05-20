@@ -31,12 +31,7 @@ export default defineEventHandler(async (event) => {
     const offset = (currentPage - 1) * itemsPerPage;
 
     const allDokumentasi = await db
-      .select({
-        id: dokumentasiKegiatanTable.id,
-        deskripsi: dokumentasiKegiatanTable.deskripsi,
-        tipeDokumen: dokumentasiKegiatanTable.tipeDokumen,
-        createAt: dokumentasiKegiatanTable.createdAt,
-      })
+      .select()
       .from(dokumentasiKegiatanTable)
       .where(eq(dokumentasiKegiatanTable.kegiatanId, kegiatanId))
       .limit(itemsPerPage)

@@ -114,7 +114,7 @@
               </span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
-              {{ formatDate(doc.createAt) }}
+              {{ formatDate(doc.createdAt) }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-right">
               <div class="flex items-center justify-end gap-2">
@@ -195,38 +195,142 @@
     <!-- Modal View -->
     <div
       v-if="showViewModal"
-      class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
       @click.self="showViewModal = false"
     >
       <div
-        class="bg-white rounded-2xl shadow-lg max-w-2xl w-full max-h-screen overflow-y-auto"
+        class="bg-white rounded-3xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col"
       >
+        <!-- Modal Header -->
         <div
-          class="p-6 border-b border-slate-200 flex justify-between items-center"
+          class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50"
         >
-          <h3 class="text-lg font-bold">Detail Dokumentasi</h3>
+          <div>
+            <h3 class="text-xl font-bold text-slate-900">Detail Dokumentasi</h3>
+            <p class="text-sm text-slate-500">Informasi lengkap dan berkas pendukung</p>
+          </div>
           <button
             @click="showViewModal = false"
-            class="p-1 rounded-lg hover:bg-slate-100"
+            class="p-2 rounded-xl hover:bg-slate-200 transition-colors text-slate-400 hover:text-slate-600"
           >
             <Icon name="heroicons:x-mark" class="w-6 h-6" />
           </button>
         </div>
-        <div class="p-6 space-y-4">
-          <div>
-            <label class="text-sm font-semibold block mb-1">Deskripsi</label>
-            <p>{{ selectedDoc?.deskripsi }}</p>
+
+        <!-- Modal Body -->
+        <div class="flex-1 overflow-y-auto p-8">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <!-- Sidebar Info -->
+            <div class="lg:col-span-4 space-y-6">
+              <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100 space-y-4">
+                <div>
+                  <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Deskripsi</label>
+                  <p class="text-slate-900 font-medium leading-relaxed">{{ selectedDoc?.deskripsi }}</p>
+                </div>
+                <div>
+                  <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Tipe Dokumen</label>
+                  <span :class="['px-3 py-1 rounded-full text-xs font-semibold border inline-block', getTipeDocumenBadgeClass(selectedDoc?.tipeDokumen)]">
+                    {{ selectedDoc?.tipeDokumen }}
+                  </span>
+                </div>
+                <div>
+                  <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Tanggal Upload</label>
+                  <p class="text-slate-900 text-sm flex items-center gap-2">
+                    <Icon name="heroicons:calendar" class="w-4 h-4 text-slate-400" />
+                    {{ formatDate(selectedDoc?.createdAt) }}
+                  </p>
+                </div>
+              </div>
+
+              <!-- Detail Spesifik Barang -->
+              <div v-if="selectedDoc?.tipeDokumen === 'BARANG'" class="bg-blue-50/50 p-6 rounded-2xl border border-blue-100 space-y-4">
+                <h4 class="font-bold text-blue-900 flex items-center gap-2">
+                  <Icon name="heroicons:shopping-bag" class="w-5 h-5" />
+                  Informasi Toko
+                </h4>
+                <div class="space-y-3">
+                  <div>
+                    <label class="text-xs font-bold text-blue-400 uppercase block">Nama Toko</label>
+                    <p class="text-sm text-blue-900 font-medium">{{ selectedDoc?.namaToko || '-' }}</p>
+                  </div>
+                  <div>
+                    <label class="text-xs font-bold text-blue-400 uppercase block">Nomor Rekening</label>
+                    <p class="text-sm text-blue-900 font-medium">{{ selectedDoc?.nomorRekeningToko || '-' }}</p>
+                  </div>
+                  <div>
+                    <label class="text-xs font-bold text-blue-400 uppercase block">Atas Nama</label>
+                    <p class="text-sm text-blue-900 font-medium">{{ selectedDoc?.namaPemilikRekeningToko || '-' }}</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Detail Spesifik Jasa -->
+              <div v-if="selectedDoc?.tipeDokumen === 'JASA'" class="bg-purple-50/50 p-6 rounded-2xl border border-purple-100 space-y-4">
+                <h4 class="font-bold text-purple-900 flex items-center gap-2">
+                  <Icon name="heroicons:user-group" class="w-5 h-5" />
+                  Informasi Penyedia
+                </h4>
+                <div class="space-y-3">
+                  <div>
+                    <label class="text-xs font-bold text-purple-400 uppercase block">Nama Penyedia</label>
+                    <p class="text-sm text-purple-900 font-medium">{{ selectedDoc?.namaPenyediaJasa || '-' }}</p>
+                  </div>
+                  <div>
+                    <label class="text-xs font-bold text-purple-400 uppercase block">Nomor Rekening</label>
+                    <p class="text-sm text-purple-900 font-medium">{{ selectedDoc?.nomorRekeningJasa || '-' }}</p>
+                  </div>
+                  <div>
+                    <label class="text-xs font-bold text-purple-400 uppercase block">Atas Nama</label>
+                    <p class="text-sm text-purple-900 font-medium">{{ selectedDoc?.namaPemilikRekeningJasa || '-' }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Preview Berkas -->
+            <div class="lg:col-span-8 space-y-6">
+              <h4 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                <Icon name="heroicons:paper-clip" class="w-5 h-5 text-[#3b5988]" />
+                Berkas Terlampir
+              </h4>
+              
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Preview List Based on Type -->
+                <template v-if="selectedDoc?.tipeDokumen === 'BARANG'">
+                  <FilePreviewCard 
+                    label="Foto Barang" 
+                    :doc-id="selectedDoc.id" 
+                    field="fotoBarangUrl" 
+                  />
+                  <FilePreviewCard 
+                    label="Struk Belanja" 
+                    :doc-id="selectedDoc.id" 
+                    field="strukBelanjaUrl" 
+                  />
+                </template>
+                <template v-else-if="selectedDoc?.tipeDokumen === 'JASA'">
+                  <FilePreviewCard label="SK" :doc-id="selectedDoc.id" field="skUrl" />
+                  <FilePreviewCard label="SPMT" :doc-id="selectedDoc.id" field="spmtUrl" />
+                  <FilePreviewCard label="Amprah" :doc-id="selectedDoc.id" field="amprahUrl" />
+                  <FilePreviewCard label="NPWP" :doc-id="selectedDoc.id" field="npwpUrl" />
+                  <FilePreviewCard label="KTP" :doc-id="selectedDoc.id" field="ktpUrl" />
+                </template>
+                <template v-else>
+                  <FilePreviewCard label="File Dokumentasi" :doc-id="selectedDoc.id" field="fileUrl" />
+                </template>
+              </div>
+            </div>
           </div>
-          <div>
-            <label class="text-sm font-semibold block mb-1">Tipe Dokumen</label>
-            <p>{{ selectedDoc?.tipeDokumen }}</p>
-          </div>
-          <div>
-            <label class="text-sm font-semibold block mb-1"
-              >Tanggal Upload</label
-            >
-            <p>{{ formatDate(selectedDoc?.createAt) }}</p>
-          </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="p-6 border-t border-slate-100 bg-slate-50/50 flex justify-end">
+          <button
+            @click="showViewModal = false"
+            class="px-6 py-2 rounded-xl bg-slate-900 text-white font-medium hover:bg-slate-800 transition-all"
+          >
+            Tutup Detail
+          </button>
         </div>
       </div>
     </div>
@@ -249,7 +353,7 @@
             <Icon name="heroicons:x-mark" class="w-6 h-6" />
           </button>
         </div>
-        <div class="p-6 space-y-4">
+        <div class="p-6 space-y-4 overflow-y-auto max-h-[80vh]">
           <div>
             <label class="block text-sm font-medium mb-1"
               >Deskripsi <span class="text-red-500">*</span></label
@@ -266,27 +370,103 @@
             >
             <select
               v-model="editForm.tipeDokumen"
-              class="w-full px-4 py-2 rounded-lg border border-slate-200"
+              class="w-full px-4 py-2 rounded-lg border border-slate-200 bg-slate-50 cursor-not-allowed"
+              disabled
             >
-              <option value="">Pilih</option>
-              <option value="foto">Foto</option>
-              <option value="video">Video</option>
-              <option value="dokumen">Dokumen</option>
-              <option value="laporan">Laporan</option>
+              <option value="DOKUMENTASI">DOKUMENTASI</option>
+              <option value="BARANG">BARANG</option>
+              <option value="JASA">JASA</option>
             </select>
+            <p class="text-xs text-slate-500 mt-1">Tipe dokumen tidak dapat diubah setelah diupload.</p>
           </div>
-          <div class="flex justify-end gap-3 pt-4">
+
+          <!-- Edit Field Dokumentasi (General) -->
+          <div v-if="editForm.tipeDokumen === 'DOKUMENTASI'" class="pt-4 border-t space-y-4">
+             <div>
+              <label class="block text-sm font-medium mb-1">Ganti File Dokumentasi (Opsional)</label>
+              <input type="file" @change="e => handleFileEdit(e, 'file')" class="w-full border border-slate-200 rounded-lg p-2 text-sm" />
+              <p class="text-xs text-slate-500 mt-1">Kosongkan jika tidak ingin mengganti file.</p>
+            </div>
+          </div>
+
+          <!-- Edit Field Barang -->
+          <div v-if="editForm.tipeDokumen === 'BARANG'" class="pt-4 border-t space-y-4">
+            <h4 class="font-bold text-sm text-slate-700">Data Barang / Toko</h4>
+            <div>
+              <label class="block text-sm font-medium mb-1">Nama Toko</label>
+              <input v-model="editForm.namaToko" type="text" class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-[#3b5988] outline-none" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Nomor Rekening Toko</label>
+              <input v-model="editForm.nomorRekeningToko" type="text" class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-[#3b5988] outline-none" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Atas Nama Rekening</label>
+              <input v-model="editForm.namaPemilikRekeningToko" type="text" class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-[#3b5988] outline-none" />
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium mb-1 text-blue-600">Ganti Foto Barang</label>
+                <input type="file" @change="e => handleFileEdit(e, 'fotoBarang')" class="w-full border border-slate-200 rounded-lg p-2 text-sm" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-1 text-blue-600">Ganti Struk Belanja</label>
+                <input type="file" @change="e => handleFileEdit(e, 'strukBelanja')" class="w-full border border-slate-200 rounded-lg p-2 text-sm" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Edit Field Jasa -->
+          <div v-if="editForm.tipeDokumen === 'JASA'" class="pt-4 border-t space-y-4">
+            <h4 class="font-bold text-sm text-slate-700">Data Penyedia Jasa</h4>
+            <div>
+              <label class="block text-sm font-medium mb-1">Nama Penyedia</label>
+              <input v-model="editForm.namaPenyediaJasa" type="text" class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-[#3b5988] outline-none" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Nomor Rekening</label>
+              <input v-model="editForm.nomorRekeningJasa" type="text" class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-[#3b5988] outline-none" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium mb-1">Atas Nama Rekening</label>
+              <input v-model="editForm.namaPemilikRekeningJasa" type="text" class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-[#3b5988] outline-none" />
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium mb-1 text-purple-600">Ganti SK</label>
+                <input type="file" @change="e => handleFileEdit(e, 'sk')" class="w-full border border-slate-200 rounded-lg p-2 text-sm" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-1 text-purple-600">Ganti SPMT</label>
+                <input type="file" @change="e => handleFileEdit(e, 'spmt')" class="w-full border border-slate-200 rounded-lg p-2 text-sm" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-1 text-purple-600">Ganti Amprah</label>
+                <input type="file" @change="e => handleFileEdit(e, 'amprah')" class="w-full border border-slate-200 rounded-lg p-2 text-sm" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-1 text-purple-600">Ganti NPWP</label>
+                <input type="file" @change="e => handleFileEdit(e, 'npwp')" class="w-full border border-slate-200 rounded-lg p-2 text-sm" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-1 text-purple-600">Ganti KTP</label>
+                <input type="file" @change="e => handleFileEdit(e, 'ktp')" class="w-full border border-slate-200 rounded-lg p-2 text-sm" />
+              </div>
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-3 pt-4 border-t">
             <button
               @click="showEditModal = false"
-              class="px-4 py-2 rounded-lg border"
+              class="px-4 py-2 rounded-lg border hover:bg-slate-50 transition"
             >
               Batal
             </button>
             <button
               @click="submitEdit"
-              class="px-4 py-2 rounded-lg bg-[#3b5988] text-white"
+              class="px-4 py-2 rounded-lg bg-[#3b5988] text-white hover:bg-[#2d4570] transition"
             >
-              Simpan
+              Simpan Perubahan
             </button>
           </div>
         </div>
@@ -380,6 +560,12 @@
   const editForm = ref({
     deskripsi: "",
     tipeDokumen: "",
+    namaToko: "",
+    nomorRekeningToko: "",
+    namaPemilikRekeningToko: "",
+    namaPenyediaJasa: "",
+    nomorRekeningJasa: "",
+    namaPemilikRekeningJasa: "",
   });
 
   // Computed
@@ -422,15 +608,17 @@
     const baseClass = "px-3 py-1 rounded-full text-xs font-medium border";
     if (!tipe) return `${baseClass} bg-slate-50 text-slate-700 border-slate-200`;
     
-    switch (tipe.toLowerCase()) {
-      case "foto":
+    switch (tipe.toUpperCase()) {
+      case "BARANG":
         return `${baseClass} bg-blue-50 text-blue-700 border-blue-200`;
-      case "video":
+      case "JASA":
         return `${baseClass} bg-purple-50 text-purple-700 border-purple-200`;
-      case "dokumen":
+      case "DOKUMENTASI":
         return `${baseClass} bg-amber-50 text-amber-700 border-amber-200`;
-      case "laporan":
-        return `${baseClass} bg-emerald-50 text-emerald-700 border-emerald-200`;
+      case "FOTO":
+        return `${baseClass} bg-sky-50 text-sky-700 border-sky-200`;
+      case "VIDEO":
+        return `${baseClass} bg-indigo-50 text-indigo-700 border-indigo-200`;
       default:
         return `${baseClass} bg-slate-50 text-slate-700 border-slate-200`;
     }
@@ -455,6 +643,15 @@
     }
   };
 
+  const selectedFiles = ref<Record<string, File>>({});
+
+  const handleFileEdit = (event: Event, field: string) => {
+    const target = event.target as HTMLInputElement;
+    if (target.files && target.files[0]) {
+      selectedFiles.value[field] = target.files[0];
+    }
+  };
+
   // CRUD
   const handleView = (doc: any) => {
     selectedDoc.value = doc;
@@ -463,9 +660,16 @@
 
   const handleEdit = (doc: any) => {
     selectedDoc.value = doc;
+    selectedFiles.value = {}; // Reset files
     editForm.value = {
-      deskripsi: doc.deskripsi,
-      tipeDokumen: doc.tipeDokumen,
+      deskripsi: doc.deskripsi || "",
+      tipeDokumen: doc.tipeDokumen || "",
+      namaToko: doc.namaToko || "",
+      nomorRekeningToko: doc.nomorRekeningToko || "",
+      namaPemilikRekeningToko: doc.namaPemilikRekeningToko || "",
+      namaPenyediaJasa: doc.namaPenyediaJasa || "",
+      nomorRekeningJasa: doc.nomorRekeningJasa || "",
+      namaPemilikRekeningJasa: doc.namaPemilikRekeningJasa || "",
     };
     showEditModal.value = true;
   };
@@ -476,13 +680,25 @@
       return;
     }
     try {
+      const fd = new FormData();
+      fd.append("id", String(selectedDoc.value.id));
+      fd.append("deskripsi", editForm.value.deskripsi);
+      fd.append("tipeDokumen", editForm.value.tipeDokumen);
+      fd.append("namaToko", editForm.value.namaToko);
+      fd.append("nomorRekeningToko", editForm.value.nomorRekeningToko);
+      fd.append("namaPemilikRekeningToko", editForm.value.namaPemilikRekeningToko);
+      fd.append("namaPenyediaJasa", editForm.value.namaPenyediaJasa);
+      fd.append("nomorRekeningJasa", editForm.value.nomorRekeningJasa);
+      fd.append("namaPemilikRekeningJasa", editForm.value.namaPemilikRekeningJasa);
+
+      // Tambahkan file jika ada yang dipilih
+      Object.keys(selectedFiles.value).forEach(key => {
+        fd.append(key, selectedFiles.value[key]);
+      });
+
       await $fetch(`/api/ormawa/dokumentasi/dokumentasi`, {
         method: "PATCH",
-        body: {
-          id: selectedDoc.value.id,
-          deskripsi: editForm.value.deskripsi,
-          tipeDokumen: editForm.value.tipeDokumen,
-        },
+        body: fd,
       });
       showPopupNotification("Dokumentasi berhasil diperbarui", "success");
       showEditModal.value = false;

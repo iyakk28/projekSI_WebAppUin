@@ -18,24 +18,47 @@ export default defineEventHandler(async (event) => {
     .from(dokumentasiKegiatanTable)
     .where(eq(dokumentasiKegiatanTable.id, Number(id)))
     .limit(1);
-    
+
   const doc = results[0];
 
   if (!doc) {
-    throw createError({ statusCode: 404, message: "Dokumentasi tidak ditemukan" });
+    throw createError({
+      statusCode: 404,
+      message: "Dokumentasi tidak ditemukan",
+    });
   }
 
-  // 2. Hapus file fisik jika ada
-  if (doc.fileUrl) {
-    try {
-      await unlink(doc.fileUrl);
-    } catch (e) {
-      console.error("Gagal menghapus file:", e);
+  // 2. Hapus semua file fisik yang mungkin ada
+  const fileFields = [
+    "fileUrl",
+    "fotoBarangUrl",
+    "strukBelanjaUrl",
+    "skUrl",
+    "spmtUrl",
+    "amprahUrl",
+    "npwpUrl",
+    "ktpUrl",
+  ];
+
+  for (const field of fileFields) {
+    const value = (doc as any)[field];
+    if (value) {
+      // Menangani kemungkinan multiple paths yang dipisah titik koma
+      const paths = value.split(";").filter((p: string) => p.trim() !== "");
+      for (const filePath of paths) {
+        try {
+          await unlink(filePath);
+        } catch (e) {
+          console.error(`Gagal menghapus file ${filePath}:`, e);
+        }
+      }
     }
   }
 
   // 3. Hapus record dari database
-  await db.delete(dokumentasiKegiatanTable).where(eq(dokumentasiKegiatanTable.id, Number(id)));
+  await db
+    .delete(dokumentasiKegiatanTable)
+    .where(eq(dokumentasiKegiatanTable.id, Number(id)));
 
   return {
     success: true,

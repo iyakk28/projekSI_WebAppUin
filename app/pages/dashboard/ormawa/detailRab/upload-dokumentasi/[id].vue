@@ -145,6 +145,17 @@
           <form @submit.prevent="submitBarang" class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-slate-700 mb-1"
+                >Nama Barang <span class="text-red-500">*</span></label
+              >
+              <input
+                v-model="barangForm.namaBarang"
+                type="text"
+                class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-[#3b5988] outline-none"
+                required
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1"
                 >Nama Toko <span class="text-red-500">*</span></label
               >
               <input
@@ -393,12 +404,13 @@
 <script setup lang="ts">
   import { ref, computed, onMounted } from "vue";
   import { useRoute, useRouter } from "vue-router";
+  import { useDokumentasiStore } from "~/stores/ormawa/allDokumen";
   import { useKegiatanStore } from "~/stores/ormawa/uploadDokumen";
 
   const route = useRoute();
   const router = useRouter();
   const kegiatanStore = useKegiatanStore();
-
+  const allDokumenStore = useDokumentasiStore();
   const kegiatanId = computed(() => {
     const id = route.params.id;
     return id ? parseInt(id as string) : null;
@@ -457,6 +469,7 @@
     namaToko: "",
     nomorRekeningToko: "",
     namaPemilikRekening: "",
+    namaBarang: "",
     fotoBarang: null as File | null,
     fotoStruk: null as File | null,
   });
@@ -716,6 +729,7 @@
     }
     const fd = new FormData();
     fd.append("kegiatanId", String(kegiatanId.value));
+    fd.append("namaBarang", barangForm.value.namaBarang);
     fd.append("namaToko", barangForm.value.namaToko);
     fd.append("nomorRekeningToko", barangForm.value.nomorRekeningToko);
     fd.append("namaPemilikRekening", barangForm.value.namaPemilikRekening);
@@ -725,6 +739,7 @@
     barangForm.value = {
       namaToko: "",
       nomorRekeningToko: "",
+      namaBarang: "",
       namaPemilikRekening: "",
       fotoBarang: null,
       fotoStruk: null,
@@ -793,7 +808,10 @@
     }
   };
 
-  const closePopup = () => kegiatanStore.closePopup();
+  const closePopup = async () => {
+    kegiatanStore.closePopup();
+    await allDokumenStore.fetchDokumentasi(kegiatanId.value);
+  };
   const goBack = () => router.back();
   onMounted(() => {});
 </script>

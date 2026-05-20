@@ -20,10 +20,11 @@ export default defineEventHandler(async (event) => {
   };
 
   const kegiatanId = getField("kegiatanId");
-  const deskripsi = getField("deskripsi");
+
   const namaToko = getField("namaToko");
   const nomorRekeningToko = getField("nomorRekeningToko");
   const namaPemilikRekening = getField("namaPemilikRekening");
+  const namaBarang = getField("namaBarang");
   const status = getField("status") || "draft";
 
   // ambil file barang
@@ -59,7 +60,7 @@ export default defineEventHandler(async (event) => {
   // insert ke database
   const [hasil] = await db.insert(dokumentasiKegiatanTable).values({
     kegiatanId: Number(kegiatanId),
-    deskripsi,
+    deskripsi: namaBarang,
     tipeDokumen: "BARANG",
     fileUrl: `${fotoBarangPath};${strukPath}`,
     uploadedBy: user.id,

@@ -79,23 +79,19 @@ export const useKegiatanStore = defineStore("kegiatan", {
     async deleteUpload(item: any) {
       const dokumentasiStore = useDokumentasiStore();
       try {
-        if (item.jenis === "dokumentasi") {
-          await $fetch(`/api/ormawa/dokumentasi/dokumentasi`, { 
-            method: "DELETE",
-            body: { id: item.id }
-          });
-          if (item.kegiatanId) {
-            await dokumentasiStore.refreshDokumentasi(item.kegiatanId);
-          }
+        await $fetch(`/api/ormawa/dokumentasi/dokumentasi`, { 
+          method: "DELETE",
+          body: { id: item.id }
+        });
+        
+        if (item.kegiatanId) {
+          await dokumentasiStore.refreshDokumentasi(item.kegiatanId);
         }
-        else if (item.jenis === "barang")
-          await $fetch(`/api/barang/${item.id}`, { method: "DELETE" });
-        else if (item.jenis === "jasa")
-          await $fetch(`/api/jasa/${item.id}`, { method: "DELETE" });
 
-        this.popupMessage = `Berhasil hapus ${item.jenisLabel}`;
+        this.popupMessage = `Berhasil hapus ${item.jenisLabel || 'dokumentasi'}`;
         this.popupVisible = true;
-      } catch {
+      } catch (error) {
+        console.error("Gagal hapus:", error);
         alert("Gagal hapus");
       }
     },
