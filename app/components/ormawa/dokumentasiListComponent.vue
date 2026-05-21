@@ -246,20 +246,32 @@
               <div v-if="selectedDoc?.tipeDokumen === 'BARANG'" class="bg-blue-50/50 p-6 rounded-2xl border border-blue-100 space-y-4">
                 <h4 class="font-bold text-blue-900 flex items-center gap-2">
                   <Icon name="heroicons:shopping-bag" class="w-5 h-5" />
-                  Informasi Toko
+                  Informasi Tagihan Barang
                 </h4>
                 <div class="space-y-3">
                   <div>
                     <label class="text-xs font-bold text-blue-400 uppercase block">Nama Toko</label>
-                    <p class="text-sm text-blue-900 font-medium">{{ selectedDoc?.namaToko || '-' }}</p>
+                    <p class="text-sm text-blue-900 font-medium">{{ selectedDoc?.tokoNama || '-' }}</p>
+                  </div>
+                  <div>
+                    <label class="text-xs font-bold text-blue-400 uppercase block">Alamat Toko</label>
+                    <p class="text-sm text-blue-900 font-medium">{{ selectedDoc?.tokoAlamat || '-' }}</p>
+                  </div>
+                  <div>
+                    <label class="text-xs font-bold text-blue-400 uppercase block">Nominal</label>
+                    <p class="text-sm text-blue-900 font-medium">Rp {{ selectedDoc?.nominal || '0' }}</p>
+                  </div>
+                  <div class="border-t border-blue-100 pt-3">
+                    <label class="text-xs font-bold text-blue-400 uppercase block">Bank Penerima</label>
+                    <p class="text-sm text-blue-900 font-medium">{{ selectedDoc?.bankPenerima || '-' }}</p>
                   </div>
                   <div>
                     <label class="text-xs font-bold text-blue-400 uppercase block">Nomor Rekening</label>
-                    <p class="text-sm text-blue-900 font-medium">{{ selectedDoc?.nomorRekeningToko || '-' }}</p>
+                    <p class="text-sm text-blue-900 font-medium">{{ selectedDoc?.rekeningPenerima || '-' }}</p>
                   </div>
                   <div>
                     <label class="text-xs font-bold text-blue-400 uppercase block">Atas Nama</label>
-                    <p class="text-sm text-blue-900 font-medium">{{ selectedDoc?.namaPemilikRekeningToko || '-' }}</p>
+                    <p class="text-sm text-blue-900 font-medium">{{ selectedDoc?.namaPenerima || '-' }}</p>
                   </div>
                 </div>
               </div>
@@ -268,20 +280,28 @@
               <div v-if="selectedDoc?.tipeDokumen === 'JASA'" class="bg-purple-50/50 p-6 rounded-2xl border border-purple-100 space-y-4">
                 <h4 class="font-bold text-purple-900 flex items-center gap-2">
                   <Icon name="heroicons:user-group" class="w-5 h-5" />
-                  Informasi Penyedia
+                  Informasi Tagihan Jasa
                 </h4>
                 <div class="space-y-3">
                   <div>
                     <label class="text-xs font-bold text-purple-400 uppercase block">Nama Penyedia</label>
-                    <p class="text-sm text-purple-900 font-medium">{{ selectedDoc?.namaPenyediaJasa || '-' }}</p>
+                    <p class="text-sm text-purple-900 font-medium">{{ selectedDoc?.namaPenerima || '-' }}</p>
+                  </div>
+                  <div>
+                    <label class="text-xs font-bold text-purple-400 uppercase block">Nomor SK</label>
+                    <p class="text-sm text-purple-900 font-medium">{{ selectedDoc?.skNomor || '-' }}</p>
+                  </div>
+                  <div>
+                    <label class="text-xs font-bold text-purple-400 uppercase block">Nominal</label>
+                    <p class="text-sm text-purple-900 font-medium">Rp {{ selectedDoc?.nominal || '0' }}</p>
+                  </div>
+                  <div class="border-t border-purple-100 pt-3">
+                    <label class="text-xs font-bold text-purple-400 uppercase block">Bank Penerima</label>
+                    <p class="text-sm text-purple-900 font-medium">{{ selectedDoc?.bankPenerima || '-' }}</p>
                   </div>
                   <div>
                     <label class="text-xs font-bold text-purple-400 uppercase block">Nomor Rekening</label>
-                    <p class="text-sm text-purple-900 font-medium">{{ selectedDoc?.nomorRekeningJasa || '-' }}</p>
-                  </div>
-                  <div>
-                    <label class="text-xs font-bold text-purple-400 uppercase block">Atas Nama</label>
-                    <p class="text-sm text-purple-900 font-medium">{{ selectedDoc?.namaPemilikRekeningJasa || '-' }}</p>
+                    <p class="text-sm text-purple-900 font-medium">{{ selectedDoc?.rekeningPenerima || '-' }}</p>
                   </div>
                 </div>
               </div>
@@ -298,22 +318,13 @@
                 <!-- Preview List Based on Type -->
                 <template v-if="selectedDoc?.tipeDokumen === 'BARANG'">
                   <FilePreviewCard 
-                    label="Foto Barang" 
-                    :doc-id="selectedDoc.id" 
-                    field="fotoBarangUrl" 
-                  />
-                  <FilePreviewCard 
                     label="Struk Belanja" 
                     :doc-id="selectedDoc.id" 
-                    field="strukBelanjaUrl" 
+                    field="strukFileUrl" 
                   />
                 </template>
                 <template v-else-if="selectedDoc?.tipeDokumen === 'JASA'">
-                  <FilePreviewCard label="SK" :doc-id="selectedDoc.id" field="skUrl" />
-                  <FilePreviewCard label="SPMT" :doc-id="selectedDoc.id" field="spmtUrl" />
-                  <FilePreviewCard label="Amprah" :doc-id="selectedDoc.id" field="amprahUrl" />
-                  <FilePreviewCard label="NPWP" :doc-id="selectedDoc.id" field="npwpUrl" />
-                  <FilePreviewCard label="KTP" :doc-id="selectedDoc.id" field="ktpUrl" />
+                  <FilePreviewCard label="SK" :doc-id="selectedDoc.id" field="skFileUrl" />
                 </template>
                 <template v-else>
                   <FilePreviewCard label="File Dokumentasi" :doc-id="selectedDoc.id" field="fileUrl" />
@@ -560,12 +571,13 @@
   const editForm = ref({
     deskripsi: "",
     tipeDokumen: "",
-    namaToko: "",
-    nomorRekeningToko: "",
-    namaPemilikRekeningToko: "",
-    namaPenyediaJasa: "",
-    nomorRekeningJasa: "",
-    namaPemilikRekeningJasa: "",
+    tokoNama: "",
+    tokoAlamat: "",
+    rekeningPenerima: "",
+    bankPenerima: "",
+    namaPenerima: "",
+    nominal: "",
+    skNomor: "",
   });
 
   // Computed
@@ -575,10 +587,10 @@
       docs = docs.filter(
         (doc: any) =>
           doc.deskripsi
-            .toLowerCase()
+            ?.toLowerCase()
             .includes(searchQuery.value.toLowerCase()) ||
           doc.tipeDokumen
-            .toLowerCase()
+            ?.toLowerCase()
             .includes(searchQuery.value.toLowerCase()),
       );
     }
@@ -664,32 +676,34 @@
     editForm.value = {
       deskripsi: doc.deskripsi || "",
       tipeDokumen: doc.tipeDokumen || "",
-      namaToko: doc.namaToko || "",
-      nomorRekeningToko: doc.nomorRekeningToko || "",
-      namaPemilikRekeningToko: doc.namaPemilikRekeningToko || "",
-      namaPenyediaJasa: doc.namaPenyediaJasa || "",
-      nomorRekeningJasa: doc.nomorRekeningJasa || "",
-      namaPemilikRekeningJasa: doc.namaPemilikRekeningJasa || "",
+      tokoNama: doc.tokoNama || "",
+      tokoAlamat: doc.tokoAlamat || "",
+      rekeningPenerima: doc.rekeningPenerima || "",
+      bankPenerima: doc.bankPenerima || "",
+      namaPenerima: doc.namaPenerima || "",
+      nominal: doc.nominal || "",
+      skNomor: doc.skNomor || "",
     };
     showEditModal.value = true;
   };
 
   const submitEdit = async () => {
-    if (!editForm.value.deskripsi || !editForm.value.tipeDokumen) {
-      showPopupNotification("Semua field harus diisi", "error");
+    if (!editForm.value.tipeDokumen) {
+      showPopupNotification("Tipe dokumen tidak valid", "error");
       return;
     }
     try {
       const fd = new FormData();
-      fd.append("id", String(selectedDoc.value.id));
+      fd.append("id", String(selectedDoc.value.id)); // doc_1 or tagihan_2
       fd.append("deskripsi", editForm.value.deskripsi);
       fd.append("tipeDokumen", editForm.value.tipeDokumen);
-      fd.append("namaToko", editForm.value.namaToko);
-      fd.append("nomorRekeningToko", editForm.value.nomorRekeningToko);
-      fd.append("namaPemilikRekeningToko", editForm.value.namaPemilikRekeningToko);
-      fd.append("namaPenyediaJasa", editForm.value.namaPenyediaJasa);
-      fd.append("nomorRekeningJasa", editForm.value.nomorRekeningJasa);
-      fd.append("namaPemilikRekeningJasa", editForm.value.namaPemilikRekeningJasa);
+      fd.append("tokoNama", editForm.value.tokoNama);
+      fd.append("tokoAlamat", editForm.value.tokoAlamat);
+      fd.append("rekeningPenerima", editForm.value.rekeningPenerima);
+      fd.append("bankPenerima", editForm.value.bankPenerima);
+      fd.append("namaPenerima", editForm.value.namaPenerima);
+      fd.append("nominal", String(editForm.value.nominal));
+      fd.append("skNomor", editForm.value.skNomor);
 
       // Tambahkan file jika ada yang dipilih
       Object.keys(selectedFiles.value).forEach(key => {

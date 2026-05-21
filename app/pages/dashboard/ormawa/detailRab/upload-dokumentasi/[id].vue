@@ -90,7 +90,7 @@
                 v-model="dokumentasiForm.deskripsi"
                 rows="2"
                 class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-[#3b5988] outline-none"
-                placeholder="Contoh: Dokumentasi pembukaan kegiatan, sesi penyelenggaraan, penutupan, dll."
+                placeholder="Contoh: Dokumentasi pembukaan kegiatan, sesi penyelenggaraan, dll."
                 required
               ></textarea>
             </div>
@@ -145,21 +145,10 @@
           <form @submit.prevent="submitBarang" class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-slate-700 mb-1"
-                >Nama Barang <span class="text-red-500">*</span></label
-              >
-              <input
-                v-model="barangForm.namaBarang"
-                type="text"
-                class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-[#3b5988] outline-none"
-                required
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-1"
                 >Nama Toko <span class="text-red-500">*</span></label
               >
               <input
-                v-model="barangForm.namaToko"
+                v-model="barangForm.tokoNama"
                 type="text"
                 class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-[#3b5988] outline-none"
                 required
@@ -167,14 +156,39 @@
             </div>
             <div>
               <label class="block text-sm font-medium text-slate-700 mb-1"
-                >Nomor Rekening Toko <span class="text-red-500">*</span></label
+                >Alamat Toko</label
               >
-              <input
-                v-model="barangForm.nomorRekeningToko"
-                type="text"
+              <textarea
+                v-model="barangForm.tokoAlamat"
+                rows="2"
                 class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-[#3b5988] outline-none"
-                required
-              />
+              ></textarea>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1"
+                  >Nomor Rekening Toko
+                  <span class="text-red-500">*</span></label
+                >
+                <input
+                  v-model="barangForm.rekeningPenerima"
+                  type="text"
+                  class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-[#3b5988] outline-none"
+                  required
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1"
+                  >Bank Penerima <span class="text-red-500">*</span></label
+                >
+                <input
+                  v-model="barangForm.bankPenerima"
+                  type="text"
+                  placeholder="Contoh: BNI, Mandiri, BCA"
+                  class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-[#3b5988] outline-none"
+                  required
+                />
+              </div>
             </div>
             <div>
               <label class="block text-sm font-medium text-slate-700 mb-1"
@@ -182,7 +196,7 @@
                 <span class="text-red-500">*</span></label
               >
               <input
-                v-model="barangForm.namaPemilikRekening"
+                v-model="barangForm.namaPenerima"
                 type="text"
                 class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-[#3b5988] outline-none"
                 required
@@ -190,16 +204,15 @@
             </div>
             <div>
               <label class="block text-sm font-medium text-slate-700 mb-1"
-                >Foto Barang <span class="text-red-500">*</span></label
+                >Nominal Transaksi (Rp)
+                <span class="text-red-500">*</span></label
               >
               <input
-                type="file"
-                @change="handleBarangFotoChange"
-                accept="image/*,application/pdf"
-                class="w-full border border-slate-200 rounded-xl p-2"
+                v-model="barangForm.nominal"
+                type="number"
+                class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-[#3b5988] outline-none"
                 required
               />
-              <p class="text-xs text-slate-500 mt-1">Foto barang yang dibeli</p>
             </div>
             <div>
               <label class="block text-sm font-medium text-slate-700 mb-1"
@@ -250,91 +263,66 @@
                 >Nama Penyedia Jasa <span class="text-red-500">*</span></label
               >
               <input
-                v-model="jasaForm.namaPenyedia"
+                v-model="jasaForm.namaPenerima"
                 type="text"
                 class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-[#3b5988] outline-none"
                 required
               />
             </div>
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-1"
-                >Nomor Rekening <span class="text-red-500">*</span></label
-              >
-              <input
-                v-model="jasaForm.nomorRekening"
-                type="text"
-                class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-[#3b5988] outline-none"
-                required
-              />
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1"
+                  >Nomor Rekening <span class="text-red-500">*</span></label
+                >
+                <input
+                  v-model="jasaForm.rekeningPenerima"
+                  type="text"
+                  class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-[#3b5988] outline-none"
+                  required
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1"
+                  >Bank Penerima <span class="text-red-500">*</span></label
+                >
+                <input
+                  v-model="jasaForm.bankPenerima"
+                  type="text"
+                  placeholder="Contoh: BNI, Mandiri, BCA"
+                  class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-[#3b5988] outline-none"
+                  required
+                />
+              </div>
             </div>
             <div>
               <label class="block text-sm font-medium text-slate-700 mb-1"
-                >Nama Pemilik Rekening
+                >Nominal Transaksi (Rp)
                 <span class="text-red-500">*</span></label
               >
               <input
-                v-model="jasaForm.namaPemilikRekening"
-                type="text"
+                v-model="jasaForm.nominal"
+                type="number"
                 class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-[#3b5988] outline-none"
                 required
               />
             </div>
             <div>
               <label class="block text-sm font-medium text-slate-700 mb-1"
-                >Upload SK <span class="text-red-500">*</span></label
+                >Nomor SK</label
+              >
+              <input
+                v-model="jasaForm.skNomor"
+                type="text"
+                class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-[#3b5988] outline-none"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1"
+                >Upload File SK <span class="text-red-500">*</span></label
               >
               <input
                 type="file"
                 @change="handleJasaSKChange"
-                accept="image/*,application/pdf"
-                class="w-full border border-slate-200 rounded-xl p-2"
-                required
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-1"
-                >Upload SPMT <span class="text-red-500">*</span></label
-              >
-              <input
-                type="file"
-                @change="handleJasaSPMTChange"
-                accept="image/*,application/pdf"
-                class="w-full border border-slate-200 rounded-xl p-2"
-                required
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-1"
-                >Upload Amprah <span class="text-red-500">*</span></label
-              >
-              <input
-                type="file"
-                @change="handleJasaAmprahChange"
-                accept="image/*,application/pdf"
-                class="w-full border border-slate-200 rounded-xl p-2"
-                required
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-1"
-                >Upload NPWP (jika PNS)
-                <span class="text-red-500">*</span></label
-              >
-              <input
-                type="file"
-                @change="handleJasaNPWPChange"
-                accept="image/*,application/pdf"
-                class="w-full border border-slate-200 rounded-xl p-2"
-                required
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-1"
-                >Upload KTP <span class="text-red-500">*</span></label
-              >
-              <input
-                type="file"
-                @change="handleJasaKTPChange"
                 accept="image/*,application/pdf"
                 class="w-full border border-slate-200 rounded-xl p-2"
                 required
@@ -427,12 +415,8 @@
     { key: "jasa", label: "Upload Jasa", icon: "heroicons:user-group" },
   ];
 
-  // Data dari store (pastikan store memiliki state dan getter yang sesuai)
   const loading = computed(() => kegiatanStore.loading);
   const kegiatan = computed(() => kegiatanStore.kegiatan);
-  const dokumentasiList = computed(() => kegiatanStore.dokumentasiList);
-  const barangList = computed(() => kegiatanStore.barangList);
-  const jasaList = computed(() => kegiatanStore.jasaList);
   const popupVisible = computed(() => kegiatanStore.popupVisible);
   const popupMessage = computed(() => kegiatanStore.popupMessage);
   const dokumentasiUploading = computed(
@@ -441,47 +425,24 @@
   const barangUploading = computed(() => kegiatanStore.barangUploading);
   const jasaUploading = computed(() => kegiatanStore.jasaUploading);
 
-  const allUploads = computed(() => {
-    const docs = dokumentasiList.value.map((d) => ({
-      ...d,
-      jenis: "dokumentasi",
-      jenisLabel: "Dokumentasi Kegiatan",
-    }));
-    const bars = barangList.value.map((b) => ({
-      ...b,
-      jenis: "barang",
-      jenisLabel: "Barang",
-    }));
-    const jas = jasaList.value.map((j) => ({
-      ...j,
-      jenis: "jasa",
-      jenisLabel: "Jasa",
-    }));
-    return [...docs, ...bars, ...jas].sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    );
-  });
-
   // Form state
   const dokumentasiForm = ref({ deskripsi: "", file: null as File | null });
   const barangForm = ref({
-    namaToko: "",
-    nomorRekeningToko: "",
-    namaPemilikRekening: "",
-    namaBarang: "",
-    fotoBarang: null as File | null,
+    tokoNama: "",
+    tokoAlamat: "",
+    rekeningPenerima: "",
+    bankPenerima: "",
+    namaPenerima: "",
+    nominal: "",
     fotoStruk: null as File | null,
   });
   const jasaForm = ref({
-    namaPenyedia: "",
-    nomorRekening: "",
-    namaPemilikRekening: "",
-    sk: null as File | null,
-    spmt: null as File | null,
-    amprah: null as File | null,
-    npwp: null as File | null,
-    ktp: null as File | null,
+    namaPenerima: "",
+    rekeningPenerima: "",
+    bankPenerima: "",
+    nominal: "",
+    skNomor: "",
+    skFile: null as File | null,
   });
 
   // Helper functions
@@ -493,17 +454,7 @@
       year: "numeric",
     });
   };
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return "";
-    const date = new Date(dateStr);
-    return date.toLocaleDateString("id-ID", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+
   const formatStatusKegiatan = (status: string) => {
     const map: Record<string, string> = {
       belum_mulai: "Belum Mulai",
@@ -512,6 +463,7 @@
     };
     return map[status] || status;
   };
+
   const statusBadgeClass = (status: string) => {
     const classes: Record<string, string> = {
       belum_mulai: "bg-slate-100 text-slate-700",
@@ -521,183 +473,40 @@
     return `ml-1 px-2 py-0.5 rounded-full text-xs ${classes[status] || "bg-slate-100"}`;
   };
 
-  // Handler file untuk dokumentasi
   const handleDokumentasiFileChange = (event: Event) => {
     const target = event.target as HTMLInputElement;
-    if (!target.files || target.files.length === 0) {
-      alert("Tidak ada file yang dipilih");
-      return;
-    }
+    if (!target.files || target.files.length === 0) return;
     const file = target.files[0];
     if (file.size > 10 * 1024 * 1024) {
       alert("Ukuran file maksimal 10MB");
-      target.value = "";
-      return;
-    }
-    const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
-    if (!allowedTypes.includes(file.type)) {
-      alert("Format file harus JPG, PNG, atau PDF");
       target.value = "";
       return;
     }
     dokumentasiForm.value.file = file;
-    console.log("File berhasil dipilih:", file.name, file.size, file.type);
-  };
-
-  // Handler file untuk barang
-  const handleBarangFotoChange = (event: Event) => {
-    const target = event.target as HTMLInputElement;
-    if (!target.files || target.files.length === 0) {
-      alert("Tidak ada file yang dipilih");
-      return;
-    }
-    const file = target.files[0];
-    if (file.size > 10 * 1024 * 1024) {
-      alert("Ukuran file maksimal 10MB");
-      target.value = "";
-      return;
-    }
-    const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
-    if (!allowedTypes.includes(file.type)) {
-      alert("Format file harus JPG, PNG, atau PDF");
-      target.value = "";
-      return;
-    }
-    barangForm.value.fotoBarang = file;
-    console.log("Foto Barang dipilih:", file.name, file.size, file.type);
   };
 
   const handleBarangStrukChange = (event: Event) => {
     const target = event.target as HTMLInputElement;
-    if (!target.files || target.files.length === 0) {
-      alert("Tidak ada file yang dipilih");
-      return;
-    }
+    if (!target.files || target.files.length === 0) return;
     const file = target.files[0];
     if (file.size > 10 * 1024 * 1024) {
       alert("Ukuran file maksimal 10MB");
-      target.value = "";
-      return;
-    }
-    const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
-    if (!allowedTypes.includes(file.type)) {
-      alert("Format file harus JPG, PNG, atau PDF");
       target.value = "";
       return;
     }
     barangForm.value.fotoStruk = file;
-    console.log("Foto Struk dipilih:", file.name, file.size, file.type);
   };
 
-  // Handler file untuk jasa
   const handleJasaSKChange = (event: Event) => {
     const target = event.target as HTMLInputElement;
-    if (!target.files || target.files.length === 0) {
-      alert("Tidak ada file yang dipilih");
-      return;
-    }
+    if (!target.files || target.files.length === 0) return;
     const file = target.files[0];
     if (file.size > 10 * 1024 * 1024) {
       alert("Ukuran file maksimal 10MB");
       target.value = "";
       return;
     }
-    const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
-    if (!allowedTypes.includes(file.type)) {
-      alert("Format file harus JPG, PNG, atau PDF");
-      target.value = "";
-      return;
-    }
-    jasaForm.value.sk = file;
-    console.log("File SK dipilih:", file.name, file.size, file.type);
-  };
-
-  const handleJasaSPMTChange = (event: Event) => {
-    const target = event.target as HTMLInputElement;
-    if (!target.files || target.files.length === 0) {
-      alert("Tidak ada file yang dipilih");
-      return;
-    }
-    const file = target.files[0];
-    if (file.size > 10 * 1024 * 1024) {
-      alert("Ukuran file maksimal 10MB");
-      target.value = "";
-      return;
-    }
-    const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
-    if (!allowedTypes.includes(file.type)) {
-      alert("Format file harus JPG, PNG, atau PDF");
-      target.value = "";
-      return;
-    }
-    jasaForm.value.spmt = file;
-    console.log("File SPMT dipilih:", file.name, file.size, file.type);
-  };
-
-  const handleJasaAmprahChange = (event: Event) => {
-    const target = event.target as HTMLInputElement;
-    if (!target.files || target.files.length === 0) {
-      alert("Tidak ada file yang dipilih");
-      return;
-    }
-    const file = target.files[0];
-    if (file.size > 10 * 1024 * 1024) {
-      alert("Ukuran file maksimal 10MB");
-      target.value = "";
-      return;
-    }
-    const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
-    if (!allowedTypes.includes(file.type)) {
-      alert("Format file harus JPG, PNG, atau PDF");
-      target.value = "";
-      return;
-    }
-    jasaForm.value.amprah = file;
-    console.log("File Amprah dipilih:", file.name, file.size, file.type);
-  };
-
-  const handleJasaNPWPChange = (event: Event) => {
-    const target = event.target as HTMLInputElement;
-    if (!target.files || target.files.length === 0) {
-      alert("Tidak ada file yang dipilih");
-      return;
-    }
-    const file = target.files[0];
-    if (file.size > 10 * 1024 * 1024) {
-      alert("Ukuran file maksimal 10MB");
-      target.value = "";
-      return;
-    }
-    const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
-    if (!allowedTypes.includes(file.type)) {
-      alert("Format file harus JPG, PNG, atau PDF");
-      target.value = "";
-      return;
-    }
-    jasaForm.value.npwp = file;
-    console.log("File NPWP dipilih:", file.name, file.size, file.type);
-  };
-
-  const handleJasaKTPChange = (event: Event) => {
-    const target = event.target as HTMLInputElement;
-    if (!target.files || target.files.length === 0) {
-      alert("Tidak ada file yang dipilih");
-      return;
-    }
-    const file = target.files[0];
-    if (file.size > 10 * 1024 * 1024) {
-      alert("Ukuran file maksimal 10MB");
-      target.value = "";
-      return;
-    }
-    const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
-    if (!allowedTypes.includes(file.type)) {
-      alert("Format file harus JPG, PNG, atau PDF");
-      target.value = "";
-      return;
-    }
-    jasaForm.value.ktp = file;
-    console.log("File KTP dipilih:", file.name, file.size, file.type);
+    jasaForm.value.skFile = file;
   };
 
   // Submit functions
@@ -710,7 +519,6 @@
     fd.append("file", dokumentasiForm.value.file);
     await kegiatanStore.submitDokumentasi(fd);
     dokumentasiForm.value = { deskripsi: "", file: null };
-    // Reset input file secara visual
     const fileInput = document.querySelector(
       'input[type="file"]',
     ) as HTMLInputElement;
@@ -719,98 +527,72 @@
 
   const submitBarang = async () => {
     if (
-      !barangForm.value.namaToko ||
-      !barangForm.value.nomorRekeningToko ||
-      !barangForm.value.namaPemilikRekening ||
-      !barangForm.value.fotoBarang ||
+      !barangForm.value.tokoNama ||
+      !barangForm.value.rekeningPenerima ||
+      !barangForm.value.namaPenerima ||
+      !barangForm.value.bankPenerima ||
+      !barangForm.value.nominal ||
       !barangForm.value.fotoStruk
     ) {
-      return alert("Semua field dan file wajib diisi");
+      return alert("Field bertanda * wajib diisi");
     }
     const fd = new FormData();
     fd.append("kegiatanId", String(kegiatanId.value));
-    fd.append("namaBarang", barangForm.value.namaBarang);
-    fd.append("namaToko", barangForm.value.namaToko);
-    fd.append("nomorRekeningToko", barangForm.value.nomorRekeningToko);
-    fd.append("namaPemilikRekening", barangForm.value.namaPemilikRekening);
-    fd.append("fotoBarang", barangForm.value.fotoBarang);
+    fd.append("tokoNama", barangForm.value.tokoNama);
+    fd.append("tokoAlamat", barangForm.value.tokoAlamat);
+    fd.append("rekeningPenerima", barangForm.value.rekeningPenerima);
+    fd.append("bankPenerima", barangForm.value.bankPenerima);
+    fd.append("namaPenerima", barangForm.value.namaPenerima);
+    fd.append("nominal", String(barangForm.value.nominal));
     fd.append("fotoStruk", barangForm.value.fotoStruk);
     await kegiatanStore.submitBarang(fd);
     barangForm.value = {
-      namaToko: "",
-      nomorRekeningToko: "",
-      namaBarang: "",
-      namaPemilikRekening: "",
-      fotoBarang: null,
+      tokoNama: "",
+      tokoAlamat: "",
+      rekeningPenerima: "",
+      bankPenerima: "",
+      namaPenerima: "",
+      nominal: "",
       fotoStruk: null,
     };
-    // Reset file inputs
-    const fotoBarangInput = document.querySelector(
-      'input[accept="image/*,application/pdf"]',
-    ) as HTMLInputElement;
-    if (fotoBarangInput) fotoBarangInput.value = "";
-    const fotoStrukInput = document.querySelectorAll(
-      'input[accept="image/*,application/pdf"]',
-    )[1] as HTMLInputElement;
-    if (fotoStrukInput) fotoStrukInput.value = "";
+    const fileInputs = document.querySelectorAll('input[type="file"]');
+    fileInputs.forEach((input: any) => (input.value = ""));
   };
 
   const submitJasa = async () => {
     if (
-      !jasaForm.value.namaPenyedia ||
-      !jasaForm.value.nomorRekening ||
-      !jasaForm.value.namaPemilikRekening ||
-      !jasaForm.value.sk ||
-      !jasaForm.value.spmt ||
-      !jasaForm.value.amprah ||
-      !jasaForm.value.npwp ||
-      !jasaForm.value.ktp
+      !jasaForm.value.namaPenerima ||
+      !jasaForm.value.rekeningPenerima ||
+      !jasaForm.value.bankPenerima ||
+      !jasaForm.value.nominal ||
+      !jasaForm.value.skFile
     ) {
-      return alert("Semua field dan file wajib diisi");
+      return alert("Field bertanda * wajib diisi");
     }
     const fd = new FormData();
     fd.append("kegiatanId", String(kegiatanId.value));
-    fd.append("namaPenyedia", jasaForm.value.namaPenyedia);
-    fd.append("nomorRekening", jasaForm.value.nomorRekening);
-    fd.append("namaPemilikRekening", jasaForm.value.namaPemilikRekening);
-    fd.append("sk", jasaForm.value.sk);
-    fd.append("spmt", jasaForm.value.spmt);
-    fd.append("amprah", jasaForm.value.amprah);
-    fd.append("npwp", jasaForm.value.npwp);
-    fd.append("ktp", jasaForm.value.ktp);
+    fd.append("namaPenerima", jasaForm.value.namaPenerima);
+    fd.append("rekeningPenerima", jasaForm.value.rekeningPenerima);
+    fd.append("bankPenerima", jasaForm.value.bankPenerima);
+    fd.append("nominal", String(jasaForm.value.nominal));
+    fd.append("skNomor", jasaForm.value.skNomor);
+    fd.append("skFile", jasaForm.value.skFile);
     await kegiatanStore.submitJasa(fd);
     jasaForm.value = {
-      namaPenyedia: "",
-      nomorRekening: "",
-      namaPemilikRekening: "",
-      sk: null,
-      spmt: null,
-      amprah: null,
-      npwp: null,
-      ktp: null,
+      namaPenerima: "",
+      rekeningPenerima: "",
+      bankPenerima: "",
+      nominal: "",
+      skNomor: "",
+      skFile: null,
     };
-    // Reset all file inputs (bisa dengan querySelectorAll)
     const fileInputs = document.querySelectorAll('input[type="file"]');
-    fileInputs.forEach((input) => (input.value = ""));
-  };
-
-  // Delete dan helper lainnya
-  const deleteUpload = async (item: any) => {
-    if (!confirm(`Hapus ${item.jenisLabel} ini?`)) return;
-    await kegiatanStore.deleteUpload(item);
-  };
-
-  const refreshData = () => {
-    if (kegiatanId.value) {
-      kegiatanStore.fetchDokumentasi(kegiatanId.value);
-      kegiatanStore.fetchBarang(kegiatanId.value);
-      kegiatanStore.fetchJasa(kegiatanId.value);
-    }
+    fileInputs.forEach((input: any) => (input.value = ""));
   };
 
   const closePopup = async () => {
     kegiatanStore.closePopup();
-    await allDokumenStore.fetchDokumentasi(kegiatanId.value);
+    await allDokumenStore.refreshDokumentasi(Number(kegiatanId.value));
   };
   const goBack = () => router.back();
   onMounted(() => {});

@@ -1,6 +1,7 @@
 import { useDrizzle } from "~~/server/db";
 import { eq } from "drizzle-orm";
-import { dokumentasiKegiatanTable } from "~~/server/db/schema";
+import { dokumentasiKegiatanTable } from "~~/server/db/schema/dokumentasiSchema";
+import { tagihanPencairanTable } from "~~/server/db/schema/TagihanPencairanSchema";
 import { createFilePath } from "~~/server/utils/CreateFilePath";
 import { writeFile, unlink } from "node:fs/promises";
 import { join } from "node:path";
@@ -9,9 +10,12 @@ import fs from "node:fs";
 export default defineEventHandler(async (event) => {
   const db = useDrizzle();
   const formData = await readMultipartFormData(event);
-  
+
   if (!formData) {
-    throw createError({ statusCode: 400, message: "Tidak ada data yang dikirim" });
+    throw createError({
+      statusCode: 400,
+      message: "Tidak ada data yang dikirim",
+    });
   }
 
   const getField = (name: string): string => {
@@ -24,71 +28,103 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: "ID wajib disertakan" });
   }
 
-  // 1. Ambil data lama untuk pembersihan file jika diupdate
-  const results = await db
-    .select()
-    .from(dokumentasiKegiatanTable)
-    .where(eq(dokumentasiKegiatanTable.id, Number(id)))
-    .limit(1);
-    
-  const oldDoc = results[0];
-  if (!oldDoc) {
-    throw createError({ statusCode: 404, message: "Dokumentasi tidak ditemukan" });
-  }
+  const idStr = String(id);
+  const isTagihan = idStr.startsWith("tagihan_");
+  const realId = Number(idStr.replace("doc_", "").replace("tagihan_", ""));
 
-  const updateData: any = {
-    deskripsi: getField("deskripsi"),
-    tipeDokumen: getField("tipeDokumen"),
-    namaToko: getField("namaToko"),
-    nomorRekeningToko: getField("nomorRekeningToko"),
-    namaPemilikRekeningToko: getField("namaPemilikRekeningToko"),
-    namaPenyediaJasa: getField("namaPenyediaJasa"),
-    nomorRekeningJasa: getField("nomorRekeningJasa"),
-    namaPemilikRekeningJasa: getField("namaPemilikRekeningJasa"),
-  };
+  if (isTagihan) {
+    const results = await db
+      .select()
+      .from(tagihanPencairanTable)
+      .where(eq(tagihanPencairanTable.id, realId))
+      .limit(1);
 
-  // 2. Handle File Updates
-  const fileFields = [
-    { name: "fotoBarang", dbField: "fotoBarangUrl", category: "barang" as const },
-    { name: "strukBelanja", dbField: "strukBelanjaUrl", category: "barang" as const },
-    { name: "sk", dbField: "skUrl", category: "jasa" as const },
-    { name: "spmt", dbField: "spmtUrl", category: "jasa" as const },
-    { name: "amprah", dbField: "amprahUrl", category: "jasa" as const },
-    { name: "npwp", dbField: "npwpUrl", category: "jasa" as const },
-    { name: "ktp", dbField: "ktpUrl", category: "jasa" as const },
-    { name: "file", dbField: "fileUrl", category: "kegiatan" as const },
-  ];
+    const oldDoc = results[0];
+    if (!oldDoc)
+      throw createError({
+        statusCode: 404,
+        message: "Tagihan tidak ditemukan",
+      });
 
-  for (const f of fileFields) {
-    const fileData = formData.find((formField) => formField.name === f.name);
-    if (fileData && fileData.data && fileData.filename) {
-      // Hapus file lama jika ada
-      const oldPath = (oldDoc as any)[f.dbField];
-      if (oldPath && fs.existsSync(oldPath)) {
-        await unlink(oldPath).catch(console.error);
-      }
+    const updateData: any = {
+      namaPenerima: getField("namaPenerima"),
+      rekeningPenerima: getField("rekeningPenerima"),
+      bankPenerima: getField("bankPenerima"),
+      tokoNama: getField("tokoNama"),
+      tokoAlamat: getField("tokoAlamat"),
+      skNomor: getField("skNomor"),
+    };
 
-      // Simpan file baru
-      const targetDir = await createFilePath("dokumentasi", f.category, "");
-      const newFileName = `${Date.now()}_${f.name}_${fileData.filename}`;
-      const newPath = join(targetDir, newFileName);
-      await writeFile(newPath, fileData.data);
-      updateData[f.dbField] = newPath;
+    const nominal = getField("nominal");
+    if (nominal) updateData.nominal = nominal;
 
-      // Update fileUrl gabungan jika perlu
-      if (f.name === "file") {
-        updateData.fileUrl = newPath;
+    const fileFields = [
+      {
+        name: "fotoStruk",
+        dbField: "strukFileUrl",
+        category: "barang" as const,
+      },
+      { name: "skFile", dbField: "skFileUrl", category: "jasa" as const },
+    ];
+
+    for (const f of fileFields) {
+      const fileData = formData.find((formField) => formField.name === f.name);
+      if (fileData && fileData.data && fileData.filename) {
+        const oldPath = (oldDoc as any)[f.dbField];
+        if (oldPath && fs.existsSync(oldPath)) {
+          await unlink(oldPath).catch(() => {});
+        }
+        const targetDir = await createFilePath("dokumentasi", f.category, "");
+        const newFileName = `${Date.now()}_${f.name}_${fileData.filename}`;
+        const newPath = join(targetDir, newFileName);
+        await writeFile(newPath, fileData.data);
+        updateData[f.dbField] = newPath;
       }
     }
-  }
 
-  await db
-    .update(dokumentasiKegiatanTable)
-    .set(updateData)
-    .where(eq(dokumentasiKegiatanTable.id, Number(id)));
+    await db
+      .update(tagihanPencairanTable)
+      .set(updateData)
+      .where(eq(tagihanPencairanTable.id, realId));
+  } else {
+    const results = await db
+      .select()
+      .from(dokumentasiKegiatanTable)
+      .where(eq(dokumentasiKegiatanTable.id, realId))
+      .limit(1);
+
+    const oldDoc = results[0];
+    if (!oldDoc)
+      throw createError({
+        statusCode: 404,
+        message: "Dokumentasi tidak ditemukan",
+      });
+
+    const updateData: any = {
+      deskripsi: getField("deskripsi"),
+    };
+
+    const fileData = formData.find((f) => f.name === "file");
+    if (fileData && fileData.data && fileData.filename) {
+      const oldPath = oldDoc.fileUrl;
+      if (oldPath && fs.existsSync(oldPath)) {
+        await unlink(oldPath).catch(() => {});
+      }
+      const targetDir = await createFilePath("dokumentasi", "kegiatan", "");
+      const newFileName = `${Date.now()}_file_${fileData.filename}`;
+      const newPath = join(targetDir, newFileName);
+      await writeFile(newPath, fileData.data);
+      updateData.fileUrl = newPath;
+    }
+
+    await db
+      .update(dokumentasiKegiatanTable)
+      .set(updateData)
+      .where(eq(dokumentasiKegiatanTable.id, realId));
+  }
 
   return {
     success: true,
-    message: "Dokumentasi berhasil diperbarui",
+    message: "Data berhasil diperbarui",
   };
 });
