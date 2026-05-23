@@ -2,52 +2,57 @@ import fs from "node:fs";
 import path from "node:path";
 import { useDrizzle } from "~~/server/db";
 import { eq } from "drizzle-orm";
-import { dokumentasiKegiatanTable } from "~~/server/db/schema";
+import { dokumentasiKegiatanTable } from "~~/server/db/schema/dokumentasiSchema";
+import { tagihanPencairanTable } from "~~/server/db/schema/TagihanPencairanSchema";
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
   const { id, field = "fileUrl" } = body;
 
   if (!id) {
-    throw createError({ statusCode: 400, message: "ID dokumentasi tidak valid" });
+    throw createError({ statusCode: 400, message: "ID tidak valid" });
   }
 
-  const allowedFields = [
-    "fileUrl",
-    "fotoBarangUrl",
-    "strukBelanjaUrl",
-    "skUrl",
-    "spmtUrl",
-    "amprahUrl",
-    "npwpUrl",
-    "ktpUrl",
-  ];
-
-  if (!allowedFields.includes(field)) {
-    throw createError({ statusCode: 400, message: "Field file tidak valid" });
-  }
+  const idStr = String(id);
+  const isTagihan = idStr.startsWith("tagihan_");
+  const realId = Number(idStr.replace("doc_", "").replace("tagihan_", ""));
 
   const db = useDrizzle();
-  const doc = await db.query.dokumentasiKegiatanTable.findFirst({
-    where: eq(dokumentasiKegiatanTable.id, Number(id)),
-  });
+  let fileUrl = "";
 
-  if (!doc) {
-    throw createError({ statusCode: 404, message: "Data dokumentasi tidak ditemukan" });
+  if (isTagihan) {
+    const doc = await db.query.tagihanPencairanTable.findFirst({
+      where: eq(tagihanPencairanTable.id, realId),
+    });
+    if (!doc)
+      throw createError({
+        statusCode: 404,
+        message: "Tagihan tidak ditemukan",
+      });
+    fileUrl = (doc as any)[field];
+  } else {
+    const doc = await db.query.dokumentasiKegiatanTable.findFirst({
+      where: eq(dokumentasiKegiatanTable.id, realId),
+    });
+    if (!doc)
+      throw createError({
+        statusCode: 404,
+        message: "Dokumentasi tidak ditemukan",
+      });
+    fileUrl = (doc as any)[field];
   }
-
-  const fileUrl = (doc as any)[field];
 
   if (!fileUrl) {
-    throw createError({ statusCode: 404, message: "File tidak ditemukan untuk dokumentasi ini" });
+    throw createError({ statusCode: 404, message: "File tidak ditemukan" });
   }
 
-  // FileUrl bisa berisi multiple paths dipisah ; (untuk legacy atau tipe tertentu)
-  // Kita ambil yang pertama atau sesuai kebutuhan. Untuk detail, biasanya spesifik field.
-  const filePath = path.resolve(process.cwd(), fileUrl.split(';')[0].trim());
+  const filePath = path.resolve(process.cwd(), fileUrl.split(";")[0].trim());
 
   if (!fs.existsSync(filePath)) {
-    throw createError({ statusCode: 404, message: "File fisik tidak ditemukan" });
+    throw createError({
+      statusCode: 404,
+      message: "File fisik tidak ditemukan",
+    });
   }
 
   const ext = path.extname(filePath).toLowerCase();
@@ -64,7 +69,7 @@ export default defineEventHandler(async (event) => {
   setHeader(
     event,
     "Content-Disposition",
-    `inline; filename="${path.basename(filePath)}"`
+    `inline; filename="${path.basename(filePath)}"`,
   );
 
   return sendStream(event, fs.createReadStream(filePath));

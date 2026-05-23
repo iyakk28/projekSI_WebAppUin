@@ -15,15 +15,33 @@ export const tagihanPencairanTable = mysqlTable("tagihan_pencairan", {
     .notNull()
     .references(() => kegiatanTable.id, { onDelete: "cascade" }),
   tipeTagihan: varchar("tipe_tagihan", { length: 50 }).notNull(),
-  skNomor: varchar("sk_nomor", { length: 100 }),
+
+  skNomor: varchar("sk_nomor", { length: 255 }),
   skFileUrl: text("sk_file_url"),
+
+  spmtNomor: varchar("spmt_nomor", { length: 255 }),
+  spmtFileUrl: text("spmt_file_url"),
+
+  amprahNomor: varchar("amprah_nomor", { length: 255 }),
+  amprahFileUrl: text("amprah_file_url"),
+
+  npwpNomor: varchar("npwp_nomor", { length: 255 }),
+  npwpFileUrl: text("npwp_file_url"),
+
+  ktpNomor: varchar("ktp_nomor", { length: 255 }),
+  ktpFileUrl: text("ktp_file_url"),
+
   namaPenerima: varchar("nama_penerima", { length: 255 }).notNull(),
-  rekeningPenerima: varchar("rekening_penerima", { length: 100 }).notNull(),
   bankPenerima: varchar("bank_penerima", { length: 100 }),
+  rekeningPenerima: varchar("rekening_penerima", { length: 255 }).notNull(),
+  bukuRekeningFileUrl: text("buku_rekening_file_url"),
+
   nominal: decimal("nominal", { precision: 15, scale: 2 }).notNull(),
   tokoNama: varchar("toko_nama", { length: 255 }),
   tokoAlamat: text("toko_alamat"),
   strukFileUrl: text("struk_file_url"),
+  fotoBarangUrl: text("foto_barang_url"),
+
   statusTagihan: varchar("status_tagihan", { length: 50 }).default(
     "WAITING_PEMBAYARAN",
   ),

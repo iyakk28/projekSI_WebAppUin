@@ -1,6 +1,6 @@
 import { useDrizzle } from "~~/server/db";
-import { dokumentasiKegiatanTable } from "~~/server/db/schema";
-import { createFilePath } from "#imports"; // util nuxt js
+import { tagihanPencairanTable } from "~~/server/db/schema/TagihanPencairanSchema";
+import { createFilePath } from "#imports";
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
@@ -20,29 +20,23 @@ export default defineEventHandler(async (event) => {
   };
 
   const kegiatanId = getField("kegiatanId");
+  const tokoNama = getField("tokoNama");
+  const tokoAlamat = getField("tokoAlamat");
+  const rekeningPenerima = getField("rekeningPenerima");
+  const bankPenerima = getField("bankPenerima");
+  const namaPenerima = getField("namaPenerima");
+  const nominalStr = getField("nominal");
+  const nominal = nominalStr ? parseFloat(nominalStr) : 0;
 
-  const namaToko = getField("namaToko");
-  const nomorRekeningToko = getField("nomorRekeningToko");
-  const namaPemilikRekening = getField("namaPemilikRekening");
-  const namaBarang = getField("namaBarang");
-  const status = getField("status") || "draft";
-
-  // ambil file barang
-  const fotoBarangField = formData.find((f) => f.name === "fotoBarang");
   const strukBelanjaField = formData.find((f) => f.name === "fotoStruk");
-  if (!fotoBarangField || !strukBelanjaField) {
+  if (!strukBelanjaField) {
     throw createError({
       statusCode: 400,
-      message: "Foto barang dan struk wajib diupload",
+      message: "Foto struk wajib diupload",
     });
   }
 
   const targetPath = await createFilePath("dokumentasi", "barang", "");
-
-  // simpan file barang
-  const fotoBarangName = Date.now() + "_barang_" + fotoBarangField.filename;
-  const fotoBarangPath = join(targetPath, fotoBarangName);
-  await writeFile(fotoBarangPath, fotoBarangField.data);
 
   // simpan file struk
   const strukName = Date.now() + "_struk_" + strukBelanjaField.filename;
@@ -57,20 +51,20 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // insert ke database
-  const [hasil] = await db.insert(dokumentasiKegiatanTable).values({
+  // insert ke database tagihan_pencairan
+  const [hasil] = await db.insert(tagihanPencairanTable).values({
     kegiatanId: Number(kegiatanId),
-    deskripsi: namaBarang,
-    tipeDokumen: "BARANG",
-    fileUrl: `${fotoBarangPath};${strukPath}`,
-    uploadedBy: user.id,
-    namaToko,
-    nomorRekeningToko,
-    namaPemilikRekeningToko: namaPemilikRekening,
-    fotoBarangUrl: fotoBarangPath,
-    strukBelanjaUrl: strukPath,
+    tipeTagihan: "BARANG",
+    namaPenerima,
+    rekeningPenerima,
+    bankPenerima,
+    nominal: nominal.toString(),
+    tokoNama,
+    tokoAlamat,
+    strukFileUrl: strukPath,
+    createdBy: user.id,
   });
-  console.log("anjay", hasil);
+
   return {
     success: true,
     message: "Barang berhasil diupload",

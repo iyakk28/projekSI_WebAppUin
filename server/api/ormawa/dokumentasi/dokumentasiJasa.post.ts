@@ -1,6 +1,6 @@
 import { useDrizzle } from "~~/server/db";
-import { dokumentasiKegiatanTable } from "~~/server/db/schema";
-import { createFilePath } from "#imports"; // util nuxt js
+import { tagihanPencairanTable } from "~~/server/db/schema/TagihanPencairanSchema";
+import { createFilePath } from "#imports";
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
@@ -20,51 +20,26 @@ export default defineEventHandler(async (event) => {
   };
 
   const kegiatanId = getField("kegiatanId");
-  const deskripsi = getField("deskripsi");
-  const namaPenyedia = getField("namaPenyedia");
-  const nomorRekening = getField("nomorRekening");
-  const namaPemilikRekening = getField("namaPemilikRekening");
-  const status = getField("status") || "draft";
+  const namaPenerima = getField("namaPenerima");
+  const rekeningPenerima = getField("rekeningPenerima");
+  const bankPenerima = getField("bankPenerima");
+  const nominalStr = getField("nominal");
+  const nominal = nominalStr ? parseFloat(nominalStr) : 0;
+  const skNomor = getField("skNomor");
 
-  const skField = formData.find((f) => f.name === "sk");
-  const spmtField = formData.find((f) => f.name === "spmt");
-  const amprahField = formData.find((f) => f.name === "amprah");
-  const npwpField = formData.find((f) => f.name === "npwp");
-  const ktpField = formData.find((f) => f.name === "ktp");
+  const skField = formData.find((f) => f.name === "skFile");
 
-  if (!skField || !spmtField || !amprahField || !npwpField || !ktpField) {
+  if (!skField) {
     throw createError({
       statusCode: 400,
-      message: "Semua file jasa wajib diupload",
+      message: "File SK wajib diupload",
     });
   }
 
   const skDir = await createFilePath("dokumentasi", "jasa", "");
-  const spmtDir = await createFilePath("dokumentasi", "jasa", "");
-  const amprahDir = await createFilePath("dokumentasi", "jasa", "");
-  const npwpDir = await createFilePath("dokumentasi", "jasa", "");
-  const ktpDir = await createFilePath("dokumentasi", "jasa", "");
-
   const skName = Date.now() + "_sk_" + skField.filename;
   const skPath = join(skDir, skName);
   await writeFile(skPath, skField.data);
-
-  const spmtName = Date.now() + "_spmt_" + spmtField.filename;
-  const spmtPath = join(spmtDir, spmtName);
-  await writeFile(spmtPath, spmtField.data);
-
-  // simpan file Amprah
-  const amprahName = Date.now() + "_amprah_" + amprahField.filename;
-  const amprahPath = join(amprahDir, amprahName);
-  await writeFile(amprahPath, amprahField.data);
-
-  const npwpName = Date.now() + "_npwp_" + npwpField.filename;
-  const npwpPath = join(npwpDir, npwpName);
-  await writeFile(npwpPath, npwpField.data);
-
-  const ktpName = Date.now() + "_ktp_" + ktpField.filename;
-  const ktpPath = join(ktpDir, ktpName);
-  await writeFile(ktpPath, ktpField.data);
 
   const { user } = event.context;
   if (!user) {
@@ -74,20 +49,16 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const [hasil] = await db.insert(dokumentasiKegiatanTable).values({
+  const [hasil] = await db.insert(tagihanPencairanTable).values({
     kegiatanId: Number(kegiatanId),
-    deskripsi,
-    tipeDokumen: "JASA",
-    fileUrl: `${skPath};${spmtPath};${amprahPath};${npwpPath};${ktpPath}`,
-    uploadedBy: user.id,
-    namaPenyediaJasa: namaPenyedia,
-    nomorRekeningJasa: nomorRekening,
-    namaPemilikRekeningJasa: namaPemilikRekening,
-    skUrl: skPath,
-    spmtUrl: spmtPath,
-    amprahUrl: amprahPath,
-    npwpUrl: npwpPath,
-    ktpUrl: ktpPath,
+    tipeTagihan: "JASA",
+    namaPenerima,
+    rekeningPenerima,
+    bankPenerima,
+    nominal: nominal.toString(),
+    skNomor,
+    skFileUrl: skPath,
+    createdBy: user.id,
   });
 
   return {

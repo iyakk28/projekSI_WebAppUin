@@ -1,6 +1,7 @@
 import { useDrizzle } from "~~/server/db";
 import { eq } from "drizzle-orm";
-import { dokumentasiKegiatanTable } from "~~/server/db/schema";
+import { dokumentasiKegiatanTable } from "~~/server/db/schema/dokumentasiSchema";
+import { tagihanPencairanTable } from "~~/server/db/schema/TagihanPencairanSchema";
 import { unlink } from "node:fs/promises";
 
 export default defineEventHandler(async (event) => {
@@ -12,56 +13,54 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: "ID wajib disertakan" });
   }
 
-  // 1. Cari data untuk hapus file fisik
-  const results = await db
-    .select()
-    .from(dokumentasiKegiatanTable)
-    .where(eq(dokumentasiKegiatanTable.id, Number(id)))
-    .limit(1);
+  const idStr = String(id);
+  const isDoc = idStr.startsWith("doc_");
+  const isTagihan = idStr.startsWith("tagihan_");
 
-  const doc = results[0];
+  // Backward compatibility jika id murni angka
+  const realId = isDoc || isTagihan ? Number(idStr.split("_")[1]) : Number(id);
 
-  if (!doc) {
-    throw createError({
-      statusCode: 404,
-      message: "Dokumentasi tidak ditemukan",
-    });
-  }
+  if (isTagihan) {
+    const results = await db
+      .select()
+      .from(tagihanPencairanTable)
+      .where(eq(tagihanPencairanTable.id, realId))
+      .limit(1);
 
-  // 2. Hapus semua file fisik yang mungkin ada
-  const fileFields = [
-    "fileUrl",
-    "fotoBarangUrl",
-    "strukBelanjaUrl",
-    "skUrl",
-    "spmtUrl",
-    "amprahUrl",
-    "npwpUrl",
-    "ktpUrl",
-  ];
+    const doc = results[0];
+    if (!doc)
+      throw createError({ statusCode: 404, message: "Data tidak ditemukan" });
 
-  for (const field of fileFields) {
-    const value = (doc as any)[field];
-    if (value) {
-      // Menangani kemungkinan multiple paths yang dipisah titik koma
-      const paths = value.split(";").filter((p: string) => p.trim() !== "");
+    if (doc.skFileUrl) await unlink(doc.skFileUrl).catch(() => {});
+    if (doc.strukFileUrl) await unlink(doc.strukFileUrl).catch(() => {});
+
+    await db
+      .delete(tagihanPencairanTable)
+      .where(eq(tagihanPencairanTable.id, realId));
+  } else {
+    const results = await db
+      .select()
+      .from(dokumentasiKegiatanTable)
+      .where(eq(dokumentasiKegiatanTable.id, realId))
+      .limit(1);
+
+    const doc = results[0];
+    if (!doc)
+      throw createError({ statusCode: 404, message: "Data tidak ditemukan" });
+
+    if (doc.fileUrl) {
+      const paths = doc.fileUrl
+        .split(";")
+        .filter((p: string) => p.trim() !== "");
       for (const filePath of paths) {
-        try {
-          await unlink(filePath);
-        } catch (e) {
-          console.error(`Gagal menghapus file ${filePath}:`, e);
-        }
+        await unlink(filePath).catch(() => {});
       }
     }
+
+    await db
+      .delete(dokumentasiKegiatanTable)
+      .where(eq(dokumentasiKegiatanTable.id, realId));
   }
 
-  // 3. Hapus record dari database
-  await db
-    .delete(dokumentasiKegiatanTable)
-    .where(eq(dokumentasiKegiatanTable.id, Number(id)));
-
-  return {
-    success: true,
-    message: "Dokumentasi berhasil dihapus",
-  };
+  return { success: true, message: "Data berhasil dihapus" };
 });

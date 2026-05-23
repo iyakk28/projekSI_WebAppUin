@@ -45,6 +45,7 @@ export const useKegiatanStore = defineStore("kegiatan", {
     },
 
     async submitBarang(fd: FormData) {
+      const dokumentasiStore = useDokumentasiStore();
       this.barangUploading = true;
       try {
         await $fetch("/api/ormawa/dokumentasi/dokumentasiBarang", {
@@ -53,6 +54,11 @@ export const useKegiatanStore = defineStore("kegiatan", {
         });
         this.popupMessage = "Berhasil mengupload barang";
         this.popupVisible = true;
+
+        const kegiatanId = Number(fd.get("kegiatanId"));
+        if (kegiatanId) {
+          await dokumentasiStore.refreshDokumentasi(kegiatanId);
+        }
       } catch {
         alert("Gagal upload barang");
       } finally {
@@ -61,6 +67,7 @@ export const useKegiatanStore = defineStore("kegiatan", {
     },
 
     async submitJasa(fd: FormData) {
+      const dokumentasiStore = useDokumentasiStore();
       this.jasaUploading = true;
       try {
         await $fetch("/api/ormawa/dokumentasi/dokumentasiJasa", {
@@ -69,6 +76,11 @@ export const useKegiatanStore = defineStore("kegiatan", {
         });
         this.popupMessage = "Berhasil mengupload jasa";
         this.popupVisible = true;
+
+        const kegiatanId = Number(fd.get("kegiatanId"));
+        if (kegiatanId) {
+          await dokumentasiStore.refreshDokumentasi(kegiatanId);
+        }
       } catch {
         alert("Gagal upload jasa");
       } finally {
