@@ -113,6 +113,13 @@
       "when": 1778428119541,
       "tag": "0015_glossy_korath",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "5",
+      "when": 1779508148670,
+      "tag": "0016_fair_purifiers",
+      "breakpoints": true
     }
   ]
 }
