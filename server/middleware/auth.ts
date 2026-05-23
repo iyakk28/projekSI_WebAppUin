@@ -19,7 +19,15 @@ export default defineEventHandler(async (event) => {
     if (!user) {
       console.warn("User tidak ditemukan di database");
     }
-    event.context.user = decoded;
+
+    const transformedUser = {
+      ...decoded,
+      fakultasId: decoded.fakultasId ?? decoded.fakultas,
+      prodiId: decoded.prodiId ?? decoded.prodi,
+      ormawaId: decoded.ormawaId ?? decoded.ormawa,
+    };
+
+    event.context.user = transformedUser;
   } catch (err) {
     console.warn("Token invalid atau expired");
   }
