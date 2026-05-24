@@ -78,11 +78,11 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, onMounted, computed } from "vue";
+  import { ref, onMounted, computed, watch } from "vue";
 
   const props = defineProps({
     label: { type: String, required: true },
-    docId: { type: Number, required: true },
+    docId: { type: Number, required: true, default: null },
     field: { type: String, required: true },
   });
 
@@ -103,7 +103,7 @@
         body: { id: props.docId, field: props.field },
         responseType: "blob",
       });
-
+      console.log(response);
       const blob = response as Blob;
       contentType.value = blob.type;
       imageUrl.value = URL.createObjectURL(blob);
@@ -135,6 +135,5 @@
     error.value = true;
     imageUrl.value = null;
   };
-
   onMounted(fetchFile);
 </script>

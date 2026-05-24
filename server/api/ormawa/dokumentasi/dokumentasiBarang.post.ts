@@ -66,9 +66,9 @@ export default defineEventHandler(async (event) => {
   const [hasil] = await db.insert(tagihanPencairanTable).values({
     kegiatanId: Number(kegiatanId),
     tipeTagihan: "BARANG",
-    namaPenerima: createEnkripsi(namaPenerima),
-    rekeningPenerima: createEnkripsi(rekeningPenerima),
-    bankPenerima: createEnkripsi(bankPenerima),
+    namaPenerima: namaPenerima,
+    rekeningPenerima: rekeningPenerima,
+    bankPenerima: bankPenerima,
     nominal: nominal.toString(),
     tokoNama,
     tokoAlamat,

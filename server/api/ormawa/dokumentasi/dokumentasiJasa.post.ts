@@ -8,6 +8,8 @@ export default defineEventHandler(async (event) => {
   const db = useDrizzle();
   const formData = await readMultipartFormData(event);
 
+  console.log(formData);
+
   if (!formData || formData.length === 0) {
     throw createError({
       statusCode: 400,

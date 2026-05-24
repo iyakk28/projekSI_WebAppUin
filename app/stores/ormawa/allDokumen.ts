@@ -15,12 +15,12 @@ export const useDokumentasiStore = defineStore("dokumentasiFetcher", () => {
   const fetchDokumentasi = async (
     kegiatanId: number,
     page: number = 1,
-    limit: number = 5
+    limit: number = 5,
   ) => {
     if (!kegiatanId) return;
-    
+
     const cacheKey = `${kegiatanId}_${page}_${limit}`;
-    
+
     // Cek cache
     if (cache.has(cacheKey)) {
       const cached = cache.get(cacheKey);
@@ -43,7 +43,7 @@ export const useDokumentasiStore = defineStore("dokumentasiFetcher", () => {
             page: page,
             row: limit,
           },
-        }
+        },
       );
 
       if (response.success) {
@@ -51,7 +51,10 @@ export const useDokumentasiStore = defineStore("dokumentasiFetcher", () => {
         totalItems.value = Number(response.total) || 0;
         currentPage.value = Number(response.page) || page;
         perPage.value = Number(response.row) || limit;
-        totalPages.value = Number(response.totalPages) || Math.ceil(totalItems.value / perPage.value) || 1;
+        totalPages.value =
+          Number(response.totalPages) ||
+          Math.ceil(totalItems.value / perPage.value) ||
+          1;
 
         // Simpan ke cache
         cache.set(cacheKey, {
@@ -73,7 +76,7 @@ export const useDokumentasiStore = defineStore("dokumentasiFetcher", () => {
   const refreshDokumentasi = async (
     kegiatanId: number,
     page: number = 1,
-    limit: number = 5
+    limit: number = 5,
   ) => {
     // Hapus semua cache untuk kegiatan ini
     for (const key of cache.keys()) {

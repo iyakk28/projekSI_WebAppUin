@@ -6,6 +6,7 @@ import { dokumentasiKegiatanTable } from "~~/server/db/schema/dokumentasiSchema"
 import { tagihanPencairanTable } from "~~/server/db/schema/TagihanPencairanSchema";
 
 export default defineEventHandler(async (event) => {
+  console.log("masuk ke dalam fileView");
   const body = await readBody(event);
   const { id, field = "fileUrl" } = body;
 
@@ -45,7 +46,7 @@ export default defineEventHandler(async (event) => {
   if (!fileUrl) {
     throw createError({ statusCode: 404, message: "File tidak ditemukan" });
   }
-
+  console.log(fileUrl);
   const filePath = path.resolve(process.cwd(), fileUrl.split(";")[0].trim());
 
   if (!fs.existsSync(filePath)) {
@@ -71,6 +72,6 @@ export default defineEventHandler(async (event) => {
     "Content-Disposition",
     `inline; filename="${path.basename(filePath)}"`,
   );
-
+  console.log("keluar dari fileView");
   return sendStream(event, fs.createReadStream(filePath));
 });

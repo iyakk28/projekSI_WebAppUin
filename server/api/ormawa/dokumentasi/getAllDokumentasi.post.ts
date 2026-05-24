@@ -7,7 +7,7 @@ import { showDekripsi } from "~~/server/utils/enkripsiData";
 export default defineEventHandler(async (event) => {
   try {
     const body = await readBody(event);
-    const { user } = event.context;
+
     const { kegiatanId, page, row } = body;
     if (!kegiatanId) {
       throw createError({
@@ -43,7 +43,6 @@ export default defineEventHandler(async (event) => {
         createdAt: d.createdAt,
       })),
       ...rawTagihan.map((t) => {
-        const namaPenerima = showDekripsi(t.namaPenerima);
         return {
           id: `tagihan_${t.id}`,
           realId: t.id,
@@ -52,10 +51,10 @@ export default defineEventHandler(async (event) => {
           deskripsi:
             t.tipeTagihan === "BARANG"
               ? `Pembelian Barang: ${t.tokoNama || "-"}`
-              : `Pembayaran Jasa: ${namaPenerima || "-"}`,
+              : `Pembayaran Jasa: ${t.namaPenerima || "-"}`,
           nominal: t.nominal,
-          namaPenerima: namaPenerima,
-          rekeningPenerima: showDekripsi(t.rekeningPenerima),
+          namaPenerima: t.namaPenerima,
+          rekeningPenerima: t.rekeningPenerima,
           bankPenerima: t.bankPenerima,
           tokoNama: t.tokoNama,
           tokoAlamat: t.tokoAlamat,

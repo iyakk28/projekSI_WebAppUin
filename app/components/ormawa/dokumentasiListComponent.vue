@@ -29,10 +29,7 @@
     </div>
 
     <!-- Loading State -->
-    <div
-      v-if="fetcher.loading"
-      class="flex justify-center items-center py-12"
-    >
+    <div v-if="fetcher.loading" class="flex justify-center items-center py-12">
       <div class="flex flex-col items-center gap-3">
         <Icon
           name="heroicons:arrow-path"
@@ -207,7 +204,9 @@
         >
           <div>
             <h3 class="text-xl font-bold text-slate-900">Detail Dokumentasi</h3>
-            <p class="text-sm text-slate-500">Informasi lengkap dan berkas pendukung</p>
+            <p class="text-sm text-slate-500">
+              Informasi lengkap dan berkas pendukung
+            </p>
           </div>
           <button
             @click="showViewModal = false"
@@ -222,86 +221,168 @@
           <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <!-- Sidebar Info -->
             <div class="lg:col-span-4 space-y-6">
-              <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100 space-y-4">
+              <div
+                class="bg-slate-50 p-6 rounded-2xl border border-slate-100 space-y-4"
+              >
                 <div>
-                  <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Deskripsi</label>
-                  <p class="text-slate-900 font-medium leading-relaxed">{{ selectedDoc?.deskripsi }}</p>
+                  <label
+                    class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1"
+                    >Deskripsi</label
+                  >
+                  <p class="text-slate-900 font-medium leading-relaxed">
+                    {{ selectedDoc?.deskripsi }}
+                  </p>
                 </div>
                 <div>
-                  <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Tipe Dokumen</label>
-                  <span :class="['px-3 py-1 rounded-full text-xs font-semibold border inline-block', getTipeDocumenBadgeClass(selectedDoc?.tipeDokumen)]">
+                  <label
+                    class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1"
+                    >Tipe Dokumen</label
+                  >
+                  <span
+                    :class="[
+                      'px-3 py-1 rounded-full text-xs font-semibold border inline-block',
+                      getTipeDocumenBadgeClass(selectedDoc?.tipeDokumen),
+                    ]"
+                  >
                     {{ selectedDoc?.tipeDokumen }}
                   </span>
                 </div>
                 <div>
-                  <label class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Tanggal Upload</label>
+                  <label
+                    class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1"
+                    >Tanggal Upload</label
+                  >
                   <p class="text-slate-900 text-sm flex items-center gap-2">
-                    <Icon name="heroicons:calendar" class="w-4 h-4 text-slate-400" />
+                    <Icon
+                      name="heroicons:calendar"
+                      class="w-4 h-4 text-slate-400"
+                    />
                     {{ formatDate(selectedDoc?.createdAt) }}
                   </p>
                 </div>
               </div>
 
               <!-- Detail Spesifik Barang -->
-              <div v-if="selectedDoc?.tipeDokumen === 'BARANG'" class="bg-blue-50/50 p-6 rounded-2xl border border-blue-100 space-y-4">
+              <div
+                v-if="selectedDoc?.tipeDokumen === 'BARANG'"
+                class="bg-blue-50/50 p-6 rounded-2xl border border-blue-100 space-y-4"
+              >
                 <h4 class="font-bold text-blue-900 flex items-center gap-2">
                   <Icon name="heroicons:shopping-bag" class="w-5 h-5" />
                   Informasi Tagihan Barang
                 </h4>
                 <div class="space-y-3">
                   <div>
-                    <label class="text-xs font-bold text-blue-400 uppercase block">Nama Toko</label>
-                    <p class="text-sm text-blue-900 font-medium">{{ selectedDoc?.tokoNama || '-' }}</p>
+                    <label
+                      class="text-xs font-bold text-blue-400 uppercase block"
+                      >Nama Toko</label
+                    >
+                    <p class="text-sm text-blue-900 font-medium">
+                      {{ selectedDoc?.tokoNama || "-" }}
+                    </p>
                   </div>
                   <div>
-                    <label class="text-xs font-bold text-blue-400 uppercase block">Alamat Toko</label>
-                    <p class="text-sm text-blue-900 font-medium">{{ selectedDoc?.tokoAlamat || '-' }}</p>
+                    <label
+                      class="text-xs font-bold text-blue-400 uppercase block"
+                      >Alamat Toko</label
+                    >
+                    <p class="text-sm text-blue-900 font-medium">
+                      {{ selectedDoc?.tokoAlamat || "-" }}
+                    </p>
                   </div>
                   <div>
-                    <label class="text-xs font-bold text-blue-400 uppercase block">Nominal</label>
-                    <p class="text-sm text-blue-900 font-medium">Rp {{ selectedDoc?.nominal || '0' }}</p>
+                    <label
+                      class="text-xs font-bold text-blue-400 uppercase block"
+                      >Nominal</label
+                    >
+                    <p class="text-sm text-blue-900 font-medium">
+                      Rp {{ selectedDoc?.nominal || "0" }}
+                    </p>
                   </div>
                   <div class="border-t border-blue-100 pt-3">
-                    <label class="text-xs font-bold text-blue-400 uppercase block">Bank Penerima</label>
-                    <p class="text-sm text-blue-900 font-medium">{{ selectedDoc?.bankPenerima || '-' }}</p>
+                    <label
+                      class="text-xs font-bold text-blue-400 uppercase block"
+                      >Bank Penerima</label
+                    >
+                    <p class="text-sm text-blue-900 font-medium">
+                      {{ selectedDoc?.bankPenerima || "-" }}
+                    </p>
                   </div>
                   <div>
-                    <label class="text-xs font-bold text-blue-400 uppercase block">Nomor Rekening</label>
-                    <p class="text-sm text-blue-900 font-medium">{{ selectedDoc?.rekeningPenerima || '-' }}</p>
+                    <label
+                      class="text-xs font-bold text-blue-400 uppercase block"
+                      >Nomor Rekening</label
+                    >
+                    <p class="text-sm text-blue-900 font-medium">
+                      {{ selectedDoc?.rekeningPenerima || "-" }}
+                    </p>
                   </div>
                   <div>
-                    <label class="text-xs font-bold text-blue-400 uppercase block">Atas Nama</label>
-                    <p class="text-sm text-blue-900 font-medium">{{ selectedDoc?.namaPenerima || '-' }}</p>
+                    <label
+                      class="text-xs font-bold text-blue-400 uppercase block"
+                      >Atas Nama</label
+                    >
+                    <p class="text-sm text-blue-900 font-medium">
+                      {{ selectedDoc?.namaPenerima || "-" }}
+                    </p>
                   </div>
                 </div>
               </div>
 
               <!-- Detail Spesifik Jasa -->
-              <div v-if="selectedDoc?.tipeDokumen === 'JASA'" class="bg-purple-50/50 p-6 rounded-2xl border border-purple-100 space-y-4">
+              <div
+                v-if="selectedDoc?.tipeDokumen === 'JASA'"
+                class="bg-purple-50/50 p-6 rounded-2xl border border-purple-100 space-y-4"
+              >
                 <h4 class="font-bold text-purple-900 flex items-center gap-2">
                   <Icon name="heroicons:user-group" class="w-5 h-5" />
                   Informasi Tagihan Jasa
                 </h4>
                 <div class="space-y-3">
                   <div>
-                    <label class="text-xs font-bold text-purple-400 uppercase block">Nama Penyedia</label>
-                    <p class="text-sm text-purple-900 font-medium">{{ selectedDoc?.namaPenerima || '-' }}</p>
+                    <label
+                      class="text-xs font-bold text-purple-400 uppercase block"
+                      >Nama Penyedia</label
+                    >
+                    <p class="text-sm text-purple-900 font-medium">
+                      {{ selectedDoc?.namaPenerima || "-" }}
+                    </p>
                   </div>
                   <div>
-                    <label class="text-xs font-bold text-purple-400 uppercase block">Nomor SK</label>
-                    <p class="text-sm text-purple-900 font-medium">{{ selectedDoc?.skNomor || '-' }}</p>
+                    <label
+                      class="text-xs font-bold text-purple-400 uppercase block"
+                      >Nomor SK</label
+                    >
+                    <p class="text-sm text-purple-900 font-medium">
+                      {{ selectedDoc?.skNomor || "-" }}
+                    </p>
                   </div>
                   <div>
-                    <label class="text-xs font-bold text-purple-400 uppercase block">Nominal</label>
-                    <p class="text-sm text-purple-900 font-medium">Rp {{ selectedDoc?.nominal || '0' }}</p>
+                    <label
+                      class="text-xs font-bold text-purple-400 uppercase block"
+                      >Nominal</label
+                    >
+                    <p class="text-sm text-purple-900 font-medium">
+                      Rp {{ selectedDoc?.nominal || "0" }}
+                    </p>
                   </div>
                   <div class="border-t border-purple-100 pt-3">
-                    <label class="text-xs font-bold text-purple-400 uppercase block">Bank Penerima</label>
-                    <p class="text-sm text-purple-900 font-medium">{{ selectedDoc?.bankPenerima || '-' }}</p>
+                    <label
+                      class="text-xs font-bold text-purple-400 uppercase block"
+                      >Bank Penerima</label
+                    >
+                    <p class="text-sm text-purple-900 font-medium">
+                      {{ selectedDoc?.bankPenerima || "-" }}
+                    </p>
                   </div>
                   <div>
-                    <label class="text-xs font-bold text-purple-400 uppercase block">Nomor Rekening</label>
-                    <p class="text-sm text-purple-900 font-medium">{{ selectedDoc?.rekeningPenerima || '-' }}</p>
+                    <label
+                      class="text-xs font-bold text-purple-400 uppercase block"
+                      >Nomor Rekening</label
+                    >
+                    <p class="text-sm text-purple-900 font-medium">
+                      {{ selectedDoc?.rekeningPenerima || "-" }}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -309,25 +390,38 @@
 
             <!-- Preview Berkas -->
             <div class="lg:col-span-8 space-y-6">
-              <h4 class="text-lg font-bold text-slate-900 flex items-center gap-2">
-                <Icon name="heroicons:paper-clip" class="w-5 h-5 text-[#3b5988]" />
+              <h4
+                class="text-lg font-bold text-slate-900 flex items-center gap-2"
+              >
+                <Icon
+                  name="heroicons:paper-clip"
+                  class="w-5 h-5 text-[#3b5988]"
+                />
                 Berkas Terlampir
               </h4>
-              
+
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <!-- Preview List Based on Type -->
                 <template v-if="selectedDoc?.tipeDokumen === 'BARANG'">
-                  <FilePreviewCard 
-                    label="Struk Belanja" 
-                    :doc-id="selectedDoc.id" 
-                    field="strukFileUrl" 
+                  <ormawa-file-preview-card
+                    label="Struk Belanja"
+                    :doc-id="selectedDoc.id"
+                    field="strukFileUrl"
                   />
                 </template>
                 <template v-else-if="selectedDoc?.tipeDokumen === 'JASA'">
-                  <FilePreviewCard label="SK" :doc-id="selectedDoc.id" field="skFileUrl" />
+                  <ormawa-file-preview-card
+                    label="SK"
+                    :doc-id="selectedDoc.id"
+                    field="skFileUrl"
+                  />
                 </template>
                 <template v-else>
-                  <FilePreviewCard label="File Dokumentasi" :doc-id="selectedDoc.id" field="fileUrl" />
+                  <ormawa-file-preview-card
+                    label="File Dokumentasi"
+                    :doc-id="selectedDoc.id"
+                    field="fileUrl"
+                  />
                 </template>
               </div>
             </div>
@@ -335,7 +429,9 @@
         </div>
 
         <!-- Modal Footer -->
-        <div class="p-6 border-t border-slate-100 bg-slate-50/50 flex justify-end">
+        <div
+          class="p-6 border-t border-slate-100 bg-slate-50/50 flex justify-end"
+        >
           <button
             @click="showViewModal = false"
             class="px-6 py-2 rounded-xl bg-slate-900 text-white font-medium hover:bg-slate-800 transition-all"
@@ -388,80 +484,175 @@
               <option value="BARANG">BARANG</option>
               <option value="JASA">JASA</option>
             </select>
-            <p class="text-xs text-slate-500 mt-1">Tipe dokumen tidak dapat diubah setelah diupload.</p>
+            <p class="text-xs text-slate-500 mt-1">
+              Tipe dokumen tidak dapat diubah setelah diupload.
+            </p>
           </div>
 
           <!-- Edit Field Dokumentasi (General) -->
-          <div v-if="editForm.tipeDokumen === 'DOKUMENTASI'" class="pt-4 border-t space-y-4">
-             <div>
-              <label class="block text-sm font-medium mb-1">Ganti File Dokumentasi (Opsional)</label>
-              <input type="file" @change="e => handleFileEdit(e, 'file')" class="w-full border border-slate-200 rounded-lg p-2 text-sm" />
-              <p class="text-xs text-slate-500 mt-1">Kosongkan jika tidak ingin mengganti file.</p>
+          <div
+            v-if="editForm.tipeDokumen === 'DOKUMENTASI'"
+            class="pt-4 border-t space-y-4"
+          >
+            <div>
+              <label class="block text-sm font-medium mb-1"
+                >Ganti File Dokumentasi (Opsional)</label
+              >
+              <input
+                type="file"
+                @change="(e) => handleFileEdit(e, 'file')"
+                class="w-full border border-slate-200 rounded-lg p-2 text-sm"
+              />
+              <p class="text-xs text-slate-500 mt-1">
+                Kosongkan jika tidak ingin mengganti file.
+              </p>
             </div>
           </div>
 
           <!-- Edit Field Barang -->
-          <div v-if="editForm.tipeDokumen === 'BARANG'" class="pt-4 border-t space-y-4">
+          <div
+            v-if="editForm.tipeDokumen === 'BARANG'"
+            class="pt-4 border-t space-y-4"
+          >
             <h4 class="font-bold text-sm text-slate-700">Data Barang / Toko</h4>
             <div>
               <label class="block text-sm font-medium mb-1">Nama Toko</label>
-              <input v-model="editForm.namaToko" type="text" class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-[#3b5988] outline-none" />
+              <input
+                v-model="editForm.namaToko"
+                type="text"
+                class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-[#3b5988] outline-none"
+              />
             </div>
             <div>
-              <label class="block text-sm font-medium mb-1">Nomor Rekening Toko</label>
-              <input v-model="editForm.nomorRekeningToko" type="text" class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-[#3b5988] outline-none" />
+              <label class="block text-sm font-medium mb-1"
+                >Nomor Rekening Toko</label
+              >
+              <input
+                v-model="editForm.nomorRekeningToko"
+                type="text"
+                class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-[#3b5988] outline-none"
+              />
             </div>
             <div>
-              <label class="block text-sm font-medium mb-1">Atas Nama Rekening</label>
-              <input v-model="editForm.namaPemilikRekeningToko" type="text" class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-[#3b5988] outline-none" />
+              <label class="block text-sm font-medium mb-1"
+                >Atas Nama Rekening</label
+              >
+              <input
+                v-model="editForm.namaPemilikRekeningToko"
+                type="text"
+                class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-[#3b5988] outline-none"
+              />
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium mb-1 text-blue-600">Ganti Foto Barang</label>
-                <input type="file" @change="e => handleFileEdit(e, 'fotoBarang')" class="w-full border border-slate-200 rounded-lg p-2 text-sm" />
+                <label class="block text-sm font-medium mb-1 text-blue-600"
+                  >Ganti Foto Barang</label
+                >
+                <input
+                  type="file"
+                  @change="(e) => handleFileEdit(e, 'fotoBarang')"
+                  class="w-full border border-slate-200 rounded-lg p-2 text-sm"
+                />
               </div>
               <div>
-                <label class="block text-sm font-medium mb-1 text-blue-600">Ganti Struk Belanja</label>
-                <input type="file" @change="e => handleFileEdit(e, 'strukBelanja')" class="w-full border border-slate-200 rounded-lg p-2 text-sm" />
+                <label class="block text-sm font-medium mb-1 text-blue-600"
+                  >Ganti Struk Belanja</label
+                >
+                <input
+                  type="file"
+                  @change="(e) => handleFileEdit(e, 'strukBelanja')"
+                  class="w-full border border-slate-200 rounded-lg p-2 text-sm"
+                />
               </div>
             </div>
           </div>
 
           <!-- Edit Field Jasa -->
-          <div v-if="editForm.tipeDokumen === 'JASA'" class="pt-4 border-t space-y-4">
+          <div
+            v-if="editForm.tipeDokumen === 'JASA'"
+            class="pt-4 border-t space-y-4"
+          >
             <h4 class="font-bold text-sm text-slate-700">Data Penyedia Jasa</h4>
             <div>
-              <label class="block text-sm font-medium mb-1">Nama Penyedia</label>
-              <input v-model="editForm.namaPenyediaJasa" type="text" class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-[#3b5988] outline-none" />
+              <label class="block text-sm font-medium mb-1"
+                >Nama Penyedia</label
+              >
+              <input
+                v-model="editForm.namaPenyediaJasa"
+                type="text"
+                class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-[#3b5988] outline-none"
+              />
             </div>
             <div>
-              <label class="block text-sm font-medium mb-1">Nomor Rekening</label>
-              <input v-model="editForm.nomorRekeningJasa" type="text" class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-[#3b5988] outline-none" />
+              <label class="block text-sm font-medium mb-1"
+                >Nomor Rekening</label
+              >
+              <input
+                v-model="editForm.nomorRekeningJasa"
+                type="text"
+                class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-[#3b5988] outline-none"
+              />
             </div>
             <div>
-              <label class="block text-sm font-medium mb-1">Atas Nama Rekening</label>
-              <input v-model="editForm.namaPemilikRekeningJasa" type="text" class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-[#3b5988] outline-none" />
+              <label class="block text-sm font-medium mb-1"
+                >Atas Nama Rekening</label
+              >
+              <input
+                v-model="editForm.namaPemilikRekeningJasa"
+                type="text"
+                class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-[#3b5988] outline-none"
+              />
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium mb-1 text-purple-600">Ganti SK</label>
-                <input type="file" @change="e => handleFileEdit(e, 'sk')" class="w-full border border-slate-200 rounded-lg p-2 text-sm" />
+                <label class="block text-sm font-medium mb-1 text-purple-600"
+                  >Ganti SK</label
+                >
+                <input
+                  type="file"
+                  @change="(e) => handleFileEdit(e, 'sk')"
+                  class="w-full border border-slate-200 rounded-lg p-2 text-sm"
+                />
               </div>
               <div>
-                <label class="block text-sm font-medium mb-1 text-purple-600">Ganti SPMT</label>
-                <input type="file" @change="e => handleFileEdit(e, 'spmt')" class="w-full border border-slate-200 rounded-lg p-2 text-sm" />
+                <label class="block text-sm font-medium mb-1 text-purple-600"
+                  >Ganti SPMT</label
+                >
+                <input
+                  type="file"
+                  @change="(e) => handleFileEdit(e, 'spmt')"
+                  class="w-full border border-slate-200 rounded-lg p-2 text-sm"
+                />
               </div>
               <div>
-                <label class="block text-sm font-medium mb-1 text-purple-600">Ganti Amprah</label>
-                <input type="file" @change="e => handleFileEdit(e, 'amprah')" class="w-full border border-slate-200 rounded-lg p-2 text-sm" />
+                <label class="block text-sm font-medium mb-1 text-purple-600"
+                  >Ganti Amprah</label
+                >
+                <input
+                  type="file"
+                  @change="(e) => handleFileEdit(e, 'amprah')"
+                  class="w-full border border-slate-200 rounded-lg p-2 text-sm"
+                />
               </div>
               <div>
-                <label class="block text-sm font-medium mb-1 text-purple-600">Ganti NPWP</label>
-                <input type="file" @change="e => handleFileEdit(e, 'npwp')" class="w-full border border-slate-200 rounded-lg p-2 text-sm" />
+                <label class="block text-sm font-medium mb-1 text-purple-600"
+                  >Ganti NPWP</label
+                >
+                <input
+                  type="file"
+                  @change="(e) => handleFileEdit(e, 'npwp')"
+                  class="w-full border border-slate-200 rounded-lg p-2 text-sm"
+                />
               </div>
               <div>
-                <label class="block text-sm font-medium mb-1 text-purple-600">Ganti KTP</label>
-                <input type="file" @change="e => handleFileEdit(e, 'ktp')" class="w-full border border-slate-200 rounded-lg p-2 text-sm" />
+                <label class="block text-sm font-medium mb-1 text-purple-600"
+                  >Ganti KTP</label
+                >
+                <input
+                  type="file"
+                  @change="(e) => handleFileEdit(e, 'ktp')"
+                  class="w-full border border-slate-200 rounded-lg p-2 text-sm"
+                />
               </div>
             </div>
           </div>
@@ -618,8 +809,9 @@
 
   const getTipeDocumenBadgeClass = (tipe: string) => {
     const baseClass = "px-3 py-1 rounded-full text-xs font-medium border";
-    if (!tipe) return `${baseClass} bg-slate-50 text-slate-700 border-slate-200`;
-    
+    if (!tipe)
+      return `${baseClass} bg-slate-50 text-slate-700 border-slate-200`;
+
     switch (tipe.toUpperCase()) {
       case "BARANG":
         return `${baseClass} bg-blue-50 text-blue-700 border-blue-200`;
@@ -706,7 +898,7 @@
       fd.append("skNomor", editForm.value.skNomor);
 
       // Tambahkan file jika ada yang dipilih
-      Object.keys(selectedFiles.value).forEach(key => {
+      Object.keys(selectedFiles.value).forEach((key) => {
         fd.append(key, selectedFiles.value[key]);
       });
 
@@ -735,7 +927,7 @@
     try {
       await $fetch(`/api/ormawa/dokumentasi/dokumentasi`, {
         method: "DELETE",
-        body: { id: selectedDoc.value.id }
+        body: { id: selectedDoc.value.id },
       });
       showPopupNotification("Dokumentasi berhasil dihapus", "success");
       showDeleteConfirm.value = false;
