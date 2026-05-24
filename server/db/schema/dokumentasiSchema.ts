@@ -7,7 +7,8 @@ import {
 } from "drizzle-orm/mysql-core";
 import { kegiatanTable } from "./KegiatanSchema";
 import { usersTable } from "./usersSchema";
-
+import { programStudiTable } from "./programStudiSchema";
+import { fakultasTable } from "./fakultasSchema";
 export const dokumentasiKegiatanTable = mysqlTable("dokumentasi_kegiatan", {
   id: bigint("id", { mode: "number" }).primaryKey().autoincrement(),
   kegiatanId: bigint("kegiatan_id", { mode: "number" })
@@ -15,6 +16,12 @@ export const dokumentasiKegiatanTable = mysqlTable("dokumentasi_kegiatan", {
     .references(() => kegiatanTable.id, { onDelete: "cascade" }),
   tipeDokumen: varchar("tipe_dokumen", { length: 50 }).notNull(),
   deskripsi: text("deskripsi"),
+  fakultasId: varchar("fakultas_Id", { length: 50 })
+    .notNull()
+    .references(() => fakultasTable.id),
+  prodiId: varchar("prodi_id", { length: 50 }).references(
+    () => programStudiTable.id,
+  ),
   fileUrl: text("file_url").notNull(),
   uploadedBy: bigint("uploaded_by", { mode: "number" })
     .notNull()

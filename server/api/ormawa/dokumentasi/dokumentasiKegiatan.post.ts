@@ -52,6 +52,8 @@ export default defineEventHandler(async (event) => {
     deskripsi,
     tipeDokumen,
     fileUrl: filePath,
+    fakultasId: String(user.fakultasId),
+    prodiId: user.prodiId ? String(user.prodiId) : null,
     uploadedBy: user.id,
   });
 

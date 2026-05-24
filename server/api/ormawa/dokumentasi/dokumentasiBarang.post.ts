@@ -74,6 +74,8 @@ export default defineEventHandler(async (event) => {
     tokoAlamat,
     strukFileUrl: strukPath,
     fotoBarangUrl: fotoBarangPath,
+    fakultasId: String(user.fakultasId),
+    prodiId: user.prodiId ? String(user.prodiId) : null,
     createdBy: user.id,
   });
 

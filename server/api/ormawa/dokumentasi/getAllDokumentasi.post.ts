@@ -7,6 +7,7 @@ import { showDekripsi } from "~~/server/utils/enkripsiData";
 export default defineEventHandler(async (event) => {
   try {
     const body = await readBody(event);
+    const { user } = event.context;
     const { kegiatanId, page, row } = body;
     if (!kegiatanId) {
       throw createError({
