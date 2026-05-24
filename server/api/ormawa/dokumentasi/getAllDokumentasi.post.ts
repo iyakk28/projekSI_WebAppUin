@@ -2,6 +2,7 @@ import { useDrizzle } from "~~/server/db";
 import { eq } from "drizzle-orm";
 import { dokumentasiKegiatanTable } from "~~/server/db/schema/dokumentasiSchema";
 import { tagihanPencairanTable } from "~~/server/db/schema/TagihanPencairanSchema";
+import { showDekripsi } from "~~/server/utils/enkripsiData";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -40,27 +41,40 @@ export default defineEventHandler(async (event) => {
         fileUrl: d.fileUrl,
         createdAt: d.createdAt,
       })),
-      ...rawTagihan.map((t) => ({
-        id: `tagihan_${t.id}`,
-        realId: t.id,
-        tipeData: "TAGIHAN",
-        tipeDokumen: t.tipeTagihan, // 'BARANG' atau 'JASA'
-        deskripsi:
-          t.tipeTagihan === "BARANG"
-            ? `Pembelian Barang: ${t.tokoNama || "-"}`
-            : `Pembayaran Jasa: ${t.namaPenerima || "-"}`,
-        nominal: t.nominal,
-        namaPenerima: t.namaPenerima,
-        rekeningPenerima: t.rekeningPenerima,
-        bankPenerima: t.bankPenerima,
-        tokoNama: t.tokoNama,
-        tokoAlamat: t.tokoAlamat,
-        strukFileUrl: t.strukFileUrl,
-        skNomor: t.skNomor,
-        skFileUrl: t.skFileUrl,
-        statusTagihan: t.statusTagihan,
-        createdAt: t.createdAt,
-      })),
+      ...rawTagihan.map((t) => {
+        const namaPenerima = showDekripsi(t.namaPenerima);
+        return {
+          id: `tagihan_${t.id}`,
+          realId: t.id,
+          tipeData: "TAGIHAN",
+          tipeDokumen: t.tipeTagihan, // 'BARANG' atau 'JASA'
+          deskripsi:
+            t.tipeTagihan === "BARANG"
+              ? `Pembelian Barang: ${t.tokoNama || "-"}`
+              : `Pembayaran Jasa: ${namaPenerima || "-"}`,
+          nominal: t.nominal,
+          namaPenerima: namaPenerima,
+          rekeningPenerima: showDekripsi(t.rekeningPenerima),
+          bankPenerima: t.bankPenerima,
+          tokoNama: t.tokoNama,
+          tokoAlamat: t.tokoAlamat,
+          strukFileUrl: t.strukFileUrl,
+          fotoBarangUrl: t.fotoBarangUrl,
+          skNomor: showDekripsi(t.skNomor),
+          skFileUrl: t.skFileUrl,
+          spmtNomor: showDekripsi(t.spmtNomor),
+          spmtFileUrl: t.spmtFileUrl,
+          amprahNomor: showDekripsi(t.amprahNomor),
+          amprahFileUrl: t.amprahFileUrl,
+          npwpNomor: showDekripsi(t.npwpNomor),
+          npwpFileUrl: t.npwpFileUrl,
+          ktpNomor: showDekripsi(t.ktpNomor),
+          ktpFileUrl: t.ktpFileUrl,
+          bukuRekeningFileUrl: t.bukuRekeningFileUrl,
+          statusTagihan: t.statusTagihan,
+          createdAt: t.createdAt,
+        };
+      }),
     ];
 
     // Urutkan dari yang terbaru

@@ -3,6 +3,7 @@ import { tagihanPencairanTable } from "~~/server/db/schema/TagihanPencairanSchem
 import { createFilePath } from "#imports";
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { createEnkripsi } from "~~/server/utils/enkripsiData";
 
 export default defineEventHandler(async (event) => {
   const db = useDrizzle();
@@ -29,6 +30,8 @@ export default defineEventHandler(async (event) => {
   const nominal = nominalStr ? parseFloat(nominalStr) : 0;
 
   const strukBelanjaField = formData.find((f) => f.name === "fotoStruk");
+  const fotoBarangField = formData.find((f) => f.name === "fotoBarang");
+
   if (!strukBelanjaField) {
     throw createError({
       statusCode: 400,
@@ -43,6 +46,14 @@ export default defineEventHandler(async (event) => {
   const strukPath = join(targetPath, strukName);
   await writeFile(strukPath, strukBelanjaField.data);
 
+  // simpan file foto barang jika ada
+  let fotoBarangPath = null;
+  if (fotoBarangField && fotoBarangField.data && fotoBarangField.filename) {
+    const fotoBarangName = Date.now() + "_barang_" + fotoBarangField.filename;
+    fotoBarangPath = join(targetPath, fotoBarangName);
+    await writeFile(fotoBarangPath, fotoBarangField.data);
+  }
+
   const { user } = event.context;
   if (!user) {
     throw createError({
@@ -55,13 +66,14 @@ export default defineEventHandler(async (event) => {
   const [hasil] = await db.insert(tagihanPencairanTable).values({
     kegiatanId: Number(kegiatanId),
     tipeTagihan: "BARANG",
-    namaPenerima,
-    rekeningPenerima,
-    bankPenerima,
+    namaPenerima: createEnkripsi(namaPenerima),
+    rekeningPenerima: createEnkripsi(rekeningPenerima),
+    bankPenerima: createEnkripsi(bankPenerima),
     nominal: nominal.toString(),
     tokoNama,
     tokoAlamat,
     strukFileUrl: strukPath,
+    fotoBarangUrl: fotoBarangPath,
     createdBy: user.id,
   });
 

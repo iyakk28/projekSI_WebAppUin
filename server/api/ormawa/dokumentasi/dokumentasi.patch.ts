@@ -6,6 +6,7 @@ import { createFilePath } from "~~/server/utils/CreateFilePath";
 import { writeFile, unlink } from "node:fs/promises";
 import { join } from "node:path";
 import fs from "node:fs";
+import { createEnkripsi } from "~~/server/utils/enkripsiData";
 
 export default defineEventHandler(async (event) => {
   const db = useDrizzle();
@@ -18,9 +19,9 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const getField = (name: string): string => {
+  const getField = (name: string): string | undefined => {
     const field = formData.find((f) => f.name === name);
-    return field && field.data ? Buffer.from(field.data).toString("utf-8") : "";
+    return field && field.data ? Buffer.from(field.data).toString("utf-8") : undefined;
   };
 
   const id = getField("id");
@@ -46,25 +47,39 @@ export default defineEventHandler(async (event) => {
         message: "Tagihan tidak ditemukan",
       });
 
-    const updateData: any = {
-      namaPenerima: getField("namaPenerima"),
-      rekeningPenerima: getField("rekeningPenerima"),
-      bankPenerima: getField("bankPenerima"),
-      tokoNama: getField("tokoNama"),
-      tokoAlamat: getField("tokoAlamat"),
-      skNomor: getField("skNomor"),
-    };
+    const updateData: any = {};
+    const textFields = [
+      { name: "namaPenerima", encrypt: true },
+      { name: "rekeningPenerima", encrypt: true },
+      { name: "bankPenerima", encrypt: false },
+      { name: "tokoNama", encrypt: false },
+      { name: "tokoAlamat", encrypt: false },
+      { name: "skNomor", encrypt: true },
+      { name: "spmtNomor", encrypt: true },
+      { name: "amprahNomor", encrypt: true },
+      { name: "npwpNomor", encrypt: true },
+      { name: "ktpNomor", encrypt: true },
+    ];
+
+    for (const tf of textFields) {
+      const val = getField(tf.name);
+      if (val !== undefined) {
+        updateData[tf.name] = tf.encrypt ? createEnkripsi(val) : val;
+      }
+    }
 
     const nominal = getField("nominal");
-    if (nominal) updateData.nominal = nominal;
+    if (nominal !== undefined) updateData.nominal = nominal;
 
     const fileFields = [
-      {
-        name: "fotoStruk",
-        dbField: "strukFileUrl",
-        category: "barang" as const,
-      },
+      { name: "fotoStruk", dbField: "strukFileUrl", category: "barang" as const },
+      { name: "fotoBarang", dbField: "fotoBarangUrl", category: "barang" as const },
       { name: "skFile", dbField: "skFileUrl", category: "jasa" as const },
+      { name: "spmtFile", dbField: "spmtFileUrl", category: "jasa" as const },
+      { name: "amprahFile", dbField: "amprahFileUrl", category: "jasa" as const },
+      { name: "npwpFile", dbField: "npwpFileUrl", category: "jasa" as const },
+      { name: "ktpFile", dbField: "ktpFileUrl", category: "jasa" as const },
+      { name: "bukuRekeningFile", dbField: "bukuRekeningFileUrl", category: "jasa" as const },
     ];
 
     for (const f of fileFields) {
@@ -87,6 +102,7 @@ export default defineEventHandler(async (event) => {
       .set(updateData)
       .where(eq(tagihanPencairanTable.id, realId));
   } else {
+    // ... logic for dokumentasiKegiatanTable ...
     const results = await db
       .select()
       .from(dokumentasiKegiatanTable)
@@ -100,9 +116,9 @@ export default defineEventHandler(async (event) => {
         message: "Dokumentasi tidak ditemukan",
       });
 
-    const updateData: any = {
-      deskripsi: getField("deskripsi"),
-    };
+    const updateData: any = {};
+    const deskripsi = getField("deskripsi");
+    if (deskripsi !== undefined) updateData.deskripsi = deskripsi;
 
     const fileData = formData.find((f) => f.name === "file");
     if (fileData && fileData.data && fileData.filename) {
@@ -117,10 +133,12 @@ export default defineEventHandler(async (event) => {
       updateData.fileUrl = newPath;
     }
 
-    await db
-      .update(dokumentasiKegiatanTable)
-      .set(updateData)
-      .where(eq(dokumentasiKegiatanTable.id, realId));
+    if (Object.keys(updateData).length > 0) {
+      await db
+        .update(dokumentasiKegiatanTable)
+        .set(updateData)
+        .where(eq(dokumentasiKegiatanTable.id, realId));
+    }
   }
 
   return {

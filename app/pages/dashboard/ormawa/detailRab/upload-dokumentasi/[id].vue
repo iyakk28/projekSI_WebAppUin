@@ -143,16 +143,30 @@
             Upload Barang
           </h3>
           <form @submit.prevent="submitBarang" class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-1"
-                >Nama Toko <span class="text-red-500">*</span></label
-              >
-              <input
-                v-model="barangForm.tokoNama"
-                type="text"
-                class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-[#3b5988] outline-none"
-                required
-              />
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1"
+                  >Nama Toko <span class="text-red-500">*</span></label
+                >
+                <input
+                  v-model="barangForm.tokoNama"
+                  type="text"
+                  class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-[#3b5988] outline-none"
+                  required
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1"
+                  >Nama Pemilik Rekening / Toko
+                  <span class="text-red-500">*</span></label
+                >
+                <input
+                  v-model="barangForm.namaPenerima"
+                  type="text"
+                  class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-[#3b5988] outline-none"
+                  required
+                />
+              </div>
             </div>
             <div>
               <label class="block text-sm font-medium text-slate-700 mb-1"
@@ -192,18 +206,6 @@
             </div>
             <div>
               <label class="block text-sm font-medium text-slate-700 mb-1"
-                >Nama Pemilik Rekening
-                <span class="text-red-500">*</span></label
-              >
-              <input
-                v-model="barangForm.namaPenerima"
-                type="text"
-                class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-[#3b5988] outline-none"
-                required
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-1"
                 >Nominal Transaksi (Rp)
                 <span class="text-red-500">*</span></label
               >
@@ -214,20 +216,36 @@
                 required
               />
             </div>
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-1"
-                >Foto Struk Belanja <span class="text-red-500">*</span></label
-              >
-              <input
-                type="file"
-                @change="handleBarangStrukChange"
-                accept="image/*,application/pdf"
-                class="w-full border border-slate-200 rounded-xl p-2"
-                required
-              />
-              <p class="text-xs text-slate-500 mt-1">
-                Foto atau scan struk belanja
-              </p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1"
+                  >Foto Struk Belanja <span class="text-red-500">*</span></label
+                >
+                <input
+                  type="file"
+                  @change="handleBarangStrukChange"
+                  accept="image/*,application/pdf"
+                  class="w-full border border-slate-200 rounded-xl p-2"
+                  required
+                />
+                <p class="text-xs text-slate-500 mt-1">
+                  Foto atau scan struk belanja
+                </p>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1"
+                  >Foto Barang (Opsional)</label
+                >
+                <input
+                  type="file"
+                  @change="handleBarangFotoChange"
+                  accept="image/*"
+                  class="w-full border border-slate-200 rounded-xl p-2"
+                />
+                <p class="text-xs text-slate-500 mt-1">
+                  Foto fisik barang yang dibeli
+                </p>
+              </div>
             </div>
             <div class="flex justify-end">
               <button
@@ -257,78 +275,140 @@
             <Icon name="heroicons:user-group" class="w-5 h-5 text-[#d1a82a]" />
             Upload Jasa (Penyedia Jasa)
           </h3>
-          <form @submit.prevent="submitJasa" class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-1"
-                >Nama Penyedia Jasa <span class="text-red-500">*</span></label
-              >
-              <input
-                v-model="jasaForm.namaPenerima"
-                type="text"
-                class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-[#3b5988] outline-none"
-                required
-              />
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-slate-700 mb-1"
-                  >Nomor Rekening <span class="text-red-500">*</span></label
-                >
-                <input
-                  v-model="jasaForm.rekeningPenerima"
-                  type="text"
-                  class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-[#3b5988] outline-none"
-                  required
-                />
+          <form @submit.prevent="submitJasa" class="space-y-6">
+            <!-- Informasi Penerima Jasa -->
+            <div class="space-y-4">
+              <h4 class="text-sm font-bold text-slate-800 border-b pb-1">Data Penerima & Pembayaran</h4>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1"
+                    >Nama Penyedia Jasa <span class="text-red-500">*</span></label
+                  >
+                  <input
+                    v-model="jasaForm.namaPenerima"
+                    type="text"
+                    class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-[#3b5988] outline-none"
+                    required
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1"
+                    >Nominal Transaksi (Rp)
+                    <span class="text-red-500">*</span></label
+                  >
+                  <input
+                    v-model="jasaForm.nominal"
+                    type="number"
+                    class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-[#3b5988] outline-none"
+                    required
+                  />
+                </div>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1"
+                    >Nomor Rekening <span class="text-red-500">*</span></label
+                  >
+                  <input
+                    v-model="jasaForm.rekeningPenerima"
+                    type="text"
+                    class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-[#3b5988] outline-none"
+                    required
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1"
+                    >Bank Penerima <span class="text-red-500">*</span></label
+                  >
+                  <input
+                    v-model="jasaForm.bankPenerima"
+                    type="text"
+                    placeholder="Contoh: BNI, Mandiri, BCA"
+                    class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-[#3b5988] outline-none"
+                    required
+                  />
+                </div>
               </div>
               <div>
                 <label class="block text-sm font-medium text-slate-700 mb-1"
-                  >Bank Penerima <span class="text-red-500">*</span></label
+                  >Foto Buku Rekening <span class="text-red-500">*</span></label
                 >
                 <input
-                  v-model="jasaForm.bankPenerima"
-                  type="text"
-                  placeholder="Contoh: BNI, Mandiri, BCA"
-                  class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-[#3b5988] outline-none"
+                  type="file"
+                  @change="handleJasaBukuRekeningChange"
+                  accept="image/*,application/pdf"
+                  class="w-full border border-slate-200 rounded-xl p-2"
                   required
                 />
               </div>
             </div>
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-1"
-                >Nominal Transaksi (Rp)
-                <span class="text-red-500">*</span></label
-              >
-              <input
-                v-model="jasaForm.nominal"
-                type="number"
-                class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-[#3b5988] outline-none"
-                required
-              />
+
+            <!-- Dokumen Pendukung -->
+            <div class="space-y-4">
+              <h4 class="text-sm font-bold text-slate-800 border-b pb-1">Dokumen Pendukung</h4>
+              
+              <!-- SK -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Nomor SK <span class="text-red-500">*</span></label>
+                  <input v-model="jasaForm.skNomor" type="text" class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-[#3b5988] outline-none" required />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">File SK <span class="text-red-500">*</span></label>
+                  <input type="file" @change="handleJasaSKChange" accept="image/*,application/pdf" class="w-full border border-slate-200 rounded-xl p-2" required />
+                </div>
+              </div>
+
+              <!-- SPMT -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Nomor SPMT</label>
+                  <input v-model="jasaForm.spmtNomor" type="text" class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-[#3b5988] outline-none" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">File SPMT</label>
+                  <input type="file" @change="handleJasaSPMTChange" accept="image/*,application/pdf" class="w-full border border-slate-200 rounded-xl p-2" />
+                </div>
+              </div>
+
+              <!-- Amprah -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Nomor Amprah</label>
+                  <input v-model="jasaForm.amprahNomor" type="text" class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-[#3b5988] outline-none" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">File Amprah</label>
+                  <input type="file" @change="handleJasaAmprahChange" accept="image/*,application/pdf" class="w-full border border-slate-200 rounded-xl p-2" />
+                </div>
+              </div>
+
+              <!-- NPWP -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Nomor NPWP</label>
+                  <input v-model="jasaForm.npwpNomor" type="text" class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-[#3b5988] outline-none" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">File NPWP</label>
+                  <input type="file" @change="handleJasaNPWPChange" accept="image/*,application/pdf" class="w-full border border-slate-200 rounded-xl p-2" />
+                </div>
+              </div>
+
+              <!-- KTP -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">Nomor KTP</label>
+                  <input v-model="jasaForm.ktpNomor" type="text" class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-[#3b5988] outline-none" />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1">File KTP</label>
+                  <input type="file" @change="handleJasaKTPChange" accept="image/*,application/pdf" class="w-full border border-slate-200 rounded-xl p-2" />
+                </div>
+              </div>
             </div>
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-1"
-                >Nomor SK</label
-              >
-              <input
-                v-model="jasaForm.skNomor"
-                type="text"
-                class="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-[#3b5988] outline-none"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-slate-700 mb-1"
-                >Upload File SK <span class="text-red-500">*</span></label
-              >
-              <input
-                type="file"
-                @change="handleJasaSKChange"
-                accept="image/*,application/pdf"
-                class="w-full border border-slate-200 rounded-xl p-2"
-                required
-              />
-            </div>
-            <div class="flex justify-end">
+
+            <div class="flex justify-end pt-4">
               <button
                 type="submit"
                 :disabled="jasaUploading"
@@ -435,6 +515,7 @@
     namaPenerima: "",
     nominal: "",
     fotoStruk: null as File | null,
+    fotoBarang: null as File | null,
   });
   const jasaForm = ref({
     namaPenerima: "",
@@ -443,6 +524,15 @@
     nominal: "",
     skNomor: "",
     skFile: null as File | null,
+    spmtNomor: "",
+    spmtFile: null as File | null,
+    amprahNomor: "",
+    amprahFile: null as File | null,
+    npwpNomor: "",
+    npwpFile: null as File | null,
+    ktpNomor: "",
+    ktpFile: null as File | null,
+    bukuRekeningFile: null as File | null,
   });
 
   // Helper functions
@@ -473,7 +563,7 @@
     return `ml-1 px-2 py-0.5 rounded-full text-xs ${classes[status] || "bg-slate-100"}`;
   };
 
-  const handleDokumentasiFileChange = (event: Event) => {
+  const handleFileChange = (event: Event, targetObj: any, key: string) => {
     const target = event.target as HTMLInputElement;
     if (!target.files || target.files.length === 0) return;
     const file = target.files[0];
@@ -482,32 +572,19 @@
       target.value = "";
       return;
     }
-    dokumentasiForm.value.file = file;
+    targetObj[key] = file;
   };
 
-  const handleBarangStrukChange = (event: Event) => {
-    const target = event.target as HTMLInputElement;
-    if (!target.files || target.files.length === 0) return;
-    const file = target.files[0];
-    if (file.size > 10 * 1024 * 1024) {
-      alert("Ukuran file maksimal 10MB");
-      target.value = "";
-      return;
-    }
-    barangForm.value.fotoStruk = file;
-  };
-
-  const handleJasaSKChange = (event: Event) => {
-    const target = event.target as HTMLInputElement;
-    if (!target.files || target.files.length === 0) return;
-    const file = target.files[0];
-    if (file.size > 10 * 1024 * 1024) {
-      alert("Ukuran file maksimal 10MB");
-      target.value = "";
-      return;
-    }
-    jasaForm.value.skFile = file;
-  };
+  const handleDokumentasiFileChange = (e: Event) => handleFileChange(e, dokumentasiForm.value, 'file');
+  const handleBarangStrukChange = (e: Event) => handleFileChange(e, barangForm.value, 'fotoStruk');
+  const handleBarangFotoChange = (e: Event) => handleFileChange(e, barangForm.value, 'fotoBarang');
+  
+  const handleJasaSKChange = (e: Event) => handleFileChange(e, jasaForm.value, 'skFile');
+  const handleJasaSPMTChange = (e: Event) => handleFileChange(e, jasaForm.value, 'spmtFile');
+  const handleJasaAmprahChange = (e: Event) => handleFileChange(e, jasaForm.value, 'amprahFile');
+  const handleJasaNPWPChange = (e: Event) => handleFileChange(e, jasaForm.value, 'npwpFile');
+  const handleJasaKTPChange = (e: Event) => handleFileChange(e, jasaForm.value, 'ktpFile');
+  const handleJasaBukuRekeningChange = (e: Event) => handleFileChange(e, jasaForm.value, 'bukuRekeningFile');
 
   // Submit functions
   const submitDokumentasi = async () => {
@@ -519,10 +596,7 @@
     fd.append("file", dokumentasiForm.value.file);
     await kegiatanStore.submitDokumentasi(fd);
     dokumentasiForm.value = { deskripsi: "", file: null };
-    const fileInput = document.querySelector(
-      'input[type="file"]',
-    ) as HTMLInputElement;
-    if (fileInput) fileInput.value = "";
+    resetFileInputs();
   };
 
   const submitBarang = async () => {
@@ -545,6 +619,10 @@
     fd.append("namaPenerima", barangForm.value.namaPenerima);
     fd.append("nominal", String(barangForm.value.nominal));
     fd.append("fotoStruk", barangForm.value.fotoStruk);
+    if (barangForm.value.fotoBarang) {
+      fd.append("fotoBarang", barangForm.value.fotoBarang);
+    }
+
     await kegiatanStore.submitBarang(fd);
     barangForm.value = {
       tokoNama: "",
@@ -554,9 +632,9 @@
       namaPenerima: "",
       nominal: "",
       fotoStruk: null,
+      fotoBarang: null,
     };
-    const fileInputs = document.querySelectorAll('input[type="file"]');
-    fileInputs.forEach((input: any) => (input.value = ""));
+    resetFileInputs();
   };
 
   const submitJasa = async () => {
@@ -565,9 +643,11 @@
       !jasaForm.value.rekeningPenerima ||
       !jasaForm.value.bankPenerima ||
       !jasaForm.value.nominal ||
-      !jasaForm.value.skFile
+      !jasaForm.value.skFile ||
+      !jasaForm.value.skNomor ||
+      !jasaForm.value.bukuRekeningFile
     ) {
-      return alert("Field bertanda * wajib diisi");
+      return alert("Field bertanda * wajib diisi (Nama, Rekening, Bank, Nominal, SK, & Buku Rekening)");
     }
     const fd = new FormData();
     fd.append("kegiatanId", String(kegiatanId.value));
@@ -575,8 +655,26 @@
     fd.append("rekeningPenerima", jasaForm.value.rekeningPenerima);
     fd.append("bankPenerima", jasaForm.value.bankPenerima);
     fd.append("nominal", String(jasaForm.value.nominal));
+    
+    // SK
     fd.append("skNomor", jasaForm.value.skNomor);
     fd.append("skFile", jasaForm.value.skFile);
+    
+    // Optional / New Fields
+    if (jasaForm.value.spmtNomor) fd.append("spmtNomor", jasaForm.value.spmtNomor);
+    if (jasaForm.value.spmtFile) fd.append("spmtFile", jasaForm.value.spmtFile);
+    
+    if (jasaForm.value.amprahNomor) fd.append("amprahNomor", jasaForm.value.amprahNomor);
+    if (jasaForm.value.amprahFile) fd.append("amprahFile", jasaForm.value.amprahFile);
+    
+    if (jasaForm.value.npwpNomor) fd.append("npwpNomor", jasaForm.value.npwpNomor);
+    if (jasaForm.value.npwpFile) fd.append("npwpFile", jasaForm.value.npwpFile);
+    
+    if (jasaForm.value.ktpNomor) fd.append("ktpNomor", jasaForm.value.ktpNomor);
+    if (jasaForm.value.ktpFile) fd.append("ktpFile", jasaForm.value.ktpFile);
+    
+    if (jasaForm.value.bukuRekeningFile) fd.append("bukuRekeningFile", jasaForm.value.bukuRekeningFile);
+
     await kegiatanStore.submitJasa(fd);
     jasaForm.value = {
       namaPenerima: "",
@@ -585,7 +683,20 @@
       nominal: "",
       skNomor: "",
       skFile: null,
+      spmtNomor: "",
+      spmtFile: null,
+      amprahNomor: "",
+      amprahFile: null,
+      npwpNomor: "",
+      npwpFile: null,
+      ktpNomor: "",
+      ktpFile: null,
+      bukuRekeningFile: null,
     };
+    resetFileInputs();
+  };
+
+  const resetFileInputs = () => {
     const fileInputs = document.querySelectorAll('input[type="file"]');
     fileInputs.forEach((input: any) => (input.value = ""));
   };

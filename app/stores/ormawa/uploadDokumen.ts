@@ -8,6 +8,7 @@ export const useKegiatanStore = defineStore("kegiatan", {
     dokumentasiUploading: false,
     barangUploading: false,
     jasaUploading: false,
+
     // State untuk notifikasi popup
     popupMessage: "",
     popupVisible: false,
@@ -18,6 +19,38 @@ export const useKegiatanStore = defineStore("kegiatan", {
     dokumentasiList: [] as any[],
     barangList: [] as any[],
     jasaList: [] as any[],
+
+    // Form data yang sesuai dengan database
+    formBarang: {
+      kegiatanId: null as number | null,
+      tokoNama: "",
+      tokoAlamat: "",
+      namaPenerima: "",
+      rekeningPenerima: "",
+      bankPenerima: "",
+      nominal: 0,
+      fotoStruk: null as any,
+      fotoBarang: null as any,
+    },
+
+    formJasa: {
+      kegiatanId: null as number | null,
+      namaPenerima: "",
+      rekeningPenerima: "",
+      bankPenerima: "",
+      nominal: 0,
+      skNomor: "",
+      skFile: null as any,
+      spmtNomor: "",
+      spmtFile: null as any,
+      amprahNomor: "",
+      amprahFile: null as any,
+      npwpNomor: "",
+      npwpFile: null as any,
+      ktpNomor: "",
+      ktpFile: null as any,
+      bukuRekeningFile: null as any,
+    },
   }),
 
   actions: {
@@ -31,7 +64,7 @@ export const useKegiatanStore = defineStore("kegiatan", {
         });
         this.popupMessage = "Berhasil mengupload dokumentasi kegiatan";
         this.popupVisible = true;
-        
+
         // Refresh list dokumentasi
         const kegiatanId = Number(fd.get("kegiatanId"));
         if (kegiatanId) {
@@ -76,7 +109,6 @@ export const useKegiatanStore = defineStore("kegiatan", {
         });
         this.popupMessage = "Berhasil mengupload jasa";
         this.popupVisible = true;
-
         const kegiatanId = Number(fd.get("kegiatanId"));
         if (kegiatanId) {
           await dokumentasiStore.refreshDokumentasi(kegiatanId);
@@ -91,21 +123,53 @@ export const useKegiatanStore = defineStore("kegiatan", {
     async deleteUpload(item: any) {
       const dokumentasiStore = useDokumentasiStore();
       try {
-        await $fetch(`/api/ormawa/dokumentasi/dokumentasi`, { 
+        await $fetch(`/api/ormawa/dokumentasi/dokumentasi`, {
           method: "DELETE",
-          body: { id: item.id }
+          body: { id: item.id },
         });
-        
+
         if (item.kegiatanId) {
           await dokumentasiStore.refreshDokumentasi(item.kegiatanId);
         }
 
-        this.popupMessage = `Berhasil hapus ${item.jenisLabel || 'dokumentasi'}`;
+        this.popupMessage = `Berhasil hapus ${item.jenisLabel || "dokumentasi"}`;
         this.popupVisible = true;
       } catch (error) {
         console.error("Gagal hapus:", error);
         alert("Gagal hapus");
       }
+    },
+
+    resetForms() {
+      this.formBarang = {
+        kegiatanId: null,
+        tokoNama: "",
+        tokoAlamat: "",
+        namaPenerima: "",
+        rekeningPenerima: "",
+        bankPenerima: "",
+        nominal: 0,
+        fotoStruk: null,
+        fotoBarang: null,
+      };
+      this.formJasa = {
+        kegiatanId: null,
+        namaPenerima: "",
+        rekeningPenerima: "",
+        bankPenerima: "",
+        nominal: 0,
+        skNomor: "",
+        skFile: null,
+        spmtNomor: "",
+        spmtFile: null,
+        amprahNomor: "",
+        amprahFile: null,
+        npwpNomor: "",
+        npwpFile: null,
+        ktpNomor: "",
+        ktpFile: null,
+        bukuRekeningFile: null,
+      };
     },
 
     closePopup() {
@@ -120,7 +184,6 @@ export const useKegiatanStore = defineStore("kegiatan", {
       } finally {
         this.loading = false;
       }
-    }
+    },
   },
 });
-

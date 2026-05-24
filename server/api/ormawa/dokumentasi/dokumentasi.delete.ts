@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { dokumentasiKegiatanTable } from "~~/server/db/schema/dokumentasiSchema";
 import { tagihanPencairanTable } from "~~/server/db/schema/TagihanPencairanSchema";
 import { unlink } from "node:fs/promises";
+import fs from "node:fs";
 
 export default defineEventHandler(async (event) => {
   const db = useDrizzle();
@@ -31,8 +32,23 @@ export default defineEventHandler(async (event) => {
     if (!doc)
       throw createError({ statusCode: 404, message: "Data tidak ditemukan" });
 
-    if (doc.skFileUrl) await unlink(doc.skFileUrl).catch(() => {});
-    if (doc.strukFileUrl) await unlink(doc.strukFileUrl).catch(() => {});
+    const fileFields = [
+      "skFileUrl",
+      "spmtFileUrl",
+      "amprahFileUrl",
+      "npwpFileUrl",
+      "ktpFileUrl",
+      "bukuRekeningFileUrl",
+      "strukFileUrl",
+      "fotoBarangUrl",
+    ];
+
+    for (const field of fileFields) {
+      const filePath = (doc as any)[field];
+      if (filePath && fs.existsSync(filePath)) {
+        await unlink(filePath).catch(() => {});
+      }
+    }
 
     await db
       .delete(tagihanPencairanTable)
@@ -53,7 +69,9 @@ export default defineEventHandler(async (event) => {
         .split(";")
         .filter((p: string) => p.trim() !== "");
       for (const filePath of paths) {
-        await unlink(filePath).catch(() => {});
+        if (fs.existsSync(filePath)) {
+          await unlink(filePath).catch(() => {});
+        }
       }
     }
 
