@@ -386,11 +386,19 @@
     disetujuiCount?: number;
   }
 
-  interface FakultasData {
-    id: number;
-    nama: string;
-    ormawa: OrmawaAnggaran[];
-  }
+// ✅ PERBAIKAN — buat interface sesuai shape asli dari API
+interface FakultasApiResponse {
+  fakultas: { id: number; nama: string };
+  ormawa: OrmawaAnggaran[];
+}
+
+// Flattened shape used in components
+interface FakultasData {
+  id: number;
+  nama: string;
+  ormawa: OrmawaAnggaran[];
+}
+
 
   interface DashboardData {
     total: number;
@@ -407,13 +415,12 @@
   }
 
   // API calls (sesuai asli)
-  const { data: dashData } = await useFetch<{ data: DashboardData }>(
-    "/api/ppk/dashboard",
-  );
-  const { data: ormawaData } = await useFetch<{
-    data: FakultasData[];
-    summary: SummaryData;
-  }>("/api/ppk/ormawa-anggaran");
+const { data: dashData } = await useFetch<DashboardData>
+  ("/api/ppk/dashboard");
+ const { data: ormawaData } = await useFetch<{
+  data: FakultasApiResponse[];   // ← ganti FakultasData[] jadi FakultasApiResponse[]
+  summary: SummaryData;
+}>("/api/ppk/ormawa-anggaran");
 
   // State
   const selectedOrmawaId = ref<string>("");
@@ -429,13 +436,12 @@
     }),
   );
 
-  const ormawaList = computed<FakultasData[]>(
-    () =>
-      ormawaData.value?.data?.map((fak) => ({
-        id: fak.fakultas.id,
-        nama: fak.fakultas.nama,
-        ormawa: fak.ormawa,
-      })) || [],
+  const ormawaList = computed<FakultasData[]>(() =>
+    ormawaData.value?.data?.map((fak) => ({
+      id: fak.fakultas.id,
+      nama: fak.fakultas.nama,
+      ormawa: fak.ormawa,
+    })) || [],
   );
 
   const allOrmawa = computed<OrmawaAnggaran[]>(() =>
@@ -459,7 +465,7 @@
         totalAnggaran: s.totalAnggaranKeseluruhan || 0,
         terpakai: s.totalTerpakaiKeseluruhan || 0,
         sisa: s.totalSisaKeseluruhan || 0,
-        totalKegiatan: dashData.value?.data?.total || 0,
+        totalKegiatan: dashData.value?.total || 0,
       };
     }
     const o = selectedOrmawa.value;
@@ -493,7 +499,7 @@
   });
 
   const statusData = computed(() => {
-    const d = dashData.value?.data || {};
+   const d = dashData.value || {} as DashboardData;
     const total = d.total || 1;
     return [
       {
