@@ -8,14 +8,20 @@ import {
 } from "drizzle-orm/mysql-core";
 import { kegiatanTable } from "./KegiatanSchema";
 import { usersTable } from "./usersSchema";
-
+import { programStudiTable } from "./programStudiSchema";
+import { fakultasTable } from "./fakultasSchema";
 export const tagihanPencairanTable = mysqlTable("tagihan_pencairan", {
   id: bigint("id", { mode: "number" }).primaryKey().autoincrement(),
   kegiatanId: bigint("kegiatan_id", { mode: "number" })
     .notNull()
     .references(() => kegiatanTable.id, { onDelete: "cascade" }),
   tipeTagihan: varchar("tipe_tagihan", { length: 50 }).notNull(),
-
+  fakultasId: varchar("fakultas_Id", { length: 50 })
+    .notNull()
+    .references(() => fakultasTable.id),
+  prodiId: varchar("prodi_id", { length: 50 }).references(
+    () => programStudiTable.id,
+  ),
   skNomor: varchar("sk_nomor", { length: 255 }),
   skFileUrl: text("sk_file_url"),
 
