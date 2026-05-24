@@ -66,7 +66,6 @@ export default defineEventHandler(async (event) => {
         judulKegiatan: pengajuanRabTable.judulKegiatan,
         totalAnggaranRab: pengajuanRabTable.totalAnggaran,
         fileRabUrl: pengajuanRabTable.fileRabUrl,
-        fileTorUrl: pengajuanRabTable.fileTorUrl,
         // Ormawa
         ormawaId: ormawaTable.id,
         ormawaName: ormawaTable.nama,
@@ -181,7 +180,6 @@ export default defineEventHandler(async (event) => {
           tanggalMulai: tagihan.tanggalMulai,
           tanggalSelesai: tagihan.tanggalSelesai,
           fileRabUrl: tagihan.fileRabUrl,
-          fileTorUrl: tagihan.fileTorUrl,
         },
         ormawa: {
           id: tagihan.ormawaId,
