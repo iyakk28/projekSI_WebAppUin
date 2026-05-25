@@ -400,29 +400,39 @@
                 Berkas Terlampir
               </h4>
 
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- Preview List Based on Type -->
-                <template v-if="selectedDoc?.tipeDokumen === 'BARANG'">
-                  <ormawa-file-preview-card
-                    label="Struk Belanja"
-                    :doc-id="selectedDoc.id"
-                    field="strukFileUrl"
+              <!-- Loading State for Files -->
+              <div v-if="filePreviewStore.loading" class="flex justify-center items-center py-12">
+                <div class="flex flex-col items-center gap-3">
+                  <Icon
+                    name="heroicons:arrow-path"
+                    class="w-8 h-8 animate-spin text-[#3b5988]"
                   />
-                </template>
-                <template v-else-if="selectedDoc?.tipeDokumen === 'JASA'">
-                  <ormawa-file-preview-card
-                    label="SK"
-                    :doc-id="selectedDoc.id"
-                    field="skFileUrl"
-                  />
-                </template>
-                <template v-else>
-                  <ormawa-file-preview-card
-                    label="File Dokumentasi"
-                    :doc-id="selectedDoc.id"
-                    field="fileUrl"
-                  />
-                </template>
+                  <p class="text-slate-500 text-sm">Memuat berkas...</p>
+                </div>
+              </div>
+
+              <!-- Empty State for Files -->
+              <div
+                v-else-if="filePreviewStore.files.length === 0"
+                class="flex justify-center items-center py-12 border-2 border-dashed border-slate-200 rounded-2xl"
+              >
+                <div class="flex flex-col items-center gap-3 text-center">
+                  <Icon name="heroicons:document-text" class="w-12 h-12 text-slate-300" />
+                  <p class="text-slate-500 text-sm">
+                    Tidak ada berkas yang dilampirkan
+                  </p>
+                </div>
+              </div>
+
+              <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Loop through files from store -->
+                <ormawa-file-preview-card
+                  v-for="(file, fIdx) in filePreviewStore.files"
+                  :key="fIdx"
+                  :label="file.label"
+                  :url="file.url"
+                  :type="file.type"
+                />
               </div>
             </div>
           </div>
@@ -742,12 +752,14 @@
 <script setup lang="ts">
   import { ref, computed, onMounted, watch } from "vue";
   import { useDokumentasiStore } from "~/stores/ormawa/allDokumen";
+  import { useFilePreviewStore } from "~/stores/ormawa/filePreview";
 
   const props = defineProps({
     kegiatanId: { type: Number, required: true },
   });
 
   const fetcher = useDokumentasiStore();
+  const filePreviewStore = useFilePreviewStore();
 
   // State lokal
   const searchQuery = ref("");
@@ -857,9 +869,12 @@
   };
 
   // CRUD
-  const handleView = (doc: any) => {
+  const handleView = async (doc: any) => {
     selectedDoc.value = doc;
     showViewModal.value = true;
+    if (doc.id) {
+      await filePreviewStore.fetchFiles(doc.id);
+    }
   };
 
   const handleEdit = (doc: any) => {

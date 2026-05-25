@@ -18,8 +18,8 @@
 
       <!-- Preview Image -->
       <img
-        v-if="!loading && isImage && imageUrl"
-        :src="imageUrl"
+        v-if="!loading && isImage && url"
+        :src="url"
         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         @error="handleError"
       />
@@ -78,54 +78,31 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, onMounted, computed, watch } from "vue";
+  import { ref, computed } from "vue";
 
   const props = defineProps({
     label: { type: String, required: true },
-    docId: { type: Number, required: true, default: null },
-    field: { type: String, required: true },
+    url: { type: String, required: true },
+    type: { type: String, required: true },
   });
 
-  const imageUrl = ref<string | null>(null);
-  const loading = ref(true);
+  const loading = ref(false); // No longer fetching, but could be used for image load
   const error = ref(false);
-  const contentType = ref("");
 
-  const isImage = computed(() => contentType.value.startsWith("image/"));
-  const isPdf = computed(() => contentType.value === "application/pdf");
-
-  const fetchFile = async () => {
-    loading.value = true;
-    error.value = false;
-    try {
-      const response = await $fetch("/api/ormawa/dokumentasi/fileView", {
-        method: "POST",
-        body: { id: props.docId, field: props.field },
-        responseType: "blob",
-      });
-      console.log(response);
-      const blob = response as Blob;
-      contentType.value = blob.type;
-      imageUrl.value = URL.createObjectURL(blob);
-    } catch (err) {
-      console.error("Failed to fetch file:", err);
-      error.value = true;
-    } finally {
-      loading.value = false;
-    }
-  };
+  const isImage = computed(() => props.type.startsWith("image/"));
+  const isPdf = computed(() => props.type === "application/pdf");
 
   const openFullPreview = () => {
-    if (imageUrl.value) {
-      window.open(imageUrl.value, "_blank");
+    if (props.url) {
+      window.open(props.url, "_blank");
     }
   };
 
   const downloadFile = () => {
-    if (!imageUrl.value) return;
+    if (!props.url) return;
     const link = document.createElement("a");
-    link.href = imageUrl.value;
-    link.download = `${props.label}-${props.docId}.${contentType.value.split("/")[1]}`;
+    link.href = props.url;
+    link.download = `${props.label}.${props.type.split("/")[1]}`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -133,7 +110,5 @@
 
   const handleError = () => {
     error.value = true;
-    imageUrl.value = null;
   };
-  onMounted(fetchFile);
 </script>
