@@ -134,6 +134,13 @@
       "when": 1779613616333,
       "tag": "0018_wide_tarot",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "5",
+      "when": 1779723065440,
+      "tag": "0019_petite_silver_centurion",
+      "breakpoints": true
     }
   ]
 }

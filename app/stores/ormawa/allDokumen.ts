@@ -45,7 +45,7 @@ export const useDokumentasiStore = defineStore("dokumentasiFetcher", () => {
           },
         },
       );
-
+      console.log(response.data);
       if (response.success) {
         dokumentasiList.value = response.data || [];
         totalItems.value = Number(response.total) || 0;

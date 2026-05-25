@@ -40,9 +40,11 @@ export default defineEventHandler(async (event) => {
         deskripsi: d.deskripsi,
         tipeDokumen: d.tipeDokumen,
         fileUrl: d.fileUrl,
+        status: d.status,
         createdAt: d.createdAt,
       })),
       ...rawTagihan.map((t) => {
+        console.log(t.bankPenerima);
         return {
           id: `tagihan_${t.id}`,
           realId: t.id,
@@ -51,11 +53,11 @@ export default defineEventHandler(async (event) => {
           deskripsi:
             t.tipeTagihan === "BARANG"
               ? `Pembelian Barang: ${t.tokoNama || "-"}`
-              : `Pembayaran Jasa: ${t.namaPenerima || "-"}`,
+              : `Pembayaran Jasa: ${showDekripsi(t.namaPenerima) || "-"}`,
           nominal: t.nominal,
-          namaPenerima: t.namaPenerima,
-          rekeningPenerima: t.rekeningPenerima,
-          bankPenerima: t.bankPenerima,
+          namaPenerima: showDekripsi(t.namaPenerima),
+          rekeningPenerima: showDekripsi(t.rekeningPenerima),
+          bankPenerima: showDekripsi(t.bankPenerima),
           tokoNama: t.tokoNama,
           tokoAlamat: t.tokoAlamat,
           strukFileUrl: t.strukFileUrl,

@@ -3,6 +3,7 @@ import { tagihanPencairanTable } from "~~/server/db/schema";
 import { createFilePath } from "#imports";
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { createEnkripsi } from "~~/server/utils/enkripsiData";
 
 export default defineEventHandler(async (event) => {
   const db = useDrizzle();
@@ -106,9 +107,9 @@ export default defineEventHandler(async (event) => {
     npwpFileUrl: npwpUrl,
     ktpNomor: createEnkripsi(ktpNomor) || null,
     ktpFileUrl: ktpUrl,
-    namaPenerima: namaPenerima,
-    bankPenerima: bankPenerima,
-    rekeningPenerima: rekeningPenerima,
+    namaPenerima: createEnkripsi(namaPenerima),
+    bankPenerima: createEnkripsi(bankPenerima),
+    rekeningPenerima: createEnkripsi(rekeningPenerima),
     bukuRekeningFileUrl: bukuRekeningUrl,
     nominal: nominal,
     statusTagihan: "WAITING_PEMBAYARAN",

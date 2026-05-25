@@ -4,6 +4,7 @@ import { useDrizzle } from "~~/server/db";
 import { eq } from "drizzle-orm";
 import { dokumentasiKegiatanTable } from "~~/server/db/schema/dokumentasiSchema";
 import { tagihanPencairanTable } from "~~/server/db/schema/TagihanPencairanSchema";
+import { pembayaranTable } from "~~/server/db/schema/PembayaranSchema";
 
 export default defineEventHandler(async (event) => {
   console.log("masuk ke dalam fileView");
@@ -16,12 +17,23 @@ export default defineEventHandler(async (event) => {
 
   const idStr = String(id);
   const isTagihan = idStr.startsWith("tagihan_");
-  const realId = Number(idStr.replace("doc_", "").replace("tagihan_", ""));
+  const isPembayaran = idStr.startsWith("pembayaran_");
+  const realId = Number(idStr.replace("doc_", "").replace("tagihan_", "").replace("pembayaran_", ""));
 
   const db = useDrizzle();
   let fileUrl = "";
 
-  if (isTagihan) {
+  if (isPembayaran) {
+    const pay = await db.query.pembayaranTable.findFirst({
+      where: eq(pembayaranTable.id, realId),
+    });
+    if (!pay)
+      throw createError({
+        statusCode: 404,
+        message: "Bukti pembayaran tidak ditemukan",
+      });
+    fileUrl = pay.buktiTransferUrl;
+  } else if (isTagihan) {
     const doc = await db.query.tagihanPencairanTable.findFirst({
       where: eq(tagihanPencairanTable.id, realId),
     });

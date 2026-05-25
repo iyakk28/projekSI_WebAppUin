@@ -34,115 +34,130 @@ export default defineEventHandler(async (event) => {
   const realId = Number(idStr.replace("doc_", "").replace("tagihan_", ""));
 
   if (isTagihan) {
-    const results = await db
-      .select()
-      .from(tagihanPencairanTable)
-      .where(eq(tagihanPencairanTable.id, realId))
-      .limit(1);
-
-    const oldDoc = results[0];
-    if (!oldDoc)
-      throw createError({
-        statusCode: 404,
-        message: "Tagihan tidak ditemukan",
-      });
-
-    const updateData: any = {};
-    const textFields = [
-      { name: "namaPenerima", encrypt: true },
-      { name: "rekeningPenerima", encrypt: true },
-      { name: "bankPenerima", encrypt: false },
-      { name: "tokoNama", encrypt: false },
-      { name: "tokoAlamat", encrypt: false },
-      { name: "skNomor", encrypt: true },
-      { name: "spmtNomor", encrypt: true },
-      { name: "amprahNomor", encrypt: true },
-      { name: "npwpNomor", encrypt: true },
-      { name: "ktpNomor", encrypt: true },
-    ];
-
-    for (const tf of textFields) {
-      const val = getField(tf.name);
-      if (val !== undefined) {
-        updateData[tf.name] = tf.encrypt ? createEnkripsi(val) : val;
-      }
-    }
-
-    const nominal = getField("nominal");
-    if (nominal !== undefined) updateData.nominal = nominal;
-
-    const fileFields = [
-      { name: "fotoStruk", dbField: "strukFileUrl", category: "barang" as const },
-      { name: "fotoBarang", dbField: "fotoBarangUrl", category: "barang" as const },
-      { name: "skFile", dbField: "skFileUrl", category: "jasa" as const },
-      { name: "spmtFile", dbField: "spmtFileUrl", category: "jasa" as const },
-      { name: "amprahFile", dbField: "amprahFileUrl", category: "jasa" as const },
-      { name: "npwpFile", dbField: "npwpFileUrl", category: "jasa" as const },
-      { name: "ktpFile", dbField: "ktpFileUrl", category: "jasa" as const },
-      { name: "bukuRekeningFile", dbField: "bukuRekeningFileUrl", category: "jasa" as const },
-    ];
-
-    for (const f of fileFields) {
-      const fileData = formData.find((formField) => formField.name === f.name);
-      if (fileData && fileData.data && fileData.filename) {
-        const oldPath = (oldDoc as any)[f.dbField];
-        if (oldPath && fs.existsSync(oldPath)) {
-          await unlink(oldPath).catch(() => {});
-        }
-        const targetDir = await createFilePath("dokumentasi", f.category, "");
-        const newFileName = `${Date.now()}_${f.name}_${fileData.filename}`;
-        const newPath = join(targetDir, newFileName);
-        await writeFile(newPath, fileData.data);
-        updateData[f.dbField] = newPath;
-      }
-    }
-
-    await db
-      .update(tagihanPencairanTable)
-      .set(updateData)
-      .where(eq(tagihanPencairanTable.id, realId));
+    return await handleUpdateTagihan(db, realId, formData, getField);
   } else {
-    // ... logic for dokumentasiKegiatanTable ...
-    const results = await db
-      .select()
-      .from(dokumentasiKegiatanTable)
-      .where(eq(dokumentasiKegiatanTable.id, realId))
-      .limit(1);
+    return await handleUpdateDokumentasi(db, realId, formData, getField);
+  }
+});
 
-    const oldDoc = results[0];
-    if (!oldDoc)
-      throw createError({
-        statusCode: 404,
-        message: "Dokumentasi tidak ditemukan",
-      });
+async function handleUpdateTagihan(db: any, id: number, formData: any[], getField: (name: string) => string | undefined) {
+  const results = await db
+    .select()
+    .from(tagihanPencairanTable)
+    .where(eq(tagihanPencairanTable.id, id))
+    .limit(1);
 
-    const updateData: any = {};
-    const deskripsi = getField("deskripsi");
-    if (deskripsi !== undefined) updateData.deskripsi = deskripsi;
+  const oldDoc = results[0];
+  if (!oldDoc) throw createError({ statusCode: 404, message: "Tagihan tidak ditemukan" });
 
-    const fileData = formData.find((f) => f.name === "file");
-    if (fileData && fileData.data && fileData.filename) {
-      const oldPath = oldDoc.fileUrl;
-      if (oldPath && fs.existsSync(oldPath)) {
-        await unlink(oldPath).catch(() => {});
-      }
-      const targetDir = await createFilePath("dokumentasi", "kegiatan", "");
-      const newFileName = `${Date.now()}_file_${fileData.filename}`;
-      const newPath = join(targetDir, newFileName);
-      await writeFile(newPath, fileData.data);
-      updateData.fileUrl = newPath;
-    }
+  const updateData: any = {
+    updatedAt: new Date().toISOString().slice(0, 19).replace("T", " ")
+  };
 
-    if (Object.keys(updateData).length > 0) {
-      await db
-        .update(dokumentasiKegiatanTable)
-        .set(updateData)
-        .where(eq(dokumentasiKegiatanTable.id, realId));
+  // Text fields processing
+  const textFields = [
+    { name: "namaPenerima", encrypt: true },
+    { name: "rekeningPenerima", encrypt: true },
+    { name: "bankPenerima", encrypt: true },
+    { name: "tokoNama", encrypt: false },
+    { name: "tokoAlamat", encrypt: false },
+    { name: "skNomor", encrypt: true },
+    { name: "spmtNomor", encrypt: true },
+    { name: "amprahNomor", encrypt: true },
+    { name: "npwpNomor", encrypt: true },
+    { name: "ktpNomor", encrypt: true },
+  ];
+
+  for (const tf of textFields) {
+    const val = getField(tf.name);
+    if (val !== undefined) {
+      updateData[tf.name] = tf.encrypt ? createEnkripsi(val) : val;
     }
   }
 
-  return {
-    success: true,
-    message: "Data berhasil diperbarui",
-  };
-});
+  const nominal = getField("nominal");
+  if (nominal !== undefined) updateData.nominal = nominal;
+
+  // File fields processing
+  const fileFields = [
+    { name: "fotoStruk", dbField: "strukFileUrl", category: "barang" as const },
+    { name: "fotoBarang", dbField: "fotoBarangUrl", category: "barang" as const },
+    { name: "skFile", dbField: "skFileUrl", category: "jasa" as const },
+    { name: "spmtFile", dbField: "spmtFileUrl", category: "jasa" as const },
+    { name: "amprahFile", dbField: "amprahFileUrl", category: "jasa" as const },
+    { name: "npwpFile", dbField: "npwpFileUrl", category: "jasa" as const },
+    { name: "ktpFile", dbField: "ktpFileUrl", category: "jasa" as const },
+    { name: "bukuRekeningFile", dbField: "bukuRekeningFileUrl", category: "jasa" as const },
+  ];
+
+  for (const f of fileFields) {
+    const fileData = formData.find((formField) => formField.name === f.name);
+    if (fileData && fileData.data && fileData.filename) {
+      // Delete old file if exists
+      const oldPath = (oldDoc as any)[f.dbField];
+      if (oldPath) {
+        const fullOldPath = join(process.cwd(), oldPath);
+        if (fs.existsSync(fullOldPath)) {
+          await unlink(fullOldPath).catch(() => {});
+        }
+      }
+
+      // Save new file
+      const targetDir = await createFilePath("dokumentasi", f.category, "");
+      const newFileName = `${Date.now()}_${f.name}_${fileData.filename}`;
+      const newPath = join(targetDir, newFileName);
+      await writeFile(join(process.cwd(), newPath), fileData.data);
+      updateData[f.dbField] = newPath;
+    }
+  }
+
+  await db
+    .update(tagihanPencairanTable)
+    .set(updateData)
+    .where(eq(tagihanPencairanTable.id, id));
+
+  return { success: true, message: "Tagihan berhasil diperbarui" };
+}
+
+async function handleUpdateDokumentasi(db: any, id: number, formData: any[], getField: (name: string) => string | undefined) {
+  const results = await db
+    .select()
+    .from(dokumentasiKegiatanTable)
+    .where(eq(dokumentasiKegiatanTable.id, id))
+    .limit(1);
+
+  const oldDoc = results[0];
+  if (!oldDoc) throw createError({ statusCode: 404, message: "Dokumentasi tidak ditemukan" });
+
+  const updateData: any = {};
+  
+  const deskripsi = getField("deskripsi");
+  if (deskripsi !== undefined) updateData.deskripsi = deskripsi;
+
+  const fileData = formData.find((f) => f.name === "file");
+  if (fileData && fileData.data && fileData.filename) {
+    // Delete old file
+    if (oldDoc.fileUrl) {
+      const fullOldPath = join(process.cwd(), oldDoc.fileUrl);
+      if (fs.existsSync(fullOldPath)) {
+        await unlink(fullOldPath).catch(() => {});
+      }
+    }
+
+    // Save new file
+    const targetDir = await createFilePath("dokumentasi", "kegiatan", "");
+    const newFileName = `${Date.now()}_file_${fileData.filename}`;
+    const newPath = join(targetDir, newFileName);
+    await writeFile(join(process.cwd(), newPath), fileData.data);
+    updateData.fileUrl = newPath;
+  }
+
+  if (Object.keys(updateData).length > 0) {
+    await db
+      .update(dokumentasiKegiatanTable)
+      .set(updateData)
+      .where(eq(dokumentasiKegiatanTable.id, id));
+  }
+
+  return { success: true, message: "Dokumentasi berhasil diperbarui" };
+}
