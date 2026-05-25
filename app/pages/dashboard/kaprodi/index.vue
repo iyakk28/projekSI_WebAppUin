@@ -98,8 +98,9 @@
           </div>
 
           <!-- Total Kegiatan -->
-          <div
-            class="relative overflow-hidden bg-white rounded-2xl shadow-sm border border-slate-200 p-6 group hover:shadow-lg transition-all duration-300"
+          <NuxtLink
+            to="/dashboard/kaprodi/pengajuan"
+            class="relative overflow-hidden bg-white rounded-2xl shadow-sm border border-slate-200 p-6 group hover:shadow-lg transition-all duration-300 block cursor-pointer"
           >
             <div
               class="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"
@@ -109,16 +110,19 @@
                 <div class="p-3 rounded-xl bg-purple-500/10 text-purple-600">
                   <Icon name="heroicons:document-text" class="w-6 h-6" />
                 </div>
+                <div class="text-xs font-semibold text-[#d1a82a] group-hover:underline flex items-center gap-1">
+                  Lihat Semua <Icon name="heroicons:arrow-right" class="w-3.5 h-3.5" />
+                </div>
               </div>
               <h3 class="text-2xl font-bold text-slate-900 mb-1">
-                {{ dashboardData.total }}
+                {{ dashboardData?.total || 0 }}
               </h3>
               <p class="text-sm text-slate-500">Total Kegiatan</p>
               <span class="inline-block mt-1 text-xs text-slate-400"
                 >Proposal aktif</span
               >
             </div>
-          </div>
+          </NuxtLink>
         </div>
 
         <!-- Budget Progress Hero -->
@@ -386,8 +390,8 @@
     prodi: ProdiData;
   }>("/api/kaprodi/ormawa-anggaran");
 
-  // State
-  const currentProdi = ref<ProdiData | null>(null);
+  // Computed & State
+  const currentProdi = computed(() => ormawaDataResponse.value?.prodi || null);
 
   // Computed
   const todayStr = computed(() =>
