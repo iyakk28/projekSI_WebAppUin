@@ -720,9 +720,9 @@
     color?: string;
   }
 
-  // API call
+  // API call — ambil bentuk API asli, mapping dilakukan di frontend
   const { data: pencairanData, refresh } = await useFetch<{
-    data: PencairanItem[];
+    data: any[];
   }>("/api/ppk/pencairan");
 
   // State
@@ -758,7 +758,50 @@
     year: "numeric",
   });
 
-  const pencairanList = computed(() => pencairanData.value?.data || []);
+  const normalizeStatusPencairan = (status?: string) => {
+    switch (status) {
+      case "WAITING_PEMBAYARAN":
+      case "MENUNGGU_DOKUMEN":
+        return "menunggu_dokumen";
+      case "TERVERIFIKASI":
+      case "DOKUMEN_LENGKAP":
+        return "dokumen_lengkap";
+      case "SPB_DIKIRIM":
+        return "spb_dikirim";
+      case "PROSES_PENCAIRAN":
+        return "proses_pencairan";
+      case "SELESAI":
+      case "COMPLETED":
+        return "selesai";
+      case "DIKEMBALIKAN":
+        return "menunggu_dokumen";
+      default:
+        return "menunggu_dokumen";
+    }
+  };
+
+  const pencairanList = computed<PencairanItem[]>(() =>
+    (pencairanData.value?.data || []).map((item: any) => ({
+      id: item.id,
+      namaKegiatan: item.kegiatan?.judulKegiatan || item.namaKegiatan || "",
+      namaOrmawa: item.ormawa?.nama || item.namaOrmawa || "",
+      kodeOrmawa: item.ormawa?.kode || item.kodeOrmawa || "",
+      totalDana: Number(item.nominal ?? item.totalDana ?? 0),
+      tanggalKegiatan: item.kegiatan?.tanggalMulai || item.tanggalKegiatan || "",
+      tanggalPengajuan: item.createdAt || item.tanggalPengajuan || "",
+      statusPencairan: normalizeStatusPencairan(item.statusTagihan || item.status),
+      syaratDokumen: (item.syaratDokumen || []).map((d: any) => ({
+        id: d.id,
+        nama: d.nama,
+        uploaded: !!d.url,
+        url: d.url,
+      })),
+      buktiBayar: item.buktiTransfer
+        ? { nama: item.buktiTransfer.nama, tanggal: item.buktiTransfer.tanggal, url: item.buktiTransfer.url }
+        : item.buktiBayar || undefined,
+      color: item.color,
+    })) || [],
+  );
   const countByStatus = (status: string) =>
     pencairanList.value.filter((p) => p.statusPencairan === status).length;
 
@@ -845,9 +888,9 @@
     if (!selected.value) return;
     loadingAction.value = true;
     try {
-      await $fetch(`/api/ppk/pencairan/${selected.value.id}/spb`, {
+      await $fetch(`/api/ppk/pencairan/${selected.value.id}/verifikasi`, {
         method: "POST",
-        body: { catatan: catatanSPB.value },
+        body: { keputusan: "terverifikasi", catatan: catatanSPB.value },
       });
       selected.value.statusPencairan = "spb_dikirim";
       await refresh();
@@ -862,8 +905,9 @@
     if (!selected.value) return;
     loadingAction.value = true;
     try {
-      await $fetch(`/api/ppk/pencairan/${selected.value.id}/proses`, {
+      await $fetch(`/api/ppk/pencairan/${selected.value.id}/verifikasi`, {
         method: "POST",
+        body: { keputusan: "terverifikasi", catatan: "proses_pencairan" },
       });
       selected.value.statusPencairan = "proses_pencairan";
       activeTab.value = "bukti";
@@ -885,8 +929,8 @@
     loadingAction.value = true;
     try {
       const form = new FormData();
-      form.append("bukti", buktiFile.value);
-      await $fetch(`/api/ppk/pencairan/${selected.value.id}/bukti`, {
+      form.append("bukti_transfer", buktiFile.value);
+      await $fetch(`/api/ppk/pencairan/${selected.value.id}/bayar`, {
         method: "POST",
         body: form,
       });
