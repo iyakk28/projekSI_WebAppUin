@@ -20,6 +20,7 @@ export const statusEnum = [
   "waiting_spi",
   "ditolak_spi",
   "disetujui",
+  "lunas_ppk",
   "selesai_spi",
 ] as const;
 export type StatusEnum = (typeof statusEnum)[number];
