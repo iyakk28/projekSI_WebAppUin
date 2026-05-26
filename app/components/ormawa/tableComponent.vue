@@ -138,7 +138,7 @@
                   />
                 </button>
 
-                <!-- Tombol Upload Dokumentasi (muncul jika status disetujui & acara selesai) -->
+                <!-- Tombol Upload Dokumentasi -->
                 <button
                   v-if="
                     rab.pengajuanRabTable.status === 'disetujui' &&
@@ -147,10 +147,23 @@
                   @click="handleUploadDokumentasi(rab.pengajuanRabTable.id)"
                   class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-emerald-600 bg-emerald-50 hover:bg-emerald-600 hover:text-white transition-all group/upload"
                 >
-                  <span>Upload</span>
+                  <span>Upload Dokumen</span>
                   <Icon
                     name="heroicons:cloud-arrow-up"
                     class="w-4 h-4 group-hover/upload:translate-y-[-2px] transition-transform"
+                  />
+                </button>
+
+                <!-- Tombol Upload LPJ -->
+                <button
+                  v-if="rab.pengajuanRabTable.status === 'lunas_ppk'"
+                  @click="handleUploadLpj(rab.pengajuanRabTable.id)"
+                  class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-amber-600 bg-amber-50 hover:bg-amber-600 hover:text-white transition-all group/upload-lpj"
+                >
+                  <span>Upload LPJ</span>
+                  <Icon
+                    name="heroicons:document-arrow-up"
+                    class="w-4 h-4 group-hover/upload-lpj:translate-y-[-2px] transition-transform"
                   />
                 </button>
               </div>
@@ -226,6 +239,10 @@
 
   const handleUploadDokumentasi = (rabId: number) => {
     navigateTo(`/dashboard/ormawa/detailRab/upload-dokumentasi/${rabId}`);
+  };
+
+  const handleUploadLpj = (rabId: number) => {
+    navigateTo(`/dashboard/ormawa/detailRab/upload-lpj/${rabId}`);
   };
 
   onMounted(async () => {
