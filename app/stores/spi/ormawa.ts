@@ -20,10 +20,35 @@ export const useSpiOrmawaStore = defineStore("spi-ormawa", () => {
     }
   };
 
+  const addOrmawa = async (data: { 
+    nama: string; 
+    kode: string; 
+    totalAnggaran: number; 
+    prodiId: number 
+  }) => {
+    loading.value = true;
+    try {
+      const response = await $fetch<any>("/api/spi/ormawa", {
+        method: "POST",
+        body: data,
+      });
+      if (response.success) {
+        await fetchOrmawa();
+        return { success: true, message: response.message };
+      }
+      return { success: false, message: response.message };
+    } catch (err: any) {
+      return { success: false, message: err.message };
+    } finally {
+      loading.value = false;
+    }
+  };
+
   return {
     ormawa,
     loading,
     error,
     fetchOrmawa,
+    addOrmawa,
   };
 });

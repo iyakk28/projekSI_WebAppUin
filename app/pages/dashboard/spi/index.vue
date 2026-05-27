@@ -367,6 +367,16 @@
                     <span class="font-medium">Program Studi</span>
                   </NuxtLink>
                   <NuxtLink
+                    to="/dashboard/spi/management/ormawa"
+                    class="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 text-slate-700 transition-colors"
+                  >
+                    <Icon
+                      name="heroicons:user-group"
+                      class="w-5 h-5 text-slate-400"
+                    />
+                    <span class="font-medium">Ormawa</span>
+                  </NuxtLink>
+                  <NuxtLink
                     to="/dashboard/spi/management/users"
                     class="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 text-slate-700 transition-colors"
                   >
