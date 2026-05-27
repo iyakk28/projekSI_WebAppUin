@@ -152,12 +152,21 @@
             >
               <div class="flex items-center justify-between mb-6">
                 <div>
-                  <h3 class="text-lg font-bold text-slate-900">Acara yang Akan Dilaksanakan</h3>
-                  <p class="text-sm text-slate-500">Daftar kegiatan yang akan datang</p>
+                  <h3 class="text-lg font-bold text-slate-900">
+                    Acara yang Akan Dilaksanakan
+                  </h3>
+                  <p class="text-sm text-slate-500">
+                    Daftar kegiatan yang akan datang
+                  </p>
                 </div>
               </div>
               <div class="space-y-3 max-h-96 overflow-y-auto">
-                <template v-if="spiStore.upcomingActivities && spiStore.upcomingActivities.length > 0">
+                <template
+                  v-if="
+                    spiStore.upcomingActivities &&
+                    spiStore.upcomingActivities.length > 0
+                  "
+                >
                   <div
                     v-for="activity in spiStore.upcomingActivities"
                     :key="activity.id"
@@ -165,28 +174,45 @@
                   >
                     <div class="flex items-start justify-between mb-2">
                       <div>
-                        <h4 class="font-semibold text-slate-900">{{ activity.judulKegiatan }}</h4>
-                        <p class="text-xs text-slate-500 mt-1">{{ activity.deskripsi }}</p>
+                        <h4 class="font-semibold text-slate-900">
+                          {{ activity.judulKegiatan }}
+                        </h4>
+                        <p class="text-xs text-slate-500 mt-1">
+                          {{ activity.deskripsi }}
+                        </p>
                       </div>
-                      <span class="text-xs font-medium bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                      <span
+                        class="text-xs font-medium bg-blue-100 text-blue-700 px-2 py-1 rounded"
+                      >
                         {{ activity.statusKegiatan }}
                       </span>
                     </div>
-                    <div class="grid grid-cols-3 gap-3 text-xs text-slate-600 mt-3 pt-3 border-t border-slate-100">
+                    <div
+                      class="grid grid-cols-3 gap-3 text-xs text-slate-600 mt-3 pt-3 border-t border-slate-100"
+                    >
                       <div>
                         <span class="text-slate-400">Mulai:</span>
-                        <p class="font-medium">{{ formatDate(activity.tanggalMulai) }}</p>
+                        <p class="font-medium">
+                          {{ formatDate(activity.tanggalMulai) }}
+                        </p>
                       </div>
                       <div>
                         <span class="text-slate-400">Selesai:</span>
-                        <p class="font-medium">{{ formatDate(activity.tanggalSelesai) }}</p>
+                        <p class="font-medium">
+                          {{ formatDate(activity.tanggalSelesai) }}
+                        </p>
                       </div>
                       <div>
                         <span class="text-slate-400">Budget:</span>
-                        <p class="font-medium">{{ formatRp(activity.totalAnggaran) }}</p>
+                        <p class="font-medium">
+                          {{ formatRp(activity.totalAnggaran) }}
+                        </p>
                       </div>
                     </div>
-                    <div v-if="activity.fileTorUrl" class="mt-3 pt-3 border-t border-slate-100">
+                    <div
+                      v-if="activity.fileTorUrl"
+                      class="mt-3 pt-3 border-t border-slate-100"
+                    >
                       <a
                         :href="activity.fileTorUrl"
                         target="_blank"
@@ -200,7 +226,9 @@
                   </div>
                 </template>
                 <template v-else>
-                  <p class="text-sm text-slate-500 py-4 text-center">Belum ada acara yang akan datang</p>
+                  <p class="text-sm text-slate-500 py-4 text-center">
+                    Belum ada acara yang akan datang
+                  </p>
                 </template>
               </div>
             </div>
@@ -211,12 +239,21 @@
             >
               <div class="flex items-center justify-between mb-6">
                 <div>
-                  <h3 class="text-lg font-bold text-slate-900">Acara Sedang Berjalan</h3>
-                  <p class="text-sm text-slate-500">Kegiatan dalam proses pelaksanaan</p>
+                  <h3 class="text-lg font-bold text-slate-900">
+                    Acara Sedang Berjalan
+                  </h3>
+                  <p class="text-sm text-slate-500">
+                    Kegiatan dalam proses pelaksanaan
+                  </p>
                 </div>
               </div>
               <div class="space-y-3 max-h-96 overflow-y-auto">
-                <template v-if="spiStore.ongoingActivities && spiStore.ongoingActivities.length > 0">
+                <template
+                  v-if="
+                    spiStore.ongoingActivities &&
+                    spiStore.ongoingActivities.length > 0
+                  "
+                >
                   <div
                     v-for="activity in spiStore.ongoingActivities"
                     :key="activity.id"
@@ -224,31 +261,47 @@
                   >
                     <div class="flex items-start justify-between mb-2">
                       <div>
-                        <h4 class="font-semibold text-slate-900">{{ activity.judulKegiatan }}</h4>
-                        <p class="text-xs text-slate-500 mt-1">{{ activity.deskripsi }}</p>
+                        <h4 class="font-semibold text-slate-900">
+                          {{ activity.judulKegiatan }}
+                        </h4>
+                        <p class="text-xs text-slate-500 mt-1">
+                          {{ activity.deskripsi }}
+                        </p>
                       </div>
-                      <span class="text-xs font-medium bg-amber-600 text-white px-2 py-1 rounded">
+                      <span
+                        class="text-xs font-medium bg-amber-600 text-white px-2 py-1 rounded"
+                      >
                         {{ activity.statusKegiatan }}
                       </span>
                     </div>
-                    <div class="grid grid-cols-3 gap-3 text-xs text-slate-600 mt-3 pt-3 border-t border-amber-200">
+                    <div
+                      class="grid grid-cols-3 gap-3 text-xs text-slate-600 mt-3 pt-3 border-t border-amber-200"
+                    >
                       <div>
                         <span class="text-slate-400">Mulai:</span>
-                        <p class="font-medium">{{ formatDate(activity.tanggalMulai) }}</p>
+                        <p class="font-medium">
+                          {{ formatDate(activity.tanggalMulai) }}
+                        </p>
                       </div>
                       <div>
                         <span class="text-slate-400">Selesai:</span>
-                        <p class="font-medium">{{ formatDate(activity.tanggalSelesai) }}</p>
+                        <p class="font-medium">
+                          {{ formatDate(activity.tanggalSelesai) }}
+                        </p>
                       </div>
                       <div>
                         <span class="text-slate-400">Budget:</span>
-                        <p class="font-medium">{{ formatRp(activity.totalAnggaran) }}</p>
+                        <p class="font-medium">
+                          {{ formatRp(activity.totalAnggaran) }}
+                        </p>
                       </div>
                     </div>
                   </div>
                 </template>
                 <template v-else>
-                  <p class="text-sm text-slate-500 py-4 text-center">Tidak ada acara yang sedang berjalan</p>
+                  <p class="text-sm text-slate-500 py-4 text-center">
+                    Tidak ada acara yang sedang berjalan
+                  </p>
                 </template>
               </div>
             </div>
@@ -266,7 +319,10 @@
                   to="/dashboard/spi/monitorings"
                   class="flex items-center gap-3 p-3 rounded-lg bg-[#c41e3a]/10 text-[#c41e3a] hover:bg-[#c41e3a]/20 transition-colors"
                 >
-                  <Icon name="heroicons:clipboard-document-check" class="w-5 h-5" />
+                  <Icon
+                    name="heroicons:clipboard-document-check"
+                    class="w-5 h-5"
+                  />
                   <span class="font-medium">Monitor Kegiatan</span>
                 </NuxtLink>
                 <NuxtLink
@@ -283,6 +339,44 @@
                   <Icon name="heroicons:chart-bar" class="w-5 h-5" />
                   <span class="font-medium">Laporan Audit</span>
                 </NuxtLink>
+
+                <div class="pt-4 border-t border-slate-100">
+                  <p
+                    class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3"
+                  >
+                    Manajemen Data
+                  </p>
+                  <NuxtLink
+                    to="/dashboard/spi/management/fakultas"
+                    class="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 text-slate-700 transition-colors"
+                  >
+                    <Icon
+                      name="heroicons:building-library"
+                      class="w-5 h-5 text-slate-400"
+                    />
+                    <span class="font-medium">Fakultas</span>
+                  </NuxtLink>
+                  <NuxtLink
+                    to="/dashboard/spi/management/prodi"
+                    class="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 text-slate-700 transition-colors"
+                  >
+                    <Icon
+                      name="heroicons:academic-cap"
+                      class="w-5 h-5 text-slate-400"
+                    />
+                    <span class="font-medium">Program Studi</span>
+                  </NuxtLink>
+                  <NuxtLink
+                    to="/dashboard/spi/management/users"
+                    class="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 text-slate-700 transition-colors"
+                  >
+                    <Icon
+                      name="heroicons:users"
+                      class="w-5 h-5 text-slate-400"
+                    />
+                    <span class="font-medium">Kelola User</span>
+                  </NuxtLink>
+                </div>
               </div>
             </div>
 
@@ -291,11 +385,16 @@
               class="bg-gradient-to-br from-[#c41e3a]/10 to-[#c41e3a]/5 rounded-2xl border border-[#c41e3a]/20 p-6"
             >
               <div class="flex items-start gap-3">
-                <Icon name="heroicons:information-circle" class="w-5 h-5 text-[#c41e3a] flex-shrink-0 mt-0.5" />
+                <Icon
+                  name="heroicons:information-circle"
+                  class="w-5 h-5 text-[#c41e3a] flex-shrink-0 mt-0.5"
+                />
                 <div>
                   <h4 class="font-medium text-slate-900 mb-1">Tentang SPI</h4>
                   <p class="text-sm text-slate-600">
-                    Satuan Penjaminan Internal (SPI) melakukan monitoring dan evaluasi terhadap pelaksanaan kegiatan dan implementasi RAB untuk memastikan kualitas dan sesuai dengan perencanaan.
+                    Satuan Penjaminan Internal (SPI) melakukan monitoring dan
+                    evaluasi terhadap pelaksanaan kegiatan dan implementasi RAB
+                    untuk memastikan kualitas dan sesuai dengan perencanaan.
                   </p>
                 </div>
               </div>
@@ -305,13 +404,21 @@
             <div
               class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 hover:shadow-lg transition-all duration-300"
             >
-              <h3 class="text-lg font-bold text-slate-900 mb-4">Ringkasan Kegiatan Selesai</h3>
+              <h3 class="text-lg font-bold text-slate-900 mb-4">
+                Ringkasan Kegiatan Selesai
+              </h3>
               <div class="space-y-2">
-                <div class="flex justify-between items-center p-3 bg-emerald-50 rounded-lg">
+                <div
+                  class="flex justify-between items-center p-3 bg-emerald-50 rounded-lg"
+                >
                   <span class="text-sm text-slate-600">Total Selesai</span>
-                  <span class="text-xl font-bold text-emerald-600">{{ spiStore.summary?.completedActivities || 0 }}</span>
+                  <span class="text-xl font-bold text-emerald-600">{{
+                    spiStore.summary?.completedActivities || 0
+                  }}</span>
                 </div>
-                <div class="flex justify-between items-center p-3 bg-slate-100 rounded-lg">
+                <div
+                  class="flex justify-between items-center p-3 bg-slate-100 rounded-lg"
+                >
                   <span class="text-sm text-slate-600">Pending Review</span>
                   <span class="text-xl font-bold text-slate-600">0</span>
                 </div>
@@ -325,40 +432,39 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
-import { useAuthStore } from "~/stores/auth";
-import { useSpiDashboardStore } from "~/stores/spi/dashboard";
+  import { ref, onMounted } from "vue";
+  import { useAuthStore } from "~/stores/auth";
+  import { useSpiDashboardStore } from "~/stores/spi/dashboard";
+  const authStore = useAuthStore();
+  const spiStore = useSpiDashboardStore();
+  const { user } = authStore;
 
-const authStore = useAuthStore();
-const spiStore = useSpiDashboardStore();
-const { user } = authStore;
+  const nav = (path: string) => {
+    return navigateTo(path);
+  };
 
-const nav = (path: string) => {
-  return navigateTo(path);
-};
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "-";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("id-ID", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
 
-const formatDate = (dateString: string) => {
-  if (!dateString) return "-";
-  const date = new Date(dateString);
-  return date.toLocaleDateString("id-ID", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
+  const formatRp = (amount: number) => {
+    if (!amount) return "Rp 0";
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  onMounted(async () => {
+    await spiStore.fetchSpiDashboard();
   });
-};
-
-const formatRp = (amount: number) => {
-  if (!amount) return "Rp 0";
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    minimumFractionDigits: 0,
-  }).format(amount);
-};
-
-onMounted(async () => {
-  await spiStore.fetchSpiDashboard();
-});
 </script>
 
 <style scoped></style>
