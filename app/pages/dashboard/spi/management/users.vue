@@ -16,6 +16,16 @@
       <!-- Form Tambah -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
         <h2 class="text-lg font-bold text-slate-900 mb-4">Tambah User Baru</h2>
+
+        <!-- Error Alert -->
+        <div v-if="errorMessage" class="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl flex items-start gap-3 text-red-700 animate-in fade-in slide-in-from-top-2 duration-300">
+          <Icon name="heroicons:exclamation-circle" class="w-5 h-5 flex-shrink-0 mt-0.5" />
+          <div>
+            <p class="text-sm font-semibold text-red-800">Kesalahan Input</p>
+            <p class="text-sm opacity-90">{{ errorMessage }}</p>
+          </div>
+        </div>
+
         <form @submit.prevent="handleSubmit" class="space-y-4">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <!-- Full Name -->
@@ -23,9 +33,11 @@
               <label class="text-sm font-medium text-slate-700">Nama Lengkap</label>
               <input
                 v-model="form.fullName"
+                @input="errorMessage = ''"
                 type="text"
                 placeholder="Nama Lengkap"
                 class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-[#c41e3a]/20 focus:border-[#c41e3a] outline-none transition-all"
+                :class="{ 'border-red-300 bg-red-50/30': errorMessage && !form.fullName }"
                 required
               />
             </div>
@@ -34,9 +46,11 @@
               <label class="text-sm font-medium text-slate-700">Email</label>
               <input
                 v-model="form.email"
+                @input="errorMessage = ''"
                 type="email"
                 placeholder="email@univ.ac.id"
                 class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-[#c41e3a]/20 focus:border-[#c41e3a] outline-none transition-all"
+                :class="{ 'border-red-300 bg-red-50/30': errorMessage && (errorMessage.includes('Email') || errorMessage.includes('mirip')) }"
                 required
               />
             </div>
@@ -45,9 +59,11 @@
               <label class="text-sm font-medium text-slate-700">User ID (NIM/NIP)</label>
               <input
                 v-model="form.users_id"
+                @input="errorMessage = ''"
                 type="text"
                 placeholder="ID User"
                 class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-[#c41e3a]/20 focus:border-[#c41e3a] outline-none transition-all"
+                :class="{ 'border-red-300 bg-red-50/30': errorMessage && (errorMessage.includes('User ID') || errorMessage.includes('mirip')) }"
                 required
               />
             </div>
@@ -168,6 +184,7 @@ const fakultasStore = useSpiFakultasStore();
 const prodiStore = useSpiProdiStore();
 const ormawaStore = useSpiOrmawaStore();
 
+const errorMessage = ref('');
 const form = ref({
   fullName: '',
   email: '',
@@ -186,6 +203,7 @@ onMounted(() => {
 });
 
 const handleSubmit = async () => {
+  errorMessage.value = '';
   const res = await store.addUser({ ...form.value });
   if (res.success) {
     form.value = {
@@ -200,7 +218,7 @@ const handleSubmit = async () => {
     };
     alert('User berhasil ditambahkan!');
   } else {
-    alert(res.message || 'Gagal menambahkan user');
+    errorMessage.value = res.message || 'Gagal menambahkan user';
   }
 };
 </script>

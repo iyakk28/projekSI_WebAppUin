@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
     const body = await readBody(event);
     const { nama, kode } = body;
 
-    if (!nama || !kode) {
+    if (!nama?.trim() || !kode?.trim()) {
       throw createError({
         statusCode: 400,
         statusMessage: "Nama dan kode fakultas wajib diisi",
@@ -15,8 +15,8 @@ export default defineEventHandler(async (event) => {
     }
 
     await db.insert(fakultasTable).values({
-      nama,
-      kode,
+      nama: nama.trim(),
+      kode: kode.trim().toUpperCase(),
     });
 
     return {

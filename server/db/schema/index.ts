@@ -57,6 +57,10 @@ export const ormawaRelations = relations(ormawaTable, (r) => ({
     fields: [ormawaTable.prodiId],
     references: [programStudiTable.id],
   }),
+  fakultas: r.one(fakultasTable, {
+    fields: [ormawaTable.fakultasId],
+    references: [fakultasTable.id],
+  }),
   users: r.many(usersTable),
 }));
 

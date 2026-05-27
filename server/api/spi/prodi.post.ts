@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
     const body = await readBody(event);
     const { nama, kode, fakultasId } = body;
 
-    if (!nama || !kode || !fakultasId) {
+    if (!nama?.trim() || !kode?.trim() || !fakultasId) {
       throw createError({
         statusCode: 400,
         statusMessage: "Nama, kode, dan fakultas wajib diisi",
@@ -15,8 +15,8 @@ export default defineEventHandler(async (event) => {
     }
 
     await db.insert(programStudiTable).values({
-      nama,
-      kode,
+      nama: nama.trim(),
+      kode: kode.trim().toUpperCase(),
       fakultasId: Number(fakultasId),
     });
 

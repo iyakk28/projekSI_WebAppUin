@@ -13,13 +13,14 @@ export default defineEventHandler(async (event) => {
         nama: ormawaTable.nama,
         kode: ormawaTable.kode,
         totalAnggaran: ormawaTable.totalAnggaran,
+        fakultasId: ormawaTable.fakultasId,
         prodiId: ormawaTable.prodiId,
         namaProdi: programStudiTable.nama,
         namaFakultas: fakultasTable.nama,
       })
       .from(ormawaTable)
       .leftJoin(programStudiTable, eq(ormawaTable.prodiId, programStudiTable.id))
-      .leftJoin(fakultasTable, eq(programStudiTable.fakultasId, fakultasTable.id));
+      .leftJoin(fakultasTable, eq(ormawaTable.fakultasId, fakultasTable.id));
 
     return {
       success: true,

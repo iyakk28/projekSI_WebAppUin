@@ -52,14 +52,13 @@
               </select>
             </div>
             <div class="space-y-1">
-              <label class="text-sm font-medium text-slate-700">Pilih Program Studi</label>
+              <label class="text-sm font-medium text-slate-700">Pilih Program Studi (Opsional)</label>
               <select
                 v-model="form.prodiId"
                 class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-[#c41e3a]/20 focus:border-[#c41e3a] outline-none transition-all"
                 :disabled="!selectedFakultasId"
-                required
               >
-                <option value="" disabled>{{ selectedFakultasId ? 'Pilih Prodi...' : 'Pilih Fakultas Terlebih Dahulu' }}</option>
+                <option value="">Pilih Prodi (Kosongkan jika Ormawa Fakultas)</option>
                 <option v-for="p in filteredProdi" :key="p.id" :value="p.id">
                   {{ p.nama }}
                 </option>
@@ -111,7 +110,9 @@
                 <td class="px-6 py-4 text-sm font-medium text-slate-900">{{ item.nama }}</td>
                 <td class="px-6 py-4 text-sm text-slate-600">
                   <div class="text-xs text-slate-400 uppercase font-semibold">{{ item.namaFakultas }}</div>
-                  <div>{{ item.namaProdi }}</div>
+                  <div :class="!item.namaProdi ? 'text-slate-400 italic text-xs' : ''">
+                    {{ item.namaProdi || 'Tingkat Fakultas' }}
+                  </div>
                 </td>
                 <td class="px-6 py-4 text-sm text-slate-900 font-semibold">{{ formatRp(item.totalAnggaran) }}</td>
                 <td class="px-6 py-4 text-sm text-slate-600">
@@ -170,7 +171,8 @@ const handleSubmit = async () => {
     nama: form.value.nama,
     kode: form.value.kode,
     totalAnggaran: Number(form.value.totalAnggaran),
-    prodiId: Number(form.value.prodiId)
+    fakultasId: Number(selectedFakultasId.value),
+    prodiId: form.value.prodiId ? Number(form.value.prodiId) : null
   });
   
   if (res.success) {

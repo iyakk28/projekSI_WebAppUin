@@ -5,20 +5,21 @@ export default defineEventHandler(async (event) => {
   try {
     const db = useDrizzle();
     const body = await readBody(event);
-    const { nama, kode, totalAnggaran, prodiId } = body;
+    const { nama, kode, totalAnggaran, fakultasId, prodiId } = body;
 
-    if (!nama || !kode || !prodiId) {
+    if (!nama?.trim() || !kode?.trim() || !fakultasId) {
       throw createError({
         statusCode: 400,
-        statusMessage: "Nama, kode, dan Program Studi wajib diisi",
+        statusMessage: "Nama, kode, dan Fakultas wajib diisi",
       });
     }
 
     await db.insert(ormawaTable).values({
-      nama,
-      kode,
+      nama: nama.trim(),
+      kode: kode.trim().toUpperCase(),
       totalAnggaran: totalAnggaran ? Number(totalAnggaran) : 0,
-      prodiId: Number(prodiId),
+      fakultasId: Number(fakultasId),
+      prodiId: prodiId ? Number(prodiId) : null,
     });
 
     return {

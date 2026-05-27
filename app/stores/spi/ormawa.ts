@@ -24,7 +24,8 @@ export const useSpiOrmawaStore = defineStore("spi-ormawa", () => {
     nama: string; 
     kode: string; 
     totalAnggaran: number; 
-    prodiId: number 
+    fakultasId: number;
+    prodiId?: number | null;
   }) => {
     loading.value = true;
     try {
