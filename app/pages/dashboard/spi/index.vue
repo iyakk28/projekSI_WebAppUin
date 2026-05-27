@@ -18,6 +18,15 @@
             </div>
           </div>
           <div class="flex items-center gap-3">
+            <select
+              v-model="statusFilter"
+              @change="handleStatusChange"
+              class="px-3 py-2 rounded-lg border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#c41e3a]/20 focus:border-[#c41e3a] bg-white hidden sm:block"
+            >
+              <option value="all">Semua Dokumen</option>
+              <option value="waiting_spi">Menunggu</option>
+              <option value="disetujui">Disetujui</option>
+            </select>
             <button
               class="relative p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
             >
@@ -120,26 +129,11 @@
               <p class="text-sm text-slate-500">Selesai</p>
             </div>
           </div>
+        </div>
 
-          <!-- Total Dokumentasi -->
-          <div
-            class="relative overflow-hidden bg-white rounded-2xl shadow-sm border border-slate-200 p-6 group hover:shadow-lg transition-all duration-300"
-          >
-            <div
-              class="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"
-            ></div>
-            <div class="relative">
-              <div class="flex items-center justify-between mb-4">
-                <div class="p-3 rounded-xl bg-purple-500/10 text-purple-600">
-                  <Icon name="heroicons:document-text" class="w-6 h-6" />
-                </div>
-              </div>
-              <h3 class="text-2xl font-bold text-slate-900 mb-1">
-                {{ spiStore.summary?.totalDocumentation || 0 }}
-              </h3>
-              <p class="text-sm text-slate-500">Dokumentasi</p>
-            </div>
-          </div>
+        <!-- List RAB Section -->
+        <div class="w-full">
+          <spi-rab-table />
         </div>
 
         <!-- Content Section -->
@@ -445,9 +439,18 @@
   import { ref, onMounted } from "vue";
   import { useAuthStore } from "~/stores/auth";
   import { useSpiDashboardStore } from "~/stores/spi/dashboard";
+  import { useSpiRabStore } from "~/stores/spi/rab";
+
   const authStore = useAuthStore();
   const spiStore = useSpiDashboardStore();
+  const rabStore = useSpiRabStore();
   const { user } = authStore;
+
+  const statusFilter = ref("all");
+
+  const handleStatusChange = async () => {
+    await rabStore.fetchRabList(statusFilter.value);
+  };
 
   const nav = (path: string) => {
     return navigateTo(path);
@@ -473,7 +476,10 @@
   };
 
   onMounted(async () => {
-    await spiStore.fetchSpiDashboard();
+    await Promise.all([
+      spiStore.fetchSpiDashboard(),
+      rabStore.fetchRabList(statusFilter.value),
+    ]);
   });
 </script>
 
