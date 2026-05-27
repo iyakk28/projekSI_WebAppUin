@@ -1,5 +1,6 @@
 import { useDrizzle } from "~~/server/db/index";
 import { fakultasTable } from "~~/server/db/schema/fakultasSchema";
+import { eq } from "drizzle-orm";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -14,9 +15,25 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    const cleanKode = kode.trim().toUpperCase();
+
+    // Check for duplicate kode
+    const existing = await db
+      .select()
+      .from(fakultasTable)
+      .where(eq(fakultasTable.kode, cleanKode))
+      .limit(1);
+
+    if (existing.length > 0) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: `Kode Fakultas "${cleanKode}" sudah digunakan oleh "${existing[0].nama}"`,
+      });
+    }
+
     await db.insert(fakultasTable).values({
       nama: nama.trim(),
-      kode: kode.trim().toUpperCase(),
+      kode: cleanKode,
     });
 
     return {

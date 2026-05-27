@@ -1,5 +1,6 @@
 import { useDrizzle } from "~~/server/db/index";
 import { programStudiTable } from "~~/server/db/schema/programStudiSchema";
+import { eq } from "drizzle-orm";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -14,9 +15,25 @@ export default defineEventHandler(async (event) => {
       });
     }
 
+    const cleanKode = kode.trim().toUpperCase();
+
+    // Check duplicate
+    const existing = await db
+      .select()
+      .from(programStudiTable)
+      .where(eq(programStudiTable.kode, cleanKode))
+      .limit(1);
+
+    if (existing.length > 0) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: `Kode Prodi "${cleanKode}" sudah digunakan oleh "${existing[0].nama}"`,
+      });
+    }
+
     await db.insert(programStudiTable).values({
       nama: nama.trim(),
-      kode: kode.trim().toUpperCase(),
+      kode: cleanKode,
       fakultasId: Number(fakultasId),
     });
 
