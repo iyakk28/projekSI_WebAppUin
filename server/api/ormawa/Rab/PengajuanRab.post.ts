@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
         ? Buffer.from(field.data).toString("utf-8")
         : "";
     };
-
+    console.log(user);
     const nomorPengajuan = getField("nomorPengajuan");
     const usersId = getField("usersId");
     const judulKegiatan = getField("judulKegiatan");

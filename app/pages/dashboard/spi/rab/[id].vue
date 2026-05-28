@@ -80,6 +80,40 @@
                   {{ rab.judulKegiatan }}
                 </h1>
               </div>
+              <div class="mt-6 flex gap-3 flex-end">
+                <template v-if="rab.status === 'waiting_spi'">
+                  <button
+                    @click="openActionModal('setuju')"
+                    class="inline-flex items-center gap-2 rounded-lg border border-green-400 bg-transparent px-4 py-2 text-sm font-medium text-green-700 transition-colors hover:bg-green-50 focus:outline-none"
+                  >
+                    <Icon name="heroicons:check-badge" class="h-4 w-4" />
+                    Setujui
+                  </button>
+                  <button
+                    @click="openActionModal('revisi')"
+                    class="inline-flex items-center gap-2 rounded-lg border border-yellow-400 bg-transparent px-4 py-2 text-sm font-medium text-yellow-700 transition-colors hover:bg-yellow-50 focus:outline-none"
+                  >
+                    <Icon name="heroicons:arrow-path" class="h-4 w-4" />
+                    Revisi
+                  </button>
+                  <button
+                    @click="openActionModal('tolak')"
+                    class="inline-flex items-center gap-2 rounded-lg border border-red-400 bg-transparent px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 focus:outline-none"
+                  >
+                    <Icon name="heroicons:x-mark" class="h-4 w-4" />
+                    Tolak
+                  </button>
+                </template>
+                <template v-else>
+                  <div
+                    class="rounded-xl border border-slate-200 bg-slate-50 px-5 py-3"
+                  >
+                    <p class="text-center text-sm font-medium text-slate-500">
+                      Dokumen ini tidak dalam status menunggu review SPI.
+                    </p>
+                  </div>
+                </template>
+              </div>
             </div>
 
             <div
@@ -167,7 +201,7 @@
                 <div class="flex justify-center gap-3 mt-4">
                   <button
                     @click="openDocument"
-                    class="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#c41e3a] text-white font-medium hover:bg-[#a01830] transition-all shadow-md shadow-[#c41e3a]/20"
+                    class="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white font-medium hover:bg-[#a01830] transition-all shadow-md shadow-[#c41e3a]/20"
                   >
                     <Icon name="heroicons:eye" class="w-5 h-5" />
                     Buka di Tab Baru
@@ -286,14 +320,14 @@
         <!-- Sidebar Summary Card -->
         <div class="space-y-6">
           <div
-            class="bg-black rounded-2xl shadow-sm border border-slate-200 p-6 sticky top-20"
+            class="rounded-2xl shadow-sm border border-slate-200 p-6 sticky top-20"
           >
             <h3 class="text-lg font-bold text-slate-900 mb-4">
               Ringkasan Pengajuan
             </h3>
             <div class="space-y-4">
               <div
-                class="relative overflow-hidden p-6 rounded-3xl bg-[#c41e3a] text-white shadow-2xl shadow-[#c41e3a]/30 border border-[#b21c35]"
+                class="relative overflow-hidden p-6 rounded-3xl bg-primary text-white shadow-2xl shadow-[#c41e3a]/30 border border-[#b21c35]"
               >
                 <div
                   class="absolute -top-10 -left-10 w-40 h-40 bg-gray-300 rounded-full blur-3xl"
@@ -364,17 +398,17 @@
                 </div>
               </div>
             </div>
-
-            <!-- Action Buttons for SPI -->
-            <div class="mt-8 space-y-3">
-              <!-- SPI Specific buttons will go here (Approve/Reject/Request Revision) -->
-              <div class="p-4 bg-amber-50 border border-amber-100 rounded-xl">
-                <p class="text-xs text-amber-700 text-center font-medium">
-                  Review dokumen di sebelah kiri dengan teliti sebelum
-                  memberikan keputusan penjaminan kualitas.
-                </p>
-              </div>
+            <div
+              v-if="rab.status === 'waiting_spi'"
+              class="p-4 bg-amber-50 border border-amber-100 rounded-xl mt-4"
+            >
+              <p class="text-xs text-amber-700 text-center font-medium">
+                Review dokumen di sebelah kiri dengan teliti sebelum memberikan
+                keputusan penjaminan kualitas.
+              </p>
             </div>
+            <!-- Action Buttons for SPI -->
+
             <div class="bg-blue-50 border border-blue-100 rounded-2xl p-6 mt-8">
               <div class="flex items-center gap-2 mb-3">
                 <Icon
@@ -397,8 +431,105 @@
               </ul>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
 
-          <!-- Helper Information -->
+    <!-- Action Modal (Setuju, Revisi, Tolak) -->
+    <div
+      v-if="showActionModal"
+      class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      @click.self="showActionModal = false"
+    >
+      <div class="bg-white rounded-2xl max-w-md w-full p-6">
+        <div class="flex items-center gap-3 mb-4">
+          <div
+            :class="[
+              'w-10 h-10 rounded-full flex items-center justify-center text-white',
+              actionType === 'setuju'
+                ? 'bg-emerald-500'
+                : actionType === 'tolak'
+                  ? 'bg-red-500'
+                  : 'bg-amber-500',
+            ]"
+          >
+            <Icon
+              :name="
+                actionType === 'setuju'
+                  ? 'heroicons:check'
+                  : actionType === 'tolak'
+                    ? 'heroicons:x-mark'
+                    : 'heroicons:arrow-path'
+              "
+              class="w-6 h-6"
+            />
+          </div>
+          <h3 class="text-xl font-bold text-slate-900">
+            {{
+              actionType === "setuju"
+                ? "Setujui Pengajuan"
+                : actionType === "tolak"
+                  ? "Tolak Pengajuan"
+                  : "Minta Revisi"
+            }}
+          </h3>
+        </div>
+
+        <p class="text-sm text-slate-600 mb-6">
+          {{
+            actionType === "setuju"
+              ? "Anda akan menyetujui dokumen RAB dan TOR ini. Pastikan semua rincian telah diperiksa."
+              : "Berikan catatan spesifik mengapa dokumen ini dikembalikan atau ditolak agar pengaju dapat memperbaikinya."
+          }}
+        </p>
+
+        <div class="space-y-4">
+          <div v-if="actionType !== 'setuju'">
+            <label class="block text-sm font-medium text-slate-700 mb-1"
+              >Catatan <span class="text-red-500">*</span></label
+            >
+            <textarea
+              v-model="actionCatatan"
+              rows="4"
+              class="w-full border border-slate-200 rounded-lg p-3 focus:ring-[#c41e3a] focus:border-[#c41e3a] outline-none transition-colors text-sm"
+              :placeholder="
+                actionType === 'revisi'
+                  ? 'Contoh: Rincian biaya konsumsi pada TOR tidak sesuai dengan RAB.'
+                  : 'Contoh: Kegiatan ini tidak sesuai dengan RKAT tahun berjalan.'
+              "
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-3 mt-6">
+          <button
+            @click="showActionModal = false"
+            class="px-4 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors font-medium"
+          >
+            Batal
+          </button>
+          <button
+            @click="submitAction"
+            :disabled="
+              persetujuanStore.loading ||
+              (actionType !== 'setuju' && !actionCatatan.trim())
+            "
+            :class="[
+              'px-4 py-2 rounded-lg text-white transition-all font-medium disabled:opacity-50 flex items-center gap-2',
+              actionType === 'setuju'
+                ? 'bg-emerald-600 hover:bg-emerald-700'
+                : actionType === 'tolak'
+                  ? 'bg-red-600 hover:bg-red-700'
+                  : 'bg-amber-500 hover:bg-amber-600',
+            ]"
+          >
+            <Icon
+              v-if="persetujuanStore.loading"
+              name="heroicons:arrow-path"
+              class="w-4 h-4 animate-spin"
+            />
+            {{ persetujuanStore.loading ? "Memproses..." : "Konfirmasi" }}
+          </button>
         </div>
       </div>
     </div>
@@ -410,12 +541,14 @@
   import { useRoute, useRouter } from "vue-router";
   import { useSpiRabDetailStore } from "~/stores/spi/rabDetail";
   import { useApproveLog } from "~/stores/ormawa/approveLogRab";
+  import { useSpiPersetujuanStore } from "~/stores/spi/persetujuanRab";
   import { storeToRefs } from "pinia";
 
   const route = useRoute();
   const router = useRouter();
   const detailStore = useSpiRabDetailStore();
   const approveLogStore = useApproveLog();
+  const persetujuanStore = useSpiPersetujuanStore();
 
   const { logs: approvalLogs } = storeToRefs(approveLogStore);
   const rab = computed(() => detailStore.rabDetail);
@@ -427,6 +560,11 @@
       : detailStore.fileTorObjectUrl,
   );
 
+  // Action Modal State
+  const showActionModal = ref(false);
+  const actionType = ref<"setuju" | "tolak" | "revisi">("setuju");
+  const actionCatatan = ref("");
+
   const reloadData = async () => {
     const id = Number(route.params.id);
     if (id) {
@@ -434,6 +572,35 @@
         detailStore.fetchFullDetail(id),
         approveLogStore.fetchApprovalLogs(id),
       ]);
+    }
+  };
+
+  const openActionModal = (type: "setuju" | "tolak" | "revisi") => {
+    actionType.value = type;
+    actionCatatan.value = "";
+    showActionModal.value = true;
+  };
+
+  const submitAction = async () => {
+    if (
+      (actionType.value === "tolak" || actionType.value === "revisi") &&
+      !actionCatatan.value.trim()
+    ) {
+      alert("Catatan wajib diisi");
+      return;
+    }
+
+    const res = await persetujuanStore.processAction(
+      rab.value.id,
+      actionType.value,
+      actionCatatan.value,
+    );
+
+    if (res.success) {
+      showActionModal.value = false;
+      await reloadData();
+    } else {
+      alert(res.message);
     }
   };
 
@@ -595,6 +762,9 @@
       opacity: 1;
       transform: translateY(0);
     }
+  }
+  .bg-primary {
+    background: var(--color-primary);
   }
   .animate-fadeIn {
     animation: fadeIn 0.3s ease-out;

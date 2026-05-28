@@ -2,6 +2,9 @@ import { useDrizzle } from "~~/server/db/index"; // Sesuaikan path utils Anda
 import { usersTable } from "~~/server/db/schema/usersSchema";
 import { eq, and } from "drizzle-orm";
 import { User } from "../../interface/userInterface";
+import { ormawaTable } from "~~/server/db/schema";
+import { fakultasTable } from "~~/server/db/schema";
+import { programStudiTable } from "~~/server/db/schema";
 export default defineEventHandler(async (event) => {
   try {
     const body = await readBody(event);
@@ -39,23 +42,46 @@ export default defineEventHandler(async (event) => {
       throw createError({
         statusCode: 403,
         statusMessage: "Forbidden",
-        message: "Akun Anda telah dinonaktifkan. Silahkan hubungi administrator.",
+        message:
+          "Akun Anda telah dinonaktifkan. Silahkan hubungi administrator.",
       });
     }
 
+    const [joinUser] = await useDrizzle()
+      .select({
+        id: usersTable.id,
+        role: usersTable.role,
+        username: usersTable.fullName,
+        email: usersTable.email,
+        fakultas: fakultasTable.nama,
+        prodi: programStudiTable.nama,
+        ormawa: ormawaTable.nama,
+        fakultasId: fakultasTable.id,
+        ormawaId: ormawaTable.id,
+        prodiId: programStudiTable.id,
+      })
+      .from(usersTable)
+      .where(eq(usersTable.id, user.id))
+      .leftJoin(fakultasTable, eq(fakultasTable.id, usersTable.fakultasId))
+      .leftJoin(ormawaTable, eq(ormawaTable.id, usersTable.ormawaId))
+      .leftJoin(
+        programStudiTable,
+        eq(programStudiTable.id, usersTable.prodiId),
+      );
+
     const payload: User = {
-      id: String(user.id),
-      role: user.role,
-      username: user.fullName,
-      email: user.email,
-      fakultas: user.fakultasId || null,
-      prodi: user.prodiId || null,
-      ormawa: user.ormawaId || null,
-      fakultasId: user.fakultasId || null,
-      prodiId: user.prodiId || null,
-      ormawaId: user.ormawaId || null,
+      id: String(joinUser?.id),
+      role: joinUser?.role || user.role,
+      username: joinUser?.username || "",
+      email: joinUser?.email || "",
+      fakultas: joinUser?.fakultasId || null,
+      prodi: joinUser?.prodiId || null,
+      ormawa: joinUser?.ormawaId || null,
+      fakultasId: joinUser?.fakultasId || null,
+      prodiId: joinUser?.prodiId || null,
+      ormawaId: joinUser?.ormawaId || null,
     };
-    
+    console.log(payload);
     const token = createJwt(payload);
 
     if (token == null) {
@@ -83,7 +109,7 @@ export default defineEventHandler(async (event) => {
         message: error.message,
       };
     }
-    
+
     return {
       success: false,
       message: error.message || "Terjadi kesalahan pada server",

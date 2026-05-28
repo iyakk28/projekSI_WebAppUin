@@ -19,6 +19,7 @@ export const statusEnum = [
   "revisi_ppk",
   "waiting_spi",
   "ditolak_spi",
+  "revisi_spi",
   "disetujui",
   "lunas_ppk",
   "selesai_spi",
