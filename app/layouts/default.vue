@@ -37,7 +37,7 @@
             <NuxtLink to="/dashboard/ormawa/pengajuanRab" class="nav-link">
               Pengajuan RAB
             </NuxtLink>
-            <NuxtLink to="/ormawa/kegiatan" class="nav-link">
+            <NuxtLink to="/dashboard/ormawa/kegiatan" class="nav-link">
               Kegiatan Saya
             </NuxtLink>
           </template>

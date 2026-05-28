@@ -60,9 +60,7 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 400, message: "Aksi tidak valid" });
     }
 
-    // Gunakan transaction
     await db.transaction(async (tx) => {
-      // 3. Update status RAB
       await tx
         .update(pengajuanRabTable)
         .set({ status: newStatus, updatedAt: new Date() })
@@ -73,7 +71,7 @@ export default defineEventHandler(async (event) => {
         pengajuanRabId: Number(rabId),
         actorId: user.id, // ID internal auto-increment, bukan users_id
         action: action, // setuju, tolak, revisi
-        catatanRevisi: catatan || null,
+        catatanRevisi: catatan || `disetujui`,
       });
 
       // 5. Jika disetujui, buat record kegiatan baru (menandakan dana siap dicairkan / acara bisa dimulai)
