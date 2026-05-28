@@ -21,7 +21,9 @@ export default defineEventHandler(async (event) => {
 
   const getField = (name: string): string | undefined => {
     const field = formData.find((f) => f.name === name);
-    return field && field.data ? Buffer.from(field.data).toString("utf-8") : undefined;
+    return field && field.data
+      ? Buffer.from(field.data).toString("utf-8")
+      : undefined;
   };
 
   const id = getField("id");
@@ -40,7 +42,12 @@ export default defineEventHandler(async (event) => {
   }
 });
 
-async function handleUpdateTagihan(db: any, id: number, formData: any[], getField: (name: string) => string | undefined) {
+async function handleUpdateTagihan(
+  db: any,
+  id: number,
+  formData: any[],
+  getField: (name: string) => string | undefined,
+) {
   const results = await db
     .select()
     .from(tagihanPencairanTable)
@@ -48,10 +55,11 @@ async function handleUpdateTagihan(db: any, id: number, formData: any[], getFiel
     .limit(1);
 
   const oldDoc = results[0];
-  if (!oldDoc) throw createError({ statusCode: 404, message: "Tagihan tidak ditemukan" });
+  if (!oldDoc)
+    throw createError({ statusCode: 404, message: "Tagihan tidak ditemukan" });
 
   const updateData: any = {
-    updatedAt: new Date().toISOString().slice(0, 19).replace("T", " ")
+    updatedAt: new Date().toISOString().slice(0, 19).replace("T", " "),
   };
 
   // Text fields processing
@@ -81,13 +89,21 @@ async function handleUpdateTagihan(db: any, id: number, formData: any[], getFiel
   // File fields processing
   const fileFields = [
     { name: "fotoStruk", dbField: "strukFileUrl", category: "barang" as const },
-    { name: "fotoBarang", dbField: "fotoBarangUrl", category: "barang" as const },
+    {
+      name: "fotoBarang",
+      dbField: "fotoBarangUrl",
+      category: "barang" as const,
+    },
     { name: "skFile", dbField: "skFileUrl", category: "jasa" as const },
     { name: "spmtFile", dbField: "spmtFileUrl", category: "jasa" as const },
     { name: "amprahFile", dbField: "amprahFileUrl", category: "jasa" as const },
     { name: "npwpFile", dbField: "npwpFileUrl", category: "jasa" as const },
     { name: "ktpFile", dbField: "ktpFileUrl", category: "jasa" as const },
-    { name: "bukuRekeningFile", dbField: "bukuRekeningFileUrl", category: "jasa" as const },
+    {
+      name: "bukuRekeningFile",
+      dbField: "bukuRekeningFileUrl",
+      category: "jasa" as const,
+    },
   ];
 
   for (const f of fileFields) {
@@ -119,7 +135,12 @@ async function handleUpdateTagihan(db: any, id: number, formData: any[], getFiel
   return { success: true, message: "Tagihan berhasil diperbarui" };
 }
 
-async function handleUpdateDokumentasi(db: any, id: number, formData: any[], getField: (name: string) => string | undefined) {
+async function handleUpdateDokumentasi(
+  db: any,
+  id: number,
+  formData: any[],
+  getField: (name: string) => string | undefined,
+) {
   const results = await db
     .select()
     .from(dokumentasiKegiatanTable)
@@ -127,10 +148,14 @@ async function handleUpdateDokumentasi(db: any, id: number, formData: any[], get
     .limit(1);
 
   const oldDoc = results[0];
-  if (!oldDoc) throw createError({ statusCode: 404, message: "Dokumentasi tidak ditemukan" });
+  if (!oldDoc)
+    throw createError({
+      statusCode: 404,
+      message: "Dokumentasi tidak ditemukan",
+    });
 
   const updateData: any = {};
-  
+
   const deskripsi = getField("deskripsi");
   if (deskripsi !== undefined) updateData.deskripsi = deskripsi;
 
@@ -143,12 +168,13 @@ async function handleUpdateDokumentasi(db: any, id: number, formData: any[], get
         await unlink(fullOldPath).catch(() => {});
       }
     }
-
     // Save new file
+
     const targetDir = await createFilePath("dokumentasi", "kegiatan", "");
     const newFileName = `${Date.now()}_file_${fileData.filename}`;
     const newPath = join(targetDir, newFileName);
-    await writeFile(join(process.cwd(), newPath), fileData.data);
+
+    await writeFile(join(newPath), fileData.data);
     updateData.fileUrl = newPath;
   }
 

@@ -131,7 +131,6 @@
                   @click="openDetail(rab.pengajuanRabTable.id)"
                   class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-[#3b5988] bg-[#3b5988]/10 hover:bg-[#3b5988] hover:text-white transition-all group/btn"
                 >
-                  <span>Detail</span>
                   <Icon
                     name="heroicons:eye"
                     class="w-4 h-4 group-hover/btn:scale-110 transition-transform"
@@ -139,20 +138,6 @@
                 </button>
 
                 <!-- Tombol Upload Dokumentasi -->
-                <button
-                  v-if="
-                    rab.pengajuanRabTable.status === 'disetujui' &&
-                    isEventCompleted(rab.pengajuanRabTable.tanggalSelesai)
-                  "
-                  @click="handleUploadDokumentasi(rab.pengajuanRabTable.id)"
-                  class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-emerald-600 bg-emerald-50 hover:bg-emerald-600 hover:text-white transition-all group/upload"
-                >
-                  <span>Upload Dokumen</span>
-                  <Icon
-                    name="heroicons:cloud-arrow-up"
-                    class="w-4 h-4 group-hover/upload:translate-y-[-2px] transition-transform"
-                  />
-                </button>
 
                 <!-- Tombol Upload LPJ -->
                 <button
@@ -160,7 +145,6 @@
                   @click="handleUploadLpj(rab.pengajuanRabTable.id)"
                   class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-amber-600 bg-amber-50 hover:bg-amber-600 hover:text-white transition-all group/upload-lpj"
                 >
-                  <span>Upload LPJ</span>
                   <Icon
                     name="heroicons:document-arrow-up"
                     class="w-4 h-4 group-hover/upload-lpj:translate-y-[-2px] transition-transform"

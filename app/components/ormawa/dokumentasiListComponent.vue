@@ -149,7 +149,6 @@
                   class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-600 hover:text-white transition-all"
                 >
                   <Icon name="heroicons:eye" class="w-4 h-4" />
-                  <span class="hidden sm:inline">Lihat</span>
                 </button>
 
                 <!-- Conditional Buttons -->
@@ -165,14 +164,12 @@
                     class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium text-amber-600 bg-amber-50 hover:bg-amber-600 hover:text-white transition-all"
                   >
                     <Icon name="heroicons:pencil" class="w-4 h-4" />
-                    <span class="hidden sm:inline">Edit</span>
                   </button>
                   <button
                     @click="handleDelete(doc)"
                     class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium text-red-600 bg-red-50 hover:bg-red-600 hover:text-white transition-all"
                   >
                     <Icon name="heroicons:trash" class="w-4 h-4" />
-                    <span class="hidden sm:inline">Hapus</span>
                   </button>
                 </template>
 
