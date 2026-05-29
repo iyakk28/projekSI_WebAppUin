@@ -55,6 +55,7 @@ export default defineEventHandler(async (event) => {
     fakultasId: String(user.fakultasId),
     prodiId: user.prodiId ? String(user.prodiId) : null,
     uploadedBy: user.id,
+    status: 0,
   });
 
   return {
