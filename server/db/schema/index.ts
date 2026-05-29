@@ -28,6 +28,7 @@ export {
   lpgTable,
   revisiLpgLogTable,
   auditLogTable,
+  logDokumentasiTagihanTable,
 };
 
 // ============================================

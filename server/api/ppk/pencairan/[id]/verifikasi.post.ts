@@ -6,6 +6,7 @@ import {
   pengajuanRabTable,
   usersTable,
   ormawaTable,
+  logDokumentasiTagihanTable,
 } from "~~/server/db/schema";
 
 export default defineEventHandler(async (event) => {
@@ -112,13 +113,22 @@ export default defineEventHandler(async (event) => {
     const statusBaru =
       keputusan === "terverifikasi" ? "TERVERIFIKASI" : "DIKEMBALIKAN";
 
-    await db
-      .update(tagihanPencairanTable)
-      .set({
-        statusTagihan: statusBaru,
-        updatedAt: new Date().toISOString(),
-      })
-      .where(eq(tagihanPencairanTable.id, id));
+    await db.transaction(async (tx) => {
+      await tx
+        .update(tagihanPencairanTable)
+        .set({
+          statusTagihan: statusBaru,
+          updatedAt: new Date().toISOString(),
+        })
+        .where(eq(tagihanPencairanTable.id, id));
+
+      await tx.insert(logDokumentasiTagihanTable).values({
+        tagihanId: id,
+        action: keputusan === "terverifikasi" ? "approve" : "revisi",
+        komentar: catatan?.trim() || (keputusan === "terverifikasi" ? "Dokumen diverifikasi" : "Perlu perbaikan"),
+        userId: Number(user.id),
+      });
+    });
 
     return {
       success: true,

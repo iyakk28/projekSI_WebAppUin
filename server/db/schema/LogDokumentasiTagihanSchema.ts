@@ -36,6 +36,7 @@ export const logDokumentasiTagihanTable = mysqlTable(
       "approve",
       "reject",
       "pay",
+      "revisi",
     ]).notNull(),
     komentar: text("komentar").notNull(),
     userId: bigint("user_id", { mode: "number" })

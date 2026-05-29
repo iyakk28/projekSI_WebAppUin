@@ -125,21 +125,45 @@
                   'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border',
                   doc.statusTagihan === 'SELESAI'
                     ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                    : 'bg-amber-50 text-amber-700 border-amber-200',
+                    : doc.statusTagihan === 'DIKEMBALIKAN'
+                      ? 'bg-red-50 text-red-700 border-red-200'
+                      : doc.statusTagihan === 'TERVERIFIKASI'
+                        ? 'bg-blue-50 text-blue-700 border-blue-200'
+                        : 'bg-amber-50 text-amber-700 border-amber-200',
                 ]"
               >
-                {{ doc.statusTagihan === "SELESAI" ? "Lunas" : "Menunggu" }}
+                {{
+                  doc.statusTagihan === "SELESAI"
+                    ? "Lunas"
+                    : doc.statusTagihan === "DIKEMBALIKAN"
+                      ? "Revisi"
+                      : doc.statusTagihan === "TERVERIFIKASI"
+                        ? "Terverifikasi"
+                        : "Menunggu"
+                }}
               </span>
               <span
                 v-else
                 :class="[
                   'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border',
-                  doc.status
+                  doc.status === 1
                     ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                    : 'bg-slate-50 text-slate-700 border-slate-200',
+                    : doc.status === 2
+                      ? 'bg-amber-50 text-amber-700 border-amber-200'
+                      : doc.status === 3
+                        ? 'bg-red-50 text-red-700 border-red-200'
+                        : 'bg-slate-50 text-slate-700 border-slate-200',
                 ]"
               >
-                {{ doc.status ? "Diterima" : "Menunggu" }}
+                {{
+                  doc.status === 1
+                    ? "Diterima"
+                    : doc.status === 2
+                      ? "Revisi"
+                      : doc.status === 3
+                        ? "Ditolak"
+                        : "Menunggu"
+                }}
               </span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-right">
@@ -437,57 +461,127 @@
               </div>
             </div>
 
-            <!-- Preview Berkas -->
-            <div class="lg:col-span-8 space-y-6">
-              <h4
-                class="text-lg font-bold text-slate-900 flex items-center gap-2"
-              >
-                <Icon
-                  name="heroicons:paper-clip"
-                  class="w-5 h-5 text-[#3b5988]"
-                />
-                Berkas Terlampir
-              </h4>
-
-              <!-- Loading State for Files -->
-              <div
-                v-if="filePreviewStore.loading"
-                class="flex justify-center items-center py-12"
-              >
-                <div class="flex flex-col items-center gap-3">
+            <!-- Preview Berkas & Log -->
+            <div class="lg:col-span-8 space-y-8">
+              <!-- Berkas Terlampir -->
+              <div class="space-y-6">
+                <h4
+                  class="text-lg font-bold text-slate-900 flex items-center gap-2"
+                >
                   <Icon
-                    name="heroicons:arrow-path"
-                    class="w-8 h-8 animate-spin text-[#3b5988]"
+                    name="heroicons:paper-clip"
+                    class="w-5 h-5 text-[#3b5988]"
                   />
-                  <p class="text-slate-500 text-sm">Memuat berkas...</p>
+                  Berkas Terlampir
+                </h4>
+
+                <!-- Loading State for Files -->
+                <div
+                  v-if="filePreviewStore.loading"
+                  class="flex justify-center items-center py-12"
+                >
+                  <div class="flex flex-col items-center gap-3">
+                    <Icon
+                      name="heroicons:arrow-path"
+                      class="w-8 h-8 animate-spin text-[#3b5988]"
+                    />
+                    <p class="text-slate-500 text-sm">Memuat berkas...</p>
+                  </div>
+                </div>
+
+                <!-- Empty State for Files -->
+                <div
+                  v-else-if="filePreviewStore.files.length === 0"
+                  class="flex justify-center items-center py-12 border-2 border-dashed border-slate-200 rounded-2xl"
+                >
+                  <div class="flex flex-col items-center gap-3 text-center">
+                    <Icon
+                      name="heroicons:document-text"
+                      class="w-12 h-12 text-slate-300"
+                    />
+                    <p class="text-slate-500 text-sm">
+                      Tidak ada berkas yang dilampirkan
+                    </p>
+                  </div>
+                </div>
+
+                <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <!-- Loop through files from store -->
+                  <ormawa-file-preview-card
+                    v-for="(file, fIdx) in filePreviewStore.files"
+                    :key="fIdx"
+                    :label="file.label"
+                    :url="file.url"
+                    :type="file.type"
+                  />
                 </div>
               </div>
 
-              <!-- Empty State for Files -->
-              <div
-                v-else-if="filePreviewStore.files.length === 0"
-                class="flex justify-center items-center py-12 border-2 border-dashed border-slate-200 rounded-2xl"
-              >
-                <div class="flex flex-col items-center gap-3 text-center">
+              <!-- Log Aktivitas -->
+              <div class="space-y-6 pt-6 border-t border-slate-100">
+                <h4
+                  class="text-lg font-bold text-slate-900 flex items-center gap-2"
+                >
                   <Icon
-                    name="heroicons:document-text"
-                    class="w-12 h-12 text-slate-300"
+                    name="heroicons:clock"
+                    class="w-5 h-5 text-[#3b5988]"
                   />
-                  <p class="text-slate-500 text-sm">
-                    Tidak ada berkas yang dilampirkan
-                  </p>
-                </div>
-              </div>
+                  Riwayat & Log Aktivitas
+                </h4>
 
-              <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- Loop through files from store -->
-                <ormawa-file-preview-card
-                  v-for="(file, fIdx) in filePreviewStore.files"
-                  :key="fIdx"
-                  :label="file.label"
-                  :url="file.url"
-                  :type="file.type"
-                />
+                <!-- Loading Logs -->
+                <div v-if="logStore.loading" class="flex justify-center py-8">
+                  <Icon name="heroicons:arrow-path" class="w-6 h-6 animate-spin text-slate-400" />
+                </div>
+
+                <!-- Empty Logs -->
+                <div v-else-if="logStore.logs.length === 0" class="bg-slate-50 rounded-2xl p-6 text-center border border-dashed border-slate-200">
+                  <p class="text-sm text-slate-500">Belum ada riwayat aktivitas untuk item ini</p>
+                </div>
+
+                <!-- Log List -->
+                <div v-else class="space-y-4">
+                  <div v-for="log in logStore.logs" :key="log.id" class="flex gap-4 p-4 rounded-2xl border border-slate-100 bg-white hover:border-[#3b5988]/20 transition-all">
+                    <div class="flex-shrink-0">
+                      <div :class="[
+                        'w-10 h-10 rounded-xl flex items-center justify-center',
+                        log.action === 'approve' ? 'bg-emerald-50 text-emerald-600' :
+                        log.action === 'reject' ? 'bg-red-50 text-red-600' :
+                        (log.action === 'review' || log.action === 'revisi') ? 'bg-amber-50 text-amber-600' :
+                        'bg-blue-50 text-blue-600'
+                      ]">
+                        <Icon :name="
+                          log.action === 'approve' ? 'heroicons:check-circle' :
+                          log.action === 'reject' ? 'heroicons:x-circle' :
+                          (log.action === 'review' || log.action === 'revisi') ? 'heroicons:arrow-path' :
+                          'heroicons:credit-card'
+                        " class="w-6 h-6" />
+                      </div>
+                    </div>
+                    <div class="flex-1 space-y-1">
+                      <div class="flex justify-between items-start">
+                        <div>
+                          <p class="text-sm font-bold text-slate-900 capitalize">
+                            {{
+                              log.action === 'approve' ? 'Disetujui' :
+                              log.action === 'reject' ? 'Ditolak' :
+                              log.action === 'review' ? 'Sedang Direview' :
+                              log.action === 'revisi' ? 'Perlu Revisi' :
+                              'Dibayarkan'
+                            }}
+                          </p>
+                          <p class="text-xs text-slate-500">Oleh: {{ log.user.fullname }} <span class="font-semibold text-slate-700">({{ log.user.role?.toUpperCase() }})</span></p>
+                        </div>
+                        <span class="text-[10px] font-medium text-slate-400">{{ formatDate(log.createdAt) }}</span>
+                      </div>
+                      <div class="bg-slate-50 rounded-lg p-3 mt-2">
+                        <p class="text-sm text-slate-700 leading-relaxed italic">
+                          "{{ log.komentar || 'Tidak ada komentar' }}"
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -892,6 +986,7 @@
   import { ref, computed, onMounted, watch } from "vue";
   import { useDokumentasiStore } from "~/stores/ormawa/allDokumen";
   import { useFilePreviewStore } from "~/stores/ormawa/filePreview";
+  import { useLogDokumentasiTagihanStore } from "~/stores/ormawa/logDokumentasiTagihan";
 
   const props = defineProps({
     kegiatanId: { type: Number, required: true },
@@ -899,6 +994,7 @@
 
   const fetcher = useDokumentasiStore();
   const filePreviewStore = useFilePreviewStore();
+  const logStore = useLogDokumentasiTagihanStore();
 
   // State lokal
   const searchQuery = ref("");
@@ -1018,7 +1114,10 @@
     selectedDoc.value = doc;
     showViewModal.value = true;
     if (doc.id) {
-      await filePreviewStore.fetchFiles(doc.id);
+      await Promise.all([
+        filePreviewStore.fetchFiles(doc.id),
+        logStore.fetchLogs(doc.id)
+      ]);
     }
   };
 

@@ -10,6 +10,7 @@ import {
   pengajuanRabTable,
   usersTable,
   ormawaTable,
+  logDokumentasiTagihanTable,
 } from "~~/server/db/schema";
 import { createFilePath } from "#imports";
 
@@ -156,6 +157,13 @@ export default defineEventHandler(async (event) => {
           updatedAt: new Date().toISOString(),
         })
         .where(eq(tagihanPencairanTable.id, id));
+
+      await tx.insert(logDokumentasiTagihanTable).values({
+        tagihanId: id,
+        action: "pay",
+        komentar: catatan?.trim() || "Pembayaran telah dilakukan",
+        userId: user.id,
+      });
     });
 
     return {
