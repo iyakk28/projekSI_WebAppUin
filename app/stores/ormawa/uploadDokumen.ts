@@ -129,14 +129,48 @@ export const useKegiatanStore = defineStore("kegiatan", {
         });
 
         if (item.kegiatanId) {
-          await dokumentasiStore.refreshDokumentasi(item.kegiatanId);
+          await dokumentasiStore.refreshDokumentasi(
+            item.kegiatanId,
+            dokumentasiStore.currentPage,
+            dokumentasiStore.perPage,
+          );
         }
 
         this.popupMessage = `Berhasil hapus ${item.jenisLabel || "dokumentasi"}`;
         this.popupVisible = true;
+        return { success: true };
       } catch (error) {
         console.error("Gagal hapus:", error);
-        alert("Gagal hapus");
+        this.popupMessage = "Gagal menghapus dokumentasi";
+        this.popupVisible = true;
+        return { success: false };
+      }
+    },
+
+    async updateDokumentasi(fd: FormData, kegiatanId: number) {
+      const dokumentasiStore = useDokumentasiStore();
+      try {
+        const response = await $fetch(`/api/ormawa/dokumentasi/dokumentasi`, {
+          method: "PATCH",
+          body: fd,
+        });
+        console.log(response);
+        if (kegiatanId) {
+          await dokumentasiStore.refreshDokumentasi(
+            kegiatanId,
+            dokumentasiStore.currentPage,
+            dokumentasiStore.perPage,
+          );
+        }
+
+        this.popupMessage = "Dokumentasi berhasil diperbarui";
+        this.popupVisible = true;
+        return { success: true };
+      } catch (error) {
+        console.error("Gagal update:", error);
+        this.popupMessage = "Gagal memperbarui dokumentasi";
+        this.popupVisible = true;
+        return { success: false };
       }
     },
 

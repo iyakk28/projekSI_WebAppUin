@@ -2,6 +2,7 @@ import { useDrizzle } from "~~/server/db";
 import { eq } from "drizzle-orm";
 import { dokumentasiKegiatanTable } from "~~/server/db/schema/dokumentasiSchema";
 import { tagihanPencairanTable } from "~~/server/db/schema/TagihanPencairanSchema";
+import { kegiatanTable } from "~~/server/db/schema/KegiatanSchema";
 import { unlink } from "node:fs/promises";
 import fs from "node:fs";
 
@@ -23,15 +24,23 @@ export default defineEventHandler(async (event) => {
 
   if (isTagihan) {
     const results = await db
-      .select()
+      .select({
+        tagihan: tagihanPencairanTable,
+        statusKegiatan: kegiatanTable.statusKegiatan,
+      })
       .from(tagihanPencairanTable)
+      .innerJoin(
+        kegiatanTable,
+        eq(tagihanPencairanTable.kegiatanId, kegiatanTable.id),
+      )
       .where(eq(tagihanPencairanTable.id, realId))
       .limit(1);
 
-    const doc = results[0];
-    if (!doc)
+    const res = results[0];
+    if (!res)
       throw createError({ statusCode: 404, message: "Data tidak ditemukan" });
 
+    const doc = res.tagihan;
     const fileFields = [
       "skFileUrl",
       "spmtFileUrl",
@@ -55,15 +64,37 @@ export default defineEventHandler(async (event) => {
       .where(eq(tagihanPencairanTable.id, realId));
   } else {
     const results = await db
-      .select()
+      .select({
+        dokumentasi: dokumentasiKegiatanTable,
+        statusKegiatan: kegiatanTable.statusKegiatan,
+      })
       .from(dokumentasiKegiatanTable)
+      .innerJoin(
+        kegiatanTable,
+        eq(dokumentasiKegiatanTable.kegiatanId, kegiatanTable.id),
+      )
       .where(eq(dokumentasiKegiatanTable.id, realId))
       .limit(1);
 
-    const doc = results[0];
-    if (!doc)
+    const res = results[0];
+    if (!res)
       throw createError({ statusCode: 404, message: "Data tidak ditemukan" });
 
+    if (res.statusKegiatan === "SELESAI") {
+      throw createError({
+        statusCode: 403,
+        message: "Kegiatan sudah selesai, data tidak dapat dihapus",
+      });
+    }
+
+    if (res.dokumentasi.status === "DITERIMA") {
+      throw createError({
+        statusCode: 403,
+        message: "Dokumentasi sudah diterima, data tidak dapat dihapus",
+      });
+    }
+
+    const doc = res.dokumentasi;
     if (doc.fileUrl) {
       const paths = doc.fileUrl
         .split(";")

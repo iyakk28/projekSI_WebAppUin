@@ -2,6 +2,7 @@ import { useDrizzle } from "~~/server/db";
 import { eq } from "drizzle-orm";
 import { dokumentasiKegiatanTable } from "~~/server/db/schema/dokumentasiSchema";
 import { tagihanPencairanTable } from "~~/server/db/schema/TagihanPencairanSchema";
+import { kegiatanTable } from "~~/server/db/schema/KegiatanSchema";
 import { showDekripsi } from "~~/server/utils/enkripsiData";
 
 export default defineEventHandler(async (event) => {
@@ -19,16 +20,51 @@ export default defineEventHandler(async (event) => {
 
     const db = useDrizzle();
 
-    // Ambil data Dokumentasi
+    // Ambil data Dokumentasi + statusKegiatan
     const rawDokumen = await db
-      .select()
+      .select({
+        id: dokumentasiKegiatanTable.id,
+        deskripsi: dokumentasiKegiatanTable.deskripsi,
+        tipeDokumen: dokumentasiKegiatanTable.tipeDokumen,
+        fileUrl: dokumentasiKegiatanTable.fileUrl,
+        status: dokumentasiKegiatanTable.status,
+        createdAt: dokumentasiKegiatanTable.createdAt,
+        statusKegiatan: kegiatanTable.statusKegiatan,
+      })
       .from(dokumentasiKegiatanTable)
+      .innerJoin(kegiatanTable, eq(dokumentasiKegiatanTable.kegiatanId, kegiatanTable.id))
       .where(eq(dokumentasiKegiatanTable.kegiatanId, kegiatanId));
 
-    // Ambil data Tagihan Pencairan (Barang & Jasa)
+    // Ambil data Tagihan Pencairan (Barang & Jasa) + statusKegiatan
     const rawTagihan = await db
-      .select()
+      .select({
+        id: tagihanPencairanTable.id,
+        tipeTagihan: tagihanPencairanTable.tipeTagihan,
+        nominal: tagihanPencairanTable.nominal,
+        namaPenerima: tagihanPencairanTable.namaPenerima,
+        rekeningPenerima: tagihanPencairanTable.rekeningPenerima,
+        bankPenerima: tagihanPencairanTable.bankPenerima,
+        tokoNama: tagihanPencairanTable.tokoNama,
+        tokoAlamat: tagihanPencairanTable.tokoAlamat,
+        strukFileUrl: tagihanPencairanTable.strukFileUrl,
+        fotoBarangUrl: tagihanPencairanTable.fotoBarangUrl,
+        skNomor: tagihanPencairanTable.skNomor,
+        skFileUrl: tagihanPencairanTable.skFileUrl,
+        spmtNomor: tagihanPencairanTable.spmtNomor,
+        spmtFileUrl: tagihanPencairanTable.spmtFileUrl,
+        amprahNomor: tagihanPencairanTable.amprahNomor,
+        amprahFileUrl: tagihanPencairanTable.amprahFileUrl,
+        npwpNomor: tagihanPencairanTable.npwpNomor,
+        npwpFileUrl: tagihanPencairanTable.npwpFileUrl,
+        ktpNomor: tagihanPencairanTable.ktpNomor,
+        ktpFileUrl: tagihanPencairanTable.ktpFileUrl,
+        bukuRekeningFileUrl: tagihanPencairanTable.bukuRekeningFileUrl,
+        statusTagihan: tagihanPencairanTable.statusTagihan,
+        createdAt: tagihanPencairanTable.createdAt,
+        statusKegiatan: kegiatanTable.statusKegiatan,
+      })
       .from(tagihanPencairanTable)
+      .innerJoin(kegiatanTable, eq(tagihanPencairanTable.kegiatanId, kegiatanTable.id))
       .where(eq(tagihanPencairanTable.kegiatanId, kegiatanId));
 
     // Gabungkan data
@@ -42,9 +78,9 @@ export default defineEventHandler(async (event) => {
         fileUrl: d.fileUrl,
         status: d.status,
         createdAt: d.createdAt,
+        statusKegiatan: d.statusKegiatan,
       })),
       ...rawTagihan.map((t) => {
-        console.log(t.bankPenerima);
         return {
           id: `tagihan_${t.id}`,
           realId: t.id,
@@ -75,6 +111,7 @@ export default defineEventHandler(async (event) => {
           bukuRekeningFileUrl: t.bukuRekeningFileUrl,
           statusTagihan: t.statusTagihan,
           createdAt: t.createdAt,
+          statusKegiatan: t.statusKegiatan,
         };
       }),
     ];

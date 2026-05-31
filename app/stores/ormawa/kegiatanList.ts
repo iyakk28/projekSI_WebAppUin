@@ -10,7 +10,10 @@ export const useKegiatanListStore = defineStore("kegiatanList", () => {
     loading.value = true;
     error.value = null;
     try {
-      const response = await $fetch<{ success: boolean; data: any[] }>("/api/ormawa/kegiatan");
+      const response = await $fetch<{ success: boolean; data: any[] }>(
+        "/api/ormawa/kegiatan",
+      );
+
       if (response && response.success) {
         activities.value = response.data;
       }
@@ -23,9 +26,10 @@ export const useKegiatanListStore = defineStore("kegiatanList", () => {
   };
 
   const featuredActivities = computed(() => {
-    return activities.value.filter(item => 
-      item.kegiatan.statusKegiatan === 'SEDANG_DILAKSANAKAN' || 
-      item.kegiatan.statusKegiatan === 'BELUM_DILAKSANAKAN'
+    return activities.value.filter(
+      (item) =>
+        item.kegiatan.statusKegiatan === "SEDANG_DILAKSANAKAN" ||
+        item.kegiatan.statusKegiatan === "BELUM_DILAKSANAKAN",
     );
   });
 
@@ -37,6 +41,6 @@ export const useKegiatanListStore = defineStore("kegiatanList", () => {
     error,
     fetchActivities,
     featuredActivities,
-    allActivities
+    allActivities,
   };
 });

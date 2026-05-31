@@ -4,12 +4,20 @@ import {
   varchar,
   text,
   timestamp,
-  tinyint,
+  mysqlEnum,
 } from "drizzle-orm/mysql-core";
 import { kegiatanTable } from "./KegiatanSchema";
 import { usersTable } from "./usersSchema";
 import { programStudiTable } from "./programStudiSchema";
 import { fakultasTable } from "./fakultasSchema";
+
+export const dokumentasiStatusEnum = [
+  "MENUNGGU",
+  "DITERIMA",
+  "DITOLAK",
+  "REVISI",
+] as const;
+export type DokumentasiStatus = (typeof dokumentasiStatusEnum)[number];
 
 export const dokumentasiKegiatanTable = mysqlTable("dokumentasi_kegiatan", {
   id: bigint("id", { mode: "number" }).primaryKey().autoincrement(),
@@ -24,7 +32,9 @@ export const dokumentasiKegiatanTable = mysqlTable("dokumentasi_kegiatan", {
   prodiId: varchar("prodi_id", { length: 50 }).references(
     () => programStudiTable.id,
   ),
-  status: tinyint("status").default(0).notNull(),
+  status: mysqlEnum("status", dokumentasiStatusEnum)
+    .default("MENUNGGU")
+    .notNull(),
   fileUrl: text("file_url").notNull(),
   uploadedBy: bigint("uploaded_by", { mode: "number" })
     .notNull()

@@ -48,24 +48,25 @@ export default defineEventHandler(async (event) => {
     if (isTagihan) {
       let statusTagihan = "";
       if (action === "approve") statusTagihan = "TERVERIFIKASI";
-      else if (action === "reject" || action === "review") statusTagihan = "DIKEMBALIKAN";
+      else if (action === "reject") statusTagihan = "DITOLAK";
+      else if (action === "review") statusTagihan = "DIKEMBALIKAN";
       else if (action === "pay") statusTagihan = "SELESAI";
 
       if (statusTagihan) {
         await tx
           .update(tagihanPencairanTable)
-          .set({ statusTagihan, updatedAt: new Date().toISOString() })
+          .set({ statusTagihan: statusTagihan as any, updatedAt: new Date().toISOString() })
           .where(eq(tagihanPencairanTable.id, realId));
       }
     } else {
-      let status = 0;
-      if (action === "approve") status = 1;
-      else if (action === "review") status = 2;
-      else if (action === "reject") status = 3;
+      let status = "MENUNGGU";
+      if (action === "approve") status = "DITERIMA";
+      else if (action === "review") status = "REVISI";
+      else if (action === "reject") status = "DITOLAK";
 
       await tx
         .update(dokumentasiKegiatanTable)
-        .set({ status })
+        .set({ status: status as any })
         .where(eq(dokumentasiKegiatanTable.id, realId));
     }
 

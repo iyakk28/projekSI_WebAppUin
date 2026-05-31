@@ -2,6 +2,7 @@ import { useDrizzle } from "~~/server/db";
 import { eq } from "drizzle-orm";
 import { dokumentasiKegiatanTable } from "~~/server/db/schema/dokumentasiSchema";
 import { tagihanPencairanTable } from "~~/server/db/schema/TagihanPencairanSchema";
+import { kegiatanTable } from "~~/server/db/schema/KegiatanSchema";
 import { createFilePath } from "~~/server/utils/CreateFilePath";
 import { writeFile, unlink } from "node:fs/promises";
 import { join } from "node:path";
@@ -49,20 +50,30 @@ async function handleUpdateTagihan(
   getField: (name: string) => string | undefined,
 ) {
   const results = await db
-    .select()
+    .select({
+      tagihan: tagihanPencairanTable,
+      statusKegiatan: kegiatanTable.statusKegiatan,
+    })
     .from(tagihanPencairanTable)
+    .innerJoin(
+      kegiatanTable,
+      eq(tagihanPencairanTable.kegiatanId, kegiatanTable.id),
+    )
     .where(eq(tagihanPencairanTable.id, id))
     .limit(1);
 
-  const oldDoc = results[0];
-  if (!oldDoc)
+  const res = results[0];
+  if (!res)
     throw createError({ statusCode: 404, message: "Tagihan tidak ditemukan" });
+
+  const oldDoc = res.tagihan;
 
   const updateData: any = {
     updatedAt: new Date().toISOString().slice(0, 19).replace("T", " "),
   };
 
   // Text fields processing
+  // ...
   const textFields = [
     { name: "namaPenerima", encrypt: true },
     { name: "rekeningPenerima", encrypt: true },
@@ -142,17 +153,26 @@ async function handleUpdateDokumentasi(
   getField: (name: string) => string | undefined,
 ) {
   const results = await db
-    .select()
+    .select({
+      dokumentasi: dokumentasiKegiatanTable,
+      statusKegiatan: kegiatanTable.statusKegiatan,
+    })
     .from(dokumentasiKegiatanTable)
+    .innerJoin(
+      kegiatanTable,
+      eq(dokumentasiKegiatanTable.kegiatanId, kegiatanTable.id),
+    )
     .where(eq(dokumentasiKegiatanTable.id, id))
     .limit(1);
 
-  const oldDoc = results[0];
-  if (!oldDoc)
+  const res = results[0];
+  if (!res)
     throw createError({
       statusCode: 404,
       message: "Dokumentasi tidak ditemukan",
     });
+
+  const oldDoc = res.dokumentasi;
 
   const updateData: any = {};
 

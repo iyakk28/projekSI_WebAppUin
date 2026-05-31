@@ -5,11 +5,21 @@ import {
   text,
   decimal,
   timestamp,
+  mysqlEnum,
 } from "drizzle-orm/mysql-core";
 import { kegiatanTable } from "./KegiatanSchema";
 import { usersTable } from "./usersSchema";
 import { programStudiTable } from "./programStudiSchema";
 import { fakultasTable } from "./fakultasSchema";
+export const tagihanStatusEnum = [
+  "WAITING_PEMBAYARAN",
+  "TERVERIFIKASI",
+  "DIKEMBALIKAN",
+  "SELESAI",
+  "DITOLAK",
+] as const;
+export type TagihanStatus = (typeof tagihanStatusEnum)[number];
+
 export const tagihanPencairanTable = mysqlTable("tagihan_pencairan", {
   id: bigint("id", { mode: "number" }).primaryKey().autoincrement(),
   kegiatanId: bigint("kegiatan_id", { mode: "number" })
@@ -48,7 +58,7 @@ export const tagihanPencairanTable = mysqlTable("tagihan_pencairan", {
   strukFileUrl: text("struk_file_url"),
   fotoBarangUrl: text("foto_barang_url"),
 
-  statusTagihan: varchar("status_tagihan", { length: 50 }).default(
+  statusTagihan: mysqlEnum("status_tagihan", tagihanStatusEnum).default(
     "WAITING_PEMBAYARAN",
   ),
   createdBy: bigint("created_by", { mode: "number" })

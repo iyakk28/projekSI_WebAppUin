@@ -126,10 +126,12 @@
                   doc.statusTagihan === 'SELESAI'
                     ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                     : doc.statusTagihan === 'DIKEMBALIKAN'
-                      ? 'bg-red-50 text-red-700 border-red-200'
-                      : doc.statusTagihan === 'TERVERIFIKASI'
-                        ? 'bg-blue-50 text-blue-700 border-blue-200'
-                        : 'bg-amber-50 text-amber-700 border-amber-200',
+                      ? 'bg-amber-50 text-amber-700 border-amber-200'
+                      : doc.statusTagihan === 'DITOLAK'
+                        ? 'bg-red-50 text-red-700 border-red-200'
+                        : doc.statusTagihan === 'TERVERIFIKASI'
+                          ? 'bg-blue-50 text-blue-700 border-blue-200'
+                          : 'bg-slate-50 text-slate-700 border-slate-200',
                 ]"
               >
                 {{
@@ -137,30 +139,32 @@
                     ? "Lunas"
                     : doc.statusTagihan === "DIKEMBALIKAN"
                       ? "Revisi"
-                      : doc.statusTagihan === "TERVERIFIKASI"
-                        ? "Terverifikasi"
-                        : "Menunggu"
+                      : doc.statusTagihan === "DITOLAK"
+                        ? "Ditolak"
+                        : doc.statusTagihan === "TERVERIFIKASI"
+                          ? "Terverifikasi"
+                          : "Menunggu"
                 }}
               </span>
               <span
                 v-else
                 :class="[
                   'px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border',
-                  doc.status === 1
+                  doc.status === 'DITERIMA'
                     ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                    : doc.status === 2
+                    : doc.status === 'REVISI'
                       ? 'bg-amber-50 text-amber-700 border-amber-200'
-                      : doc.status === 3
+                      : doc.status === 'DITOLAK'
                         ? 'bg-red-50 text-red-700 border-red-200'
                         : 'bg-slate-50 text-slate-700 border-slate-200',
                 ]"
               >
                 {{
-                  doc.status === 1
+                  doc.status === "DITERIMA"
                     ? "Diterima"
-                    : doc.status === 2
+                    : doc.status === "REVISI"
                       ? "Revisi"
-                      : doc.status === 3
+                      : doc.status === "DITOLAK"
                         ? "Ditolak"
                         : "Menunggu"
                 }}
@@ -175,27 +179,32 @@
                   <Icon name="heroicons:eye" class="w-4 h-4" />
                 </button>
 
-                <!-- Conditional Buttons -->
-                <template
+                <!-- Edit Button: Only for REVISI/DIKEMBALIKAN -->
+
+                <button
                   v-if="
-                    (doc.tipeData === 'TAGIHAN' &&
-                      doc.statusTagihan !== 'SELESAI') ||
-                    (doc.tipeData === 'DOKUMENTASI' && !doc.status)
+                    doc.status === 'REVISI' ||
+                    doc.status === 'DITOLAK' ||
+                    doc.statusTagihan === 'DIKEMBALIKAN'
                   "
+                  @click="handleEdit(doc)"
+                  class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium text-amber-600 bg-amber-50 hover:bg-amber-600 hover:text-white transition-all"
                 >
-                  <button
-                    @click="handleEdit(doc)"
-                    class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium text-amber-600 bg-amber-50 hover:bg-amber-600 hover:text-white transition-all"
-                  >
-                    <Icon name="heroicons:pencil" class="w-4 h-4" />
-                  </button>
-                  <button
-                    @click="handleDelete(doc)"
-                    class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium text-red-600 bg-red-50 hover:bg-red-600 hover:text-white transition-all"
-                  >
-                    <Icon name="heroicons:trash" class="w-4 h-4" />
-                  </button>
-                </template>
+                  <Icon name="heroicons:pencil" class="w-4 h-4" />
+                </button>
+
+                <!-- Delete Button: For REVISI/DIKEMBALIKAN or DITOLAK -->
+                <button
+                  v-if="
+                    doc.status === 'REVISI' ||
+                    doc.status === 'DITOLAK' ||
+                    doc.statusTagihan === 'DIKEMBALIKAN'
+                  "
+                  @click="handleDelete(doc)"
+                  class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium text-red-600 bg-red-50 hover:bg-red-600 hover:text-white transition-all"
+                >
+                  <Icon name="heroicons:trash" class="w-4 h-4" />
+                </button>
 
                 <!-- Bukti Pembayaran Button -->
                 <button
@@ -522,61 +531,98 @@
                 <h4
                   class="text-lg font-bold text-slate-900 flex items-center gap-2"
                 >
-                  <Icon
-                    name="heroicons:clock"
-                    class="w-5 h-5 text-[#3b5988]"
-                  />
+                  <Icon name="heroicons:clock" class="w-5 h-5 text-[#3b5988]" />
                   Riwayat & Log Aktivitas
                 </h4>
 
                 <!-- Loading Logs -->
                 <div v-if="logStore.loading" class="flex justify-center py-8">
-                  <Icon name="heroicons:arrow-path" class="w-6 h-6 animate-spin text-slate-400" />
+                  <Icon
+                    name="heroicons:arrow-path"
+                    class="w-6 h-6 animate-spin text-slate-400"
+                  />
                 </div>
 
                 <!-- Empty Logs -->
-                <div v-else-if="logStore.logs.length === 0" class="bg-slate-50 rounded-2xl p-6 text-center border border-dashed border-slate-200">
-                  <p class="text-sm text-slate-500">Belum ada riwayat aktivitas untuk item ini</p>
+                <div
+                  v-else-if="logStore.logs.length === 0"
+                  class="bg-slate-50 rounded-2xl p-6 text-center border border-dashed border-slate-200"
+                >
+                  <p class="text-sm text-slate-500">
+                    Belum ada riwayat aktivitas untuk item ini
+                  </p>
                 </div>
 
                 <!-- Log List -->
                 <div v-else class="space-y-4">
-                  <div v-for="log in logStore.logs" :key="log.id" class="flex gap-4 p-4 rounded-2xl border border-slate-100 bg-white hover:border-[#3b5988]/20 transition-all">
+                  <div
+                    v-for="log in logStore.logs"
+                    :key="log.id"
+                    class="flex gap-4 p-4 rounded-2xl border border-slate-100 bg-white hover:border-[#3b5988]/20 transition-all"
+                  >
                     <div class="flex-shrink-0">
-                      <div :class="[
-                        'w-10 h-10 rounded-xl flex items-center justify-center',
-                        log.action === 'approve' ? 'bg-emerald-50 text-emerald-600' :
-                        log.action === 'reject' ? 'bg-red-50 text-red-600' :
-                        (log.action === 'review' || log.action === 'revisi') ? 'bg-amber-50 text-amber-600' :
-                        'bg-blue-50 text-blue-600'
-                      ]">
-                        <Icon :name="
-                          log.action === 'approve' ? 'heroicons:check-circle' :
-                          log.action === 'reject' ? 'heroicons:x-circle' :
-                          (log.action === 'review' || log.action === 'revisi') ? 'heroicons:arrow-path' :
-                          'heroicons:credit-card'
-                        " class="w-6 h-6" />
+                      <div
+                        :class="[
+                          'w-10 h-10 rounded-xl flex items-center justify-center',
+                          log.action === 'approve'
+                            ? 'bg-emerald-50 text-emerald-600'
+                            : log.action === 'reject'
+                              ? 'bg-red-50 text-red-600'
+                              : log.action === 'review' ||
+                                  log.action === 'revisi'
+                                ? 'bg-amber-50 text-amber-600'
+                                : 'bg-blue-50 text-blue-600',
+                        ]"
+                      >
+                        <Icon
+                          :name="
+                            log.action === 'approve'
+                              ? 'heroicons:check-circle'
+                              : log.action === 'reject'
+                                ? 'heroicons:x-circle'
+                                : log.action === 'review' ||
+                                    log.action === 'revisi'
+                                  ? 'heroicons:arrow-path'
+                                  : 'heroicons:credit-card'
+                          "
+                          class="w-6 h-6"
+                        />
                       </div>
                     </div>
                     <div class="flex-1 space-y-1">
                       <div class="flex justify-between items-start">
                         <div>
-                          <p class="text-sm font-bold text-slate-900 capitalize">
+                          <p
+                            class="text-sm font-bold text-slate-900 capitalize"
+                          >
                             {{
-                              log.action === 'approve' ? 'Disetujui' :
-                              log.action === 'reject' ? 'Ditolak' :
-                              log.action === 'review' ? 'Sedang Direview' :
-                              log.action === 'revisi' ? 'Perlu Revisi' :
-                              'Dibayarkan'
+                              log.action === "approve"
+                                ? "Disetujui"
+                                : log.action === "reject"
+                                  ? "Ditolak"
+                                  : log.action === "review"
+                                    ? "Sedang Direview"
+                                    : log.action === "revisi"
+                                      ? "Perlu Revisi"
+                                      : "Dibayarkan"
                             }}
                           </p>
-                          <p class="text-xs text-slate-500">Oleh: {{ log.user.fullname }} <span class="font-semibold text-slate-700">({{ log.user.role?.toUpperCase() }})</span></p>
+                          <p class="text-xs text-slate-500">
+                            Oleh: {{ log.user.fullname }}
+                            <span class="font-semibold text-slate-700"
+                              >({{ log.user.role?.toUpperCase() }})</span
+                            >
+                          </p>
                         </div>
-                        <span class="text-[10px] font-medium text-slate-400">{{ formatDate(log.createdAt) }}</span>
+                        <span class="text-[10px] font-medium text-slate-400">{{
+                          formatDate(log.createdAt)
+                        }}</span>
                       </div>
                       <div class="bg-slate-50 rounded-lg p-3 mt-2">
-                        <p class="text-sm text-slate-700 leading-relaxed italic">
-                          "{{ log.komentar || 'Tidak ada komentar' }}"
+                        <p
+                          class="text-sm text-slate-700 leading-relaxed italic"
+                        >
+                          "{{ log.komentar || "Tidak ada komentar" }}"
                         </p>
                       </div>
                     </div>
@@ -985,6 +1031,7 @@
 <script setup lang="ts">
   import { ref, computed, onMounted, watch } from "vue";
   import { useDokumentasiStore } from "~/stores/ormawa/allDokumen";
+  import { useKegiatanStore } from "~/stores/ormawa/uploadDokumen";
   import { useFilePreviewStore } from "~/stores/ormawa/filePreview";
   import { useLogDokumentasiTagihanStore } from "~/stores/ormawa/logDokumentasiTagihan";
 
@@ -993,6 +1040,7 @@
   });
 
   const fetcher = useDokumentasiStore();
+  const kegiatanStore = useKegiatanStore();
   const filePreviewStore = useFilePreviewStore();
   const logStore = useLogDokumentasiTagihanStore();
 
@@ -1116,7 +1164,7 @@
     if (doc.id) {
       await Promise.all([
         filePreviewStore.fetchFiles(doc.id),
-        logStore.fetchLogs(doc.id)
+        logStore.fetchLogs(doc.id),
       ]);
     }
   };
@@ -1211,17 +1259,13 @@
         fd.append(key, selectedFiles.value[key]);
       });
 
-      await $fetch(`/api/ormawa/dokumentasi/dokumentasi`, {
-        method: "PATCH",
-        body: fd,
-      });
-      showPopupNotification("Dokumentasi berhasil diperbarui", "success");
-      showEditModal.value = false;
-      await fetcher.refreshDokumentasi(
-        props.kegiatanId,
-        fetcher.currentPage,
-        fetcher.perPage,
-      );
+      const res = await kegiatanStore.updateDokumentasi(fd, props.kegiatanId);
+      if (res.success) {
+        showPopupNotification(kegiatanStore.popupMessage, "success");
+        showEditModal.value = false;
+      } else {
+        showPopupNotification(kegiatanStore.popupMessage, "error");
+      }
     } catch (error) {
       showPopupNotification("Gagal memperbarui dokumentasi", "error");
     }
@@ -1234,17 +1278,17 @@
 
   const submitDelete = async () => {
     try {
-      await $fetch(`/api/ormawa/dokumentasi/dokumentasi`, {
-        method: "DELETE",
-        body: { id: selectedDoc.value.id },
+      const res = await kegiatanStore.deleteUpload({
+        id: selectedDoc.value.id,
+        kegiatanId: props.kegiatanId,
       });
-      showPopupNotification("Dokumentasi berhasil dihapus", "success");
-      showDeleteConfirm.value = false;
-      await fetcher.refreshDokumentasi(
-        props.kegiatanId,
-        fetcher.currentPage,
-        fetcher.perPage,
-      );
+
+      if (res.success) {
+        showPopupNotification(kegiatanStore.popupMessage, "success");
+        showDeleteConfirm.value = false;
+      } else {
+        showPopupNotification(kegiatanStore.popupMessage, "error");
+      }
     } catch (error) {
       showPopupNotification("Gagal menghapus dokumentasi", "error");
     }
