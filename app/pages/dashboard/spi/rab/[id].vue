@@ -67,6 +67,8 @@
           <div
             class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8"
           >
+            <!-- Processing Timeline -->
+
             <div class="flex items-start justify-between gap-4 mb-4">
               <div>
                 <p
@@ -79,40 +81,6 @@
                 >
                   {{ rab.judulKegiatan }}
                 </h1>
-              </div>
-              <div class="mt-6 flex gap-3 flex-end">
-                <template v-if="rab.status === 'waiting_spi'">
-                  <button
-                    @click="openActionModal('setuju')"
-                    class="inline-flex items-center gap-2 rounded-lg border border-green-400 bg-transparent px-4 py-2 text-sm font-medium text-green-700 transition-colors hover:bg-green-50 focus:outline-none"
-                  >
-                    <Icon name="heroicons:check-badge" class="h-4 w-4" />
-                    Setujui
-                  </button>
-                  <button
-                    @click="openActionModal('revisi')"
-                    class="inline-flex items-center gap-2 rounded-lg border border-yellow-400 bg-transparent px-4 py-2 text-sm font-medium text-yellow-700 transition-colors hover:bg-yellow-50 focus:outline-none"
-                  >
-                    <Icon name="heroicons:arrow-path" class="h-4 w-4" />
-                    Revisi
-                  </button>
-                  <button
-                    @click="openActionModal('tolak')"
-                    class="inline-flex items-center gap-2 rounded-lg border border-red-400 bg-transparent px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 focus:outline-none"
-                  >
-                    <Icon name="heroicons:x-mark" class="h-4 w-4" />
-                    Tolak
-                  </button>
-                </template>
-                <template v-else>
-                  <div
-                    class="rounded-xl border border-slate-200 bg-slate-50 px-5 py-3"
-                  >
-                    <p class="text-center text-sm font-medium text-slate-500">
-                      Dokumen ini tidak dalam status menunggu review SPI.
-                    </p>
-                  </div>
-                </template>
               </div>
             </div>
 
@@ -135,7 +103,40 @@
                 <span>Diajukan {{ formatDate(rab.createdAt) }}</span>
               </div>
             </div>
-
+            <div class="mt-6 flex gap-3 flex-end">
+              <template v-if="rab.status === 'waiting_spi'">
+                <button
+                  @click="openActionModal('setuju')"
+                  class="inline-flex items-center gap-2 rounded-lg border border-green-400 bg-transparent px-4 py-2 text-sm font-medium text-green-700 transition-colors hover:bg-green-50 focus:outline-none"
+                >
+                  <Icon name="heroicons:check-badge" class="h-4 w-4" />
+                  Setujui
+                </button>
+                <button
+                  @click="openActionModal('revisi')"
+                  class="inline-flex items-center gap-2 rounded-lg border border-yellow-400 bg-transparent px-4 py-2 text-sm font-medium text-yellow-700 transition-colors hover:bg-yellow-50 focus:outline-none"
+                >
+                  <Icon name="heroicons:arrow-path" class="h-4 w-4" />
+                  Revisi
+                </button>
+                <button
+                  @click="openActionModal('tolak')"
+                  class="inline-flex items-center gap-2 rounded-lg border border-red-400 bg-transparent px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 focus:outline-none"
+                >
+                  <Icon name="heroicons:x-mark" class="h-4 w-4" />
+                  Tolak
+                </button>
+              </template>
+              <template v-else>
+                <div
+                  class="rounded-xl border border-slate-200 bg-slate-50 px-5 py-3"
+                >
+                  <p class="text-center text-sm font-medium text-slate-500">
+                    Dokumen ini tidak dalam status menunggu review SPI.
+                  </p>
+                </div>
+              </template>
+            </div>
             <div
               class="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-100"
             >
@@ -327,28 +328,79 @@
             </h3>
             <div class="space-y-4">
               <div
-                class="relative overflow-hidden p-6 rounded-3xl bg-primary text-white shadow-2xl shadow-[#c41e3a]/30 border border-[#b21c35]"
+                class="relative p-6 rounded-3xl text-white bg-primary shadow-2xl shadow-primary/20 border border-white/10 overflow-hidden group transition-all duration-300 hover:shadow-primary/30"
               >
+                <!-- Decorative pattern (subtle dots) - adds texture without extra gaps -->
                 <div
-                  class="absolute -top-10 -left-10 w-40 h-40 bg-gray-300 rounded-full blur-3xl"
+                  class="absolute inset-0 opacity-10 pointer-events-none"
+                  style="
+                    background-image: radial-gradient(
+                      circle at 1px 1px,
+                      white 1px,
+                      transparent 1px
+                    );
+                    background-size: 16px 16px;
+                  "
                 ></div>
 
-                <div class="flex items-center gap-3.5 mb-3 relative z-10">
-                  <p
-                    class="text-sm font-semibold text-red-100 opacity-90 tracking-wide uppercase"
+                <!-- Subtle shine effect at top-right -->
+                <div
+                  class="absolute -top-12 -right-12 w-32 h-32 bg-white/5 rounded-full blur-2xl"
+                ></div>
+
+                <div class="relative z-10">
+                  <!-- Header with icon and title - compact gap-2 -->
+                  <div class="flex items-center gap-2 mb-2">
+                    <!-- Elegant wallet / budget icon -->
+                    <svg
+                      class="w-5 h-5 text-white/80 flex-shrink-0"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      stroke-width="1.5"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 5.25v10.5a.75.75 0 0 0 .75.75h15a.75.75 0 0 0 .75-.75V6a.75.75 0 0 0-.75-.75H3.75a.75.75 0 0 0-.75.75Zm16.5 4.5h-2.25a.75.75 0 0 0-.75.75v3a.75.75 0 0 0 .75.75h2.25a.75.75 0 0 0 .75-.75v-3a.75.75 0 0 0-.75-.75Z"
+                      />
+                    </svg>
+                    <p
+                      class="text-xs font-semibold text-white/90 tracking-wider uppercase"
+                    >
+                      Total Anggaran Diajukan
+                    </p>
+                    <!-- Small indicator badge (optional) -->
+                    <span
+                      class="ml-auto text-[10px] font-medium bg-white/10 px-2 py-0.5 rounded-full"
+                      >2025</span
+                    >
+                  </div>
+
+                  <!-- Amount with refined typography and subtle glow -->
+                  <div class="flex items-baseline flex-wrap gap-0.5">
+                    <span class="text-xl font-bold text-white/80 tracking-wide"
+                      >Rp</span
+                    >
+                    <span
+                      class="text-5xl font-black tracking-tighter leading-none drop-shadow-sm"
+                      style="text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1)"
+                    >
+                      {{ Number(rab.totalAnggaran).toLocaleString("id-ID") }}
+                    </span>
+                  </div>
+
+                  <!-- Minimal footer line (no extra vertical gap, just a hairline decoration) -->
+                  <div
+                    class="mt-3 pt-2 border-t border-white/10 flex justify-end"
                   >
-                    Total Anggaran Diajukan
-                  </p>
+                    <span
+                      class="text-[11px] font-medium text-white/60 tracking-wide"
+                      >✓ Anggaran aktif</span
+                    >
+                  </div>
                 </div>
-
-                <p
-                  class="text-4xl font-extrabold tracking-tighter text-white relative z-10"
-                >
-                  <span class="text-2xl font-bold opacity-70">Rp</span>
-                  {{ Number(rab.totalAnggaran).toLocaleString("id-ID") }}
-                </p>
               </div>
-
               <div class="space-y-3 pt-2 flex gap-5 flex-col">
                 <div
                   class="flex justify-between items-start border-b border-slate-100"
@@ -360,9 +412,8 @@
                     <p class="font-bold text-sm text-slate-900">
                       {{ rab.pengaju }}
                     </p>
-                    <p
-                      class="text-[10px] text-slate-400 uppercase font-semibold"
-                    >
+
+                    <p class="text-[10px] text-slate-800 uppercase font-bold">
                       {{ rab.prodi || "Ormawa Fakultas" }}
                     </p>
                   </div>
@@ -378,22 +429,15 @@
                   }}</span>
                 </div>
                 <div
-                  class="flex justify-between items-center border-b border-slate-100"
+                  class="flex justify-between items-start gap-4 border-b border-slate-100 py-2"
                 >
-                  <span class="text-sm text-slate-500 font-medium">Ormawa</span>
-                  <span class="font-bold text-sm text-slate-900">{{
-                    rab.ormawa
-                  }}</span>
-                </div>
-                <div class="flex justify-between items-center">
-                  <span class="text-sm text-slate-500 font-medium">Status</span>
-                  <span
-                    :class="[
-                      'font-bold text-sm uppercase tracking-wider',
-                      getStatusTextColor(rab.status),
-                    ]"
+                  <span class="text-sm text-slate-500 font-medium shrink-0"
+                    >Ormawa</span
                   >
-                    {{ formatStatus(rab.status) }}
+                  <span
+                    class="font-semibold text-sm text-slate-800 text-end break-words"
+                  >
+                    {{ rab.ormawa }}
                   </span>
                 </div>
               </div>
@@ -540,14 +584,14 @@
   import { ref, computed, onMounted, onBeforeUnmount } from "vue";
   import { useRoute, useRouter } from "vue-router";
   import { useSpiRabDetailStore } from "~/stores/spi/rabDetail";
-  import { useApproveLog } from "~/stores/ormawa/approveLogRab";
+  import { useSpiApprovalLogStore } from "~/stores/spi/approvalLog";
   import { useSpiPersetujuanStore } from "~/stores/spi/persetujuanRab";
   import { storeToRefs } from "pinia";
 
   const route = useRoute();
   const router = useRouter();
   const detailStore = useSpiRabDetailStore();
-  const approveLogStore = useApproveLog();
+  const approveLogStore = useSpiApprovalLogStore();
   const persetujuanStore = useSpiPersetujuanStore();
 
   const { logs: approvalLogs } = storeToRefs(approveLogStore);
@@ -627,6 +671,8 @@
       day: "numeric",
       month: "long",
       year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -639,6 +685,7 @@
       revisi_ppk: "Revisi PPK",
       waiting_spi: "Review SPI",
       ditolak_spi: "Ditolak SPI",
+      revisi_spi: "Revisi SPI",
       disetujui: "Disetujui",
       lunas_ppk: "Lunas (PPK)",
       selesai_spi: "Selesai",
@@ -652,6 +699,7 @@
       disetujui: "bg-emerald-50 text-emerald-700 border-emerald-200",
       selesai_spi: "bg-emerald-50 text-emerald-700 border-emerald-200",
       ditolak_spi: "bg-red-50 text-red-700 border-red-200",
+      revisi_spi: "bg-yellow-50 text-yellow-700 border-yellow-200",
     };
     return colors[status] || "bg-amber-50 text-amber-700 border-amber-200";
   };
@@ -662,6 +710,7 @@
       disetujui: "bg-emerald-500",
       selesai_spi: "bg-emerald-500",
       ditolak_spi: "bg-red-500",
+      revisi_spi: "bg-yellow-500",
     };
     return dots[status] || "bg-amber-500";
   };
@@ -671,6 +720,7 @@
       disetujui: "text-emerald-600",
       selesai_spi: "text-emerald-600",
       ditolak_spi: "text-red-600",
+      revisi_spi: "text-yellow-600",
     };
     return colors[status] || "text-amber-600";
   };

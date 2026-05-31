@@ -62,11 +62,7 @@
             >
               Total Anggaran
             </th>
-            <th
-              class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider"
-            >
-              Status
-            </th>
+
             <th
               class="px-6 py-4 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider"
             >
@@ -102,26 +98,13 @@
                 {{ Number(rab.totalAnggaran).toLocaleString("id-ID") }}</span
               >
             </td>
-            <td class="px-6 py-4 whitespace-nowrap">
-              <span
-                :class="[
-                  'px-3 py-1 rounded-full text-xs font-medium border',
-                  rab.status === 'disetujui'
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                    : rab.status === 'waiting_spi'
-                      ? 'bg-amber-50 text-amber-700 border-amber-200'
-                      : 'bg-blue-50 text-blue-700 border-blue-200',
-                ]"
-              >
-                {{ rab.status }}
-              </span>
-            </td>
+
             <td class="px-6 py-4 whitespace-nowrap text-right">
               <button
                 @click="openDetail(rab.id)"
-                class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-[#c41e3a] bg-[#c41e3a]/10 hover:bg-[#c41e3a] hover:text-white transition-all"
+                class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white bg-emerald-500 hover:bg-emerald-600 hover:text-white transition-all"
               >
-                <span>Detail</span>
+                <span>Review</span>
                 <Icon name="heroicons:eye" class="w-4 h-4" />
               </button>
             </td>
@@ -136,15 +119,17 @@
     </div>
 
     <!-- Pagination -->
-    <div class="px-6 py-4 border-t border-slate-200 flex items-center justify-between">
+    <div
+      class="px-6 py-4 border-t border-slate-200 flex items-center justify-between"
+    >
       <p class="text-sm text-slate-500">
-        Menampilkan {{ (rabStore.page - 1) * rabStore.limit + 1 }} - 
-        {{ Math.min(rabStore.page * rabStore.limit, rabStore.total) }} 
+        Menampilkan {{ (rabStore.page - 1) * rabStore.limit + 1 }} -
+        {{ Math.min(rabStore.page * rabStore.limit, rabStore.total) }}
         dari {{ rabStore.total }} data
       </p>
 
       <div class="flex items-center gap-2">
-        <button 
+        <button
           @click="rabStore.changePage(rabStore.page - 1)"
           :disabled="rabStore.page === 1 || rabStore.loading"
           class="p-2 rounded-lg border border-slate-200 text-slate-400 hover:text-slate-600 hover:border-slate-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -152,13 +137,17 @@
           <Icon name="heroicons:chevron-left" class="w-5 h-5" />
         </button>
 
-        <span class="px-4 py-2 rounded-lg bg-[#c41e3a] text-white text-sm font-medium shadow-sm shadow-[#c41e3a]/20">
+        <span
+          class="px-4 py-2 rounded-lg bg-[#c41e3a] text-white text-sm font-medium shadow-sm shadow-[#c41e3a]/20"
+        >
           {{ rabStore.page }}
         </span>
 
-        <button 
+        <button
           @click="rabStore.changePage(rabStore.page + 1)"
-          :disabled="rabStore.page * rabStore.limit >= rabStore.total || rabStore.loading"
+          :disabled="
+            rabStore.page * rabStore.limit >= rabStore.total || rabStore.loading
+          "
           class="p-2 rounded-lg border border-slate-200 text-slate-600 hover:text-slate-900 hover:border-slate-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           <Icon name="heroicons:chevron-right" class="w-5 h-5" />
@@ -169,10 +158,10 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, computed } from "vue";
-  import { useSpiRabStore } from "~/stores/spi/rab";
+  import { ref, computed, onMounted } from "vue";
+  import { rabReviewStore } from "~/stores/spi/reviewRab";
 
-  const rabStore = useSpiRabStore();
+  const rabStore = rabReviewStore();
   const searchQuery = ref("");
 
   const filteredRabList = computed(() => {
@@ -194,6 +183,10 @@
       year: "numeric",
     });
   };
+
+  onMounted(async () => {
+    await rabStore.fetchRabList();
+  });
 
   const openDetail = (id: number) => {
     navigateTo(`/dashboard/spi/rab/${id}`);

@@ -13,6 +13,12 @@ export default defineEventHandler(async (event) => {
     const db = useDrizzle();
     const query = getQuery(event);
     const status = query.status as string;
+    const fakultasId = query.fakultasId as string;
+    const prodiId = query.prodiId as string;
+    const ormawaId = query.ormawaId as string;
+    const startDate = query.startDate as string;
+    const endDate = query.endDate as string;
+    const search = query.search as string;
 
     const page = parseInt(query.page as string) || 1;
     const limit = parseInt(query.limit as string) || 10;
@@ -20,14 +26,52 @@ export default defineEventHandler(async (event) => {
 
     const filters = [];
 
-    filters.push(eq(pengajuanRabTable.status, "waiting_spi"));
+    if (status && status !== "all") {
+      filters.push(eq(pengajuanRabTable.status, status as any));
+    } else {
+      // Default filter for SPI if no specific status is selected
+      // SPI usually cares about waiting_spi, disetujui, ditolak_spi, revisi_spi
+      // But we can show everything if status is 'all'
+    }
+
+    if (fakultasId) {
+      filters.push(eq(pengajuanRabTable.fakultasId, fakultasId));
+    }
+
+    if (prodiId) {
+      filters.push(eq(pengajuanRabTable.prodiId, prodiId));
+    }
+
+    if (ormawaId) {
+      filters.push(eq(ormawaTable.id, parseInt(ormawaId)));
+    }
+
+    if (startDate) {
+      filters.push(gte(pengajuanRabTable.tanggalMulai, startDate));
+    }
+
+    if (endDate) {
+      filters.push(lte(pengajuanRabTable.tanggalSelesai, endDate));
+    }
+
+    if (search) {
+      filters.push(
+        or(
+          like(pengajuanRabTable.judulKegiatan, `%${search}%`),
+          like(pengajuanRabTable.nomorPengajuan, `%${search}%`),
+        ),
+      );
+    }
 
     const whereClause = filters.length > 0 ? and(...filters) : undefined;
 
     // Get total count
     const totalCountResult = await db
       .select({ count: sql<number>`count(*)` })
-      .from(pengajuanRabTable);
+      .from(pengajuanRabTable)
+      .leftJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.users_id))
+      .leftJoin(ormawaTable, eq(usersTable.ormawaId, ormawaTable.id))
+      .where(whereClause);
 
     const total = totalCountResult[0].count;
 
@@ -48,7 +92,7 @@ export default defineEventHandler(async (event) => {
       })
       .from(pengajuanRabTable)
       .leftJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.id))
-      .leftJoin(ormawaTable, eq(usersTable.ormawaId, ormawaTable.id))
+      .leftJoin(ormawaTable, eq(ormawaTable.id, usersTable.ormawaId))
       .leftJoin(
         fakultasTable,
         eq(pengajuanRabTable.fakultasId, fakultasTable.id),

@@ -18,10 +18,13 @@ export default defineEventHandler(async (event) => {
         pengajuan: pengajuanRabTable,
       })
       .from(kegiatanTable)
-      .innerJoin(pengajuanRabTable, eq(kegiatanTable.pengajuanRabId, pengajuanRabTable.id))
+      .innerJoin(
+        pengajuanRabTable,
+        eq(kegiatanTable.pengajuanRabId, pengajuanRabTable.id),
+      )
       .where(eq(pengajuanRabTable.usersId, user.id))
       .orderBy(desc(kegiatanTable.createdAt));
-
+    console.log(data);
     return {
       success: true,
       data: data,

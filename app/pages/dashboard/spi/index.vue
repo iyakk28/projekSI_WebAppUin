@@ -315,11 +315,11 @@
   import { ref, onMounted } from "vue";
   import { useAuthStore } from "~/stores/auth";
   import { useSpiDashboardStore } from "~/stores/spi/dashboard";
-  import { useSpiRabStore } from "~/stores/spi/rab";
+  import { useSpiAllRabStore } from "~/stores/spi/AlllRab";
 
   const authStore = useAuthStore();
   const spiStore = useSpiDashboardStore();
-  const rabStore = useSpiRabStore();
+  const rabStore = useSpiAllRabStore();
   const { user } = authStore;
 
   const statusFilter = ref("all");
@@ -352,10 +352,7 @@
   };
 
   onMounted(async () => {
-    await Promise.all([
-      spiStore.fetchSpiDashboard(),
-      rabStore.fetchRabList(statusFilter.value),
-    ]);
+    await Promise.all([spiStore.fetchSpiDashboard()]);
   });
 </script>
 

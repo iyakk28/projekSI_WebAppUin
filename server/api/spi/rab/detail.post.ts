@@ -37,9 +37,10 @@ export default defineEventHandler(async (event) => {
         ormawa: ormawaTable.nama,
         fakultas: fakultasTable.nama,
         prodi: programStudiTable.nama,
+        ormawaId: usersTable.ormawaId,
       })
       .from(pengajuanRabTable)
-      .leftJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.users_id))
+      .leftJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.id))
       .leftJoin(
         fakultasTable,
         eq(pengajuanRabTable.fakultasId, fakultasTable.id),
