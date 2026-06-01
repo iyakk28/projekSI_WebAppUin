@@ -12,11 +12,13 @@ export interface LpgReadyRab {
   kegiatanId: number;
   lpgStatus: string | null;
   lpgId: number | null;
+  submittedAt?: string | null;
 }
 
 export const useLpgListStore = defineStore("lpgList", {
   state: () => ({
     readyRabs: [] as LpgReadyRab[],
+    historyRabs: [] as LpgReadyRab[],
     loading: false,
     error: null as string | null,
   }),
@@ -26,11 +28,12 @@ export const useLpgListStore = defineStore("lpgList", {
       this.loading = true;
       this.error = null;
       try {
-        const response = await $fetch<{ success: boolean; data: LpgReadyRab[] }>(
+        const response = await $fetch<{ success: boolean; data: { ready: LpgReadyRab[], history: LpgReadyRab[] } }>(
           "/api/ormawa/Lpg/listReady"
         );
         if (response.success) {
-          this.readyRabs = response.data;
+          this.readyRabs = response.data.ready;
+          this.historyRabs = response.data.history;
         }
       } catch (err: any) {
         this.error = err.data?.message || "Gagal mengambil daftar RAB untuk LPG";

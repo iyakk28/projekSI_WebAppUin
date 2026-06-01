@@ -19,6 +19,7 @@ export const kegiatanTable = mysqlTable("kegiatan", {
     "BELUM_DILAKSANAKAN",
     "SEDANG_DILAKSANAKAN",
     "SELESAI",
+    "LUNAS",
   ])
     .notNull()
     .default("BELUM_DILAKSANAKAN"),

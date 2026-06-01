@@ -28,7 +28,7 @@ export default defineEventHandler(async (event) => {
 
     // Get LPG
     const lpg = await db.query.lpgTable.findFirst({
-      where: eq(lpgTable.kegiatanId, kegiatan.id)
+      where: eq(lpgTable.kegiatanId, kegiatan.id),
     });
 
     if (!lpg) {
@@ -42,9 +42,9 @@ export default defineEventHandler(async (event) => {
         catatanRevisi: revisiLpgLogTable.catatanRevisi,
         createdAt: revisiLpgLogTable.createdAt,
         actor: {
-          fullname: usersTable.fullname,
+          fullname: usersTable.fullName,
           role: usersTable.role,
-        }
+        },
       })
       .from(revisiLpgLogTable)
       .innerJoin(usersTable, eq(revisiLpgLogTable.requesterId, usersTable.id))

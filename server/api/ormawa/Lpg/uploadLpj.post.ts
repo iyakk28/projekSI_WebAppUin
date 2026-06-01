@@ -16,20 +16,17 @@ export default defineEventHandler(async (event) => {
         message: "Tidak ada data yang dikirim",
       });
     }
-
     const getField = (name: string): string => {
       const field = formData.find((f) => f.name === name);
       return field && field.data
         ? Buffer.from(field.data).toString("utf-8")
         : "";
     };
-
     const rabIdStr = getField("rabId");
     if (!rabIdStr) {
       throw createError({ statusCode: 400, message: "RAB ID wajib diisi" });
     }
     const rabId = parseInt(rabIdStr);
-
     const fileLpjField = formData.find((f) => f.name === "fileLpj");
     if (!fileLpjField || !fileLpjField.data || fileLpjField.data.length === 0) {
       throw createError({
@@ -37,14 +34,12 @@ export default defineEventHandler(async (event) => {
         message: "File LPJ wajib diupload",
       });
     }
-
     if (fileLpjField.type !== "application/pdf") {
       throw createError({
         statusCode: 400,
         message: "File LPJ wajib berformat PDF",
       });
     }
-
     if (fileLpjField.data.length > 10 * 1024 * 1024) {
       throw createError({
         statusCode: 400,
@@ -52,11 +47,9 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const ormawaNotes = getField("ormawaNotes");
-
     const db = useDrizzle();
+    const user = event.context.user;
 
-    // Get kegiatanId from rabId
     const kegiatan = await db.query.kegiatanTable.findFirst({
       where: eq(kegiatanTable.pengajuanRabId, rabId),
     });
@@ -67,8 +60,11 @@ export default defineEventHandler(async (event) => {
         message: "Kegiatan tidak ditemukan untuk RAB ini",
       });
     }
-
-    const uploadBaseDirLpj = await createFilePath("file", "Lpj", "uploaded");
+    const uploadBaseDirLpj = await createFilePath(
+      "file",
+      "Lpg",
+      "SedangBerlangsung",
+    );
     const timestamp = Date.now();
     const originalNameLpj = fileLpjField.filename || "file_lpj.pdf";
     const safeNameLpj = originalNameLpj.replace(/[^a-zA-Z0-9.\-]/g, "_");
@@ -77,22 +73,24 @@ export default defineEventHandler(async (event) => {
     await writeFile(absolutePathLpj, fileLpjField.data);
     const relativePathLpj = relative(process.cwd(), absolutePathLpj).replace(
       /\\/g,
-      "/"
+      "/",
     );
 
-    // Check if lpg already exists for this kegiatan
     const existingLpg = await db.query.lpgTable.findFirst({
-      where: eq(lpgTable.kegiatanId, kegiatan.id)
+      where: eq(lpgTable.kegiatanId, kegiatan.id),
     });
 
     let resultId;
     if (existingLpg) {
-       await db.update(lpgTable).set({
-        fileLpgUrl: relativePathLpj,
-        ormawaNotes: ormawaNotes || null,
-        statusLpg: "WAITING_SPI",
-        updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
-      }).where(eq(lpgTable.id, existingLpg.id));
+      await db
+        .update(lpgTable)
+        .set({
+          fileLpgUrl: relativePathLpj,
+          statusLpg: "WAITING_SPI",
+          uploadedBy: user.id,
+          updatedAt: new Date().toISOString().slice(0, 19).replace("T", " "),
+        })
+        .where(eq(lpgTable.id, existingLpg.id));
       resultId = existingLpg.id;
     } else {
       const result = await db
@@ -100,16 +98,15 @@ export default defineEventHandler(async (event) => {
         .values({
           kegiatanId: kegiatan.id,
           fileLpgUrl: relativePathLpj,
-          ormawaNotes: ormawaNotes || null,
           statusLpg: "WAITING_SPI",
-          submittedAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
-          createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
-          updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
+          uploadedBy: user.id,
+          submittedAt: new Date().toISOString().slice(0, 19).replace("T", " "),
+          createdAt: new Date().toISOString().slice(0, 19).replace("T", " "),
+          updatedAt: new Date().toISOString().slice(0, 19).replace("T", " "),
         })
         .$returningId();
       resultId = result[0].id;
     }
-
     return {
       success: true,
       message: "LPJ berhasil diupload",
