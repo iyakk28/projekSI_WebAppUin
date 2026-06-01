@@ -86,7 +86,11 @@ export default defineEventHandler(async (event) => {
         .from(pengajuanRabTable)
         .where(
           and(
-            eq(pengajuanRabTable.status, "waiting_spi"),
+            inArray(pengajuanRabTable.status, [
+              "waiting_spi",
+              "disetujui",
+              "selesai_spi",
+            ]),
             inArray(pengajuanRabTable.usersId, ormawaUserIds),
           ),
         ),

@@ -2,9 +2,15 @@
 // VERSI DEBUG — tambah console.log di setiap step untuk cari step mana yang gagal
 // Setelah ketemu masalahnya, hapus semua console.log debug
 
-import { eq, inArray, desc, and } from "drizzle-orm";
+import { eq, inArray, desc, and, ne } from "drizzle-orm";
 import { useDrizzle } from "~~/server/db";
-import { pengajuanRabTable, usersTable, ormawaTable } from "~~/server/db/schema";
+import {
+  pengajuanRabTable,
+  usersTable,
+  ormawaTable,
+  kegiatanTable,
+  tagihanPencairanTable,
+} from "~~/server/db/schema";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -92,6 +98,13 @@ export default defineEventHandler(async (event) => {
 
     const ormawaUserIds = ormawaUsers.map((u) => u.usersId);
 
+    const userMap = new Map(ormawaUsers.map((u) => [u.usersId, u]));
+    const ormawaDetailRows = await db
+      .select({ id: ormawaTable.id, nama: ormawaTable.nama, kode: ormawaTable.kode })
+      .from(ormawaTable)
+      .where(inArray(ormawaTable.id, ormawaIds));
+    const ormawaMap = new Map(ormawaDetailRows.map((o) => [o.id, o]));
+
     console.log("Step 3 - ormawaUserIds:", ormawaUserIds);
 
     if (ormawaUserIds.length === 0) {
@@ -103,78 +116,142 @@ export default defineEventHandler(async (event) => {
       };
     }
 
-    // Step 4: Cek pengajuan dengan status apapun dulu (tanpa filter status) untuk debug
-    const semuaPengajuan = await db
+    // Step 4: Ambil semua pengajuan RAB/TOR yang tidak berstatus draft
+    const pengajuan = await db
       .select({
         id: pengajuanRabTable.id,
+        nomorPengajuan: pengajuanRabTable.nomorPengajuan,
         usersId: pengajuanRabTable.usersId,
+        judulKegiatan: pengajuanRabTable.judulKegiatan,
+        deskripsi: pengajuanRabTable.deskripsi,
+        totalAnggaran: pengajuanRabTable.totalAnggaran,
+        tanggalMulai: pengajuanRabTable.tanggalMulai,
+        tanggalSelesai: pengajuanRabTable.tanggalSelesai,
         status: pengajuanRabTable.status,
-        judul: pengajuanRabTable.judulKegiatan,
+        fileRabUrl: pengajuanRabTable.fileRabUrl,
+        fileTorUrl: pengajuanRabTable.fileTorUrl,
+        createdAt: pengajuanRabTable.createdAt,
+        updatedAt: pengajuanRabTable.updatedAt,
       })
-      .from(pengajuanRabTable)
-      .where(inArray(pengajuanRabTable.usersId, ormawaUserIds));
-
-    console.log("Step 4 - semua pengajuan tanpa filter status:", JSON.stringify(semuaPengajuan));
-
-    // Step 5: Filter dengan status waiting_ppk dan revisi_ppk
-    const data = await db
-      .select({ pengajuanRabTable })
       .from(pengajuanRabTable)
       .where(
         and(
-          inArray(pengajuanRabTable.status, ["waiting_ppk", "revisi_ppk"]),
+          ne(pengajuanRabTable.status, "draft"),
           inArray(pengajuanRabTable.usersId, ormawaUserIds),
         ),
       )
       .orderBy(desc(pengajuanRabTable.createdAt));
 
-    console.log("Step 5 - data dengan filter waiting_ppk/revisi_ppk:", JSON.stringify(data));
-    console.log("=== END DEBUG ===");
+    const pengajuanIds = pengajuan.map((item) => item.id);
+    const kegiatanRows = pengajuanIds.length
+      ? await db
+          .select({
+            id: kegiatanTable.id,
+            pengajuanRabId: kegiatanTable.pengajuanRabId,
+            statusKegiatan: kegiatanTable.statusKegiatan,
+          })
+          .from(kegiatanTable)
+          .where(inArray(kegiatanTable.pengajuanRabId, pengajuanIds))
+      : [];
 
-    // Buat map untuk lookup
-    const userMap = new Map(ormawaUsers.map((u) => [u.usersId, u]));
-    const ormawaDetailRows = await db
-      .select({ id: ormawaTable.id, nama: ormawaTable.nama, kode: ormawaTable.kode })
-      .from(ormawaTable)
-      .where(inArray(ormawaTable.id, ormawaIds));
-    const ormawaMap = new Map(ormawaDetailRows.map((o) => [o.id, o]));
+    const kegiatanMap = new Map(
+      kegiatanRows.map((row) => [row.pengajuanRabId, row]),
+    );
+
+    const kegiatanIds = kegiatanRows.map((row) => row.id);
+    const tagihanRows = kegiatanIds.length
+      ? await db
+          .select({
+            kegiatanId: tagihanPencairanTable.kegiatanId,
+            statusTagihan: tagihanPencairanTable.statusTagihan,
+            nominal: tagihanPencairanTable.nominal,
+          })
+          .from(tagihanPencairanTable)
+          .where(inArray(tagihanPencairanTable.kegiatanId, kegiatanIds))
+      : [];
+
+    const tagihanMap = new Map<number, {
+      total: number;
+      selesai: number;
+      nominalSelesai: number;
+      statuses: Set<string>;
+    }>();
+
+    for (const item of tagihanRows) {
+      const current = tagihanMap.get(item.kegiatanId) ?? {
+        total: 0,
+        selesai: 0,
+        nominalSelesai: 0,
+        statuses: new Set<string>(),
+      };
+      current.total += 1;
+      if (item.statusTagihan) {
+        current.statuses.add(item.statusTagihan);
+        if (item.statusTagihan === "SELESAI") {
+          current.selesai += 1;
+          current.nominalSelesai += Number(item.nominal ?? 0);
+        }
+      }
+      tagihanMap.set(item.kegiatanId, current);
+    }
+
+    const activityData = pengajuan.map((r) => {
+      const userInfo = userMap.get(r.usersId);
+      const ormawaInfo = userInfo?.ormawaId
+        ? ormawaMap.get(userInfo.ormawaId)
+        : null;
+      const kegiatanInfo = kegiatanMap.get(r.id);
+      const tagihanInfo = kegiatanInfo
+        ? tagihanMap.get(kegiatanInfo.id)
+        : undefined;
+
+      return {
+        id: r.id,
+        nomorPengajuan: r.nomorPengajuan,
+        judulKegiatan: r.judulKegiatan,
+        deskripsi: r.deskripsi,
+        totalAnggaran: Number(r.totalAnggaran ?? 0),
+        tanggalMulai: r.tanggalMulai,
+        tanggalSelesai: r.tanggalSelesai,
+        status: r.status,
+        fileRabUrl: r.fileRabUrl,
+        fileTorUrl: r.fileTorUrl,
+        createdAt: r.createdAt,
+        updatedAt: r.updatedAt,
+        pengaju: {
+          id: userInfo?.intId ?? null,
+          nama: userInfo?.fullName ?? "",
+          email: userInfo?.email ?? "",
+        },
+        ormawa: {
+          id: ormawaInfo?.id ?? null,
+          nama: ormawaInfo?.nama ?? "",
+          kode: ormawaInfo?.kode ?? "",
+        },
+        statusKegiatan: kegiatanInfo?.statusKegiatan ?? null,
+        pencairan: {
+          totalTagihan: tagihanInfo?.total ?? 0,
+          selesaiTagihan: tagihanInfo?.selesai ?? 0,
+          nominalSelesai: tagihanInfo?.nominalSelesai ?? 0,
+          statuses: Array.from(tagihanInfo?.statuses ?? []),
+        },
+      };
+    });
 
     return {
       success: true,
       summary: {
-        totalMasuk: data.length,
-        totalWaitingPPK: data.filter((d) => d.pengajuanRabTable.status === "waiting_ppk").length,
-        totalRevisiPPK: data.filter((d) => d.pengajuanRabTable.status === "revisi_ppk").length,
+        totalMasuk: activityData.length,
+        totalWaitingPPK: activityData.filter((d) => d.status === "waiting_ppk")
+          .length,
+        totalRevisiPPK: activityData.filter((d) => d.status === "revisi_ppk")
+          .length,
+        totalWaitingSPI: activityData.filter((d) => d.status === "waiting_spi")
+          .length,
+        totalSelesaiSPI: activityData.filter((d) => d.status === "selesai_spi")
+          .length,
       },
-      data: data.map((row) => {
-        const r = row.pengajuanRabTable;
-        const userInfo = userMap.get(r.usersId);
-        const ormawaInfo = userInfo?.ormawaId ? ormawaMap.get(userInfo.ormawaId) : null;
-        return {
-          id: r.id,
-          nomorPengajuan: r.nomorPengajuan,
-          judulKegiatan: r.judulKegiatan,
-          deskripsi: r.deskripsi,
-          totalAnggaran: r.totalAnggaran,
-          tanggalMulai: r.tanggalMulai,
-          tanggalSelesai: r.tanggalSelesai,
-          status: r.status,
-          fileRabUrl: r.fileRabUrl,
-          fileTorUrl: r.fileTorUrl,
-          createdAt: r.createdAt,
-          updatedAt: r.updatedAt,
-          pengaju: {
-            id: userInfo?.intId ?? null,
-            nama: userInfo?.fullName ?? "",
-            email: userInfo?.email ?? "",
-          },
-          ormawa: {
-            id: ormawaInfo?.id ?? null,
-            nama: ormawaInfo?.nama ?? "",
-            kode: ormawaInfo?.kode ?? "",
-          },
-        };
-      }),
+      data: activityData,
     };
   } catch (error: any) {
     console.error("Error GET /api/ppk/kegiatan:", error);
