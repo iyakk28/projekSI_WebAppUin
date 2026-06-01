@@ -1,36 +1,37 @@
-import { defineEventHandler, readMultipartFormData, createError } from "h3";
-import { writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import { join, relative } from "node:path";
-import { eq, and } from "drizzle-orm";
+import { cwd } from "node:process";
+import { eq } from "drizzle-orm";
 import { useDrizzle } from "~~/server/db";
 import {
   tagihanPencairanTable,
   pembayaranTable,
-  kegiatanTable,
-  pengajuanRabTable,
   usersTable,
-  ormawaTable,
 } from "~~/server/db/schema";
-import { createFilePath } from "#imports";
+import {
+  decodeUrlId,
+  getDokumenPpkFromMeta,
+  mysqlTimestamp,
+  resolveTagihanId,
+} from "~~/server/utils/pencairanHelpers";
 
 export default defineEventHandler(async (event) => {
   try {
-    const id = Number(getRouterParam(event, "id"));
-    if (isNaN(id) || id <= 0) {
+    const routeId = decodeUrlId(getRouterParam(event, "id"));
+    if (Number.isNaN(routeId) || routeId === 0) {
       throw createError({
         statusCode: 400,
-        statusMessage: "ID tagihan tidak valid",
+        statusMessage: "ID pencairan tidak valid",
       });
     }
 
     const user = event.context.user;
     const db = useDrizzle();
 
-    // ✅ Ambil fakultasId PPK yang sedang login
     const [ppkData] = await db
-      .select({ fakultasId: usersTable.fakultasId })
+      .select({ fakultasId: usersTable.fakultasId, id: usersTable.id })
       .from(usersTable)
-      .where(eq(usersTable.users_id, user.id));
+      .where(eq(usersTable.id, Number(user.id)));
 
     if (!ppkData?.fakultasId) {
       throw createError({
@@ -39,30 +40,29 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // ✅ Ambil tagihan sekaligus validasi kepemilikan fakultas via join
+    const tagihanId = await resolveTagihanId(
+      db,
+      routeId,
+      ppkData.id,
+      ppkData.fakultasId,
+    );
+
+    if (!tagihanId) {
+      throw createError({
+        statusCode: 404,
+        statusMessage: "Data pencairan tidak ditemukan",
+      });
+    }
+
     const [tagihan] = await db
       .select({
         id: tagihanPencairanTable.id,
         statusTagihan: tagihanPencairanTable.statusTagihan,
         nominal: tagihanPencairanTable.nominal,
         namaPenerima: tagihanPencairanTable.namaPenerima,
-        ormawaFakultasId: ormawaTable.fakultasId, // untuk validasi
       })
       .from(tagihanPencairanTable)
-      .innerJoin(
-        kegiatanTable,
-        eq(tagihanPencairanTable.kegiatanId, kegiatanTable.id),
-      )
-      .innerJoin(
-        pengajuanRabTable,
-        eq(kegiatanTable.pengajuanRabId, pengajuanRabTable.id),
-      )
-      .innerJoin(
-        usersTable,
-        eq(pengajuanRabTable.usersId, usersTable.users_id),
-      )
-      .leftJoin(ormawaTable, eq(usersTable.ormawaId, ormawaTable.id))
-      .where(eq(tagihanPencairanTable.id, id));
+      .where(eq(tagihanPencairanTable.id, tagihanId));
 
     if (!tagihan) {
       throw createError({
@@ -71,24 +71,23 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // ✅ Validasi: tagihan harus dari ormawa se-fakultas dengan PPK
-    if (tagihan.ormawaFakultasId !== ppkData.fakultasId) {
-      throw createError({
-        statusCode: 403,
-        statusMessage: "Anda tidak memiliki akses untuk membayar tagihan ini",
-      });
-    }
-
-    if (tagihan.statusTagihan !== "TERVERIFIKASI") {
+    if (tagihan.statusTagihan !== "TRANSFER_DILAKUKAN") {
       throw createError({
         statusCode: 422,
-        statusMessage: `Tagihan belum terverifikasi. Status saat ini: ${tagihan.statusTagihan}`,
+        statusMessage: `Konfirmasi transfer terlebih dahulu. Status saat ini: ${tagihan.statusTagihan}`,
       });
     }
 
-    // Baca multipart form data
+    const dokumenPpk = await getDokumenPpkFromMeta(tagihanId);
+    if (!dokumenPpk.spbFileUrl || !dokumenPpk.kwitansiFileUrl) {
+      throw createError({
+        statusCode: 422,
+        statusMessage: "Surat Perintah Bayar dan kwitansi harus diunggah sebelum pencairan",
+      });
+    }
+
     const formData = await readMultipartFormData(event);
-    if (!formData || formData.length === 0) {
+    if (!formData?.length) {
       throw createError({
         statusCode: 400,
         statusMessage: "Tidak ada data yang dikirim",
@@ -101,10 +100,9 @@ export default defineEventHandler(async (event) => {
     };
 
     const catatan = getField("catatan");
-
-    // Validasi file bukti transfer
     const buktiField = formData.find((f) => f.name === "bukti_transfer");
-    if (!buktiField || !buktiField.data || buktiField.data.length === 0) {
+
+    if (!buktiField?.data?.length) {
       throw createError({
         statusCode: 400,
         statusMessage: "File bukti transfer wajib diupload",
@@ -126,26 +124,23 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // Simpan file bukti transfer
-    const uploadDir = await createFilePath("BuktiTransfer", String(id));
-    const timestamp = Date.now();
-    const originalName = buktiField.filename || "bukti_transfer";
-    const safeName = originalName.replace(/[^a-zA-Z0-9.\-]/g, "_");
-    const uniqueFilename = `${timestamp}_${safeName}`;
+    const uploadDir = join(cwd(), "uploads", "ppk", "bukti-transfer", String(tagihanId));
+    await mkdir(uploadDir, { recursive: true });
+    const safeName = (buktiField.filename || "bukti_transfer").replace(
+      /[^a-zA-Z0-9.\-]/g,
+      "_",
+    );
+    const uniqueFilename = `${Date.now()}_${safeName}`;
     const absolutePath = join(uploadDir, uniqueFilename);
     await writeFile(absolutePath, buktiField.data);
-    const relativePath = relative(process.cwd(), absolutePath).replace(
-      /\\/g,
-      "/",
-    );
+    const relativePath = relative(cwd(), absolutePath).replace(/\\/g, "/");
 
-    // Insert pembayaran + update status tagihan dalam satu transaksi
     await db.transaction(async (tx) => {
       await tx.insert(pembayaranTable).values({
-        tagihanId: id,
-        ppkId: user.id,
+        tagihanId,
+        ppkId: ppkData.id,
         buktiTransferUrl: relativePath,
-        tanggalPembayaran: new Date().toISOString(),
+        tanggalPembayaran: mysqlTimestamp(),
         catatanPembayaran: catatan?.trim() || null,
       });
 
@@ -153,20 +148,19 @@ export default defineEventHandler(async (event) => {
         .update(tagihanPencairanTable)
         .set({
           statusTagihan: "SELESAI",
-          updatedAt: new Date().toISOString(),
+          updatedAt: mysqlTimestamp(),
         })
-        .where(eq(tagihanPencairanTable.id, id));
+        .where(eq(tagihanPencairanTable.id, tagihanId));
     });
 
     return {
       success: true,
       message: "Pembayaran berhasil dicatat. Bukti transfer telah disimpan.",
       data: {
-        tagihanId: id,
+        tagihanId,
         namaPenerima: tagihan.namaPenerima,
         nominal: tagihan.nominal,
         statusTagihan: "SELESAI",
-        buktiTransfer: uniqueFilename,
       },
     };
   } catch (error: any) {
