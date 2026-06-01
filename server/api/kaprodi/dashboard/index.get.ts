@@ -2,8 +2,14 @@
 // Endpoint untuk mengambil statistik pengajuan proposal milik Ormawa binaan Kaprodi
 // Mengikuti pola server/api/ppk/dashboard/index.get.ts dengan adaptasi relasi prodiId
 
-import { eq, sql, ne, and, inArray } from "drizzle-orm";
-import { pengajuanRabTable, usersTable, ormawaTable } from "~~/server/db/schema";
+import { eq, sql, ne, and, inArray, desc } from "drizzle-orm";
+import {
+  pengajuanRabTable,
+  usersTable,
+  ormawaTable,
+  kegiatanTable,
+  tagihanPencairanTable,
+} from "~~/server/db/schema";
 import { useDrizzle } from "~~/server/db";
 
 export default defineEventHandler(async (event) => {
@@ -60,6 +66,12 @@ export default defineEventHandler(async (event) => {
       .where(inArray(usersTable.ormawaId, ormawaIds));
 
     const ormawaUserIds = ormawaUsers.map((u) => u.usersId);
+    const userMap = new Map(ormawaUsers.map((u) => [u.usersId, u]));
+    const ormawaDetails = await db
+      .select({ id: ormawaTable.id, nama: ormawaTable.nama, kode: ormawaTable.kode })
+      .from(ormawaTable)
+      .where(inArray(ormawaTable.id, ormawaIds));
+    const ormawaMap = new Map(ormawaDetails.map((o) => [o.id, o]));
 
     if (ormawaUserIds.length === 0) {
       return {
@@ -70,6 +82,7 @@ export default defineEventHandler(async (event) => {
         revisi: 0,
         ditolak: 0,
         data: { total: 0, menunggu: 0, disetujui: 0, revisi: 0, ditolak: 0 },
+        activities: [],
       };
     }
 
@@ -140,10 +153,113 @@ export default defineEventHandler(async (event) => {
       ditolak: Number(ditolak[0]?.count ?? 0),
     };
 
+    const pengajuanRows = await db
+      .select({
+        id: pengajuanRabTable.id,
+        nomorPengajuan: pengajuanRabTable.nomorPengajuan,
+        usersId: pengajuanRabTable.usersId,
+        judulKegiatan: pengajuanRabTable.judulKegiatan,
+        status: pengajuanRabTable.status,
+        totalAnggaran: pengajuanRabTable.totalAnggaran,
+        tanggalMulai: pengajuanRabTable.tanggalMulai,
+        tanggalSelesai: pengajuanRabTable.tanggalSelesai,
+        fileRabUrl: pengajuanRabTable.fileRabUrl,
+        fileTorUrl: pengajuanRabTable.fileTorUrl,
+        createdAt: pengajuanRabTable.createdAt,
+        updatedAt: pengajuanRabTable.updatedAt,
+      })
+      .from(pengajuanRabTable)
+      .where(inArray(pengajuanRabTable.usersId, ormawaUserIds))
+      .orderBy(desc(pengajuanRabTable.createdAt));
+
+    const pengajuanIds = pengajuanRows.map((item) => item.id);
+    const kegiatanRows = pengajuanIds.length
+      ? await db
+          .select({
+            id: kegiatanTable.id,
+            pengajuanRabId: kegiatanTable.pengajuanRabId,
+            statusKegiatan: kegiatanTable.statusKegiatan,
+          })
+          .from(kegiatanTable)
+          .where(inArray(kegiatanTable.pengajuanRabId, pengajuanIds))
+      : [];
+
+    const kegiatanMap = new Map(
+      kegiatanRows.map((row) => [row.pengajuanRabId, row]),
+    );
+
+    const kegiatanIds = kegiatanRows.map((row) => row.id);
+    const tagihanRows = kegiatanIds.length
+      ? await db
+          .select({
+            kegiatanId: tagihanPencairanTable.kegiatanId,
+            statusTagihan: tagihanPencairanTable.statusTagihan,
+            nominal: tagihanPencairanTable.nominal,
+          })
+          .from(tagihanPencairanTable)
+          .where(inArray(tagihanPencairanTable.kegiatanId, kegiatanIds))
+      : [];
+
+    const tagihanMap = new Map<number, {
+      total: number;
+      selesai: number;
+      nominalSelesai: number;
+      statuses: Set<string>;
+    }>();
+
+    for (const item of tagihanRows) {
+      const current = tagihanMap.get(item.kegiatanId) ?? {
+        total: 0,
+        selesai: 0,
+        nominalSelesai: 0,
+        statuses: new Set<string>(),
+      };
+      if (item.statusTagihan) {
+        current.total += 1;
+        current.statuses.add(item.statusTagihan);
+        if (item.statusTagihan === "SELESAI") {
+          current.selesai += 1;
+          current.nominalSelesai += Number(item.nominal ?? 0);
+        }
+      }
+      tagihanMap.set(item.kegiatanId, current);
+    }
+
+    const activityList = pengajuanRows.map((row) => {
+      const ormawa = userMap.get(row.usersId)?.ormawaId
+        ? ormawaMap.get(userMap.get(row.usersId)!.ormawaId)
+        : null;
+      const kegiatan = kegiatanMap.get(row.id);
+      const tagihan = kegiatan ? tagihanMap.get(kegiatan.id) : undefined;
+
+      return {
+        id: row.id,
+        nomorPengajuan: row.nomorPengajuan,
+        judulKegiatan: row.judulKegiatan,
+        status: row.status,
+        statusKegiatan: kegiatan?.statusKegiatan ?? null,
+        ormawa: {
+          id: ormawa?.id ?? null,
+          nama: ormawa?.nama ?? "",
+          kode: ormawa?.kode ?? "",
+        },
+        totalAnggaran: Number(row.totalAnggaran ?? 0),
+        tanggalMulai: row.tanggalMulai,
+        tanggalSelesai: row.tanggalSelesai,
+        pencairan: {
+          totalTagihan: tagihan?.total ?? 0,
+          selesaiTagihan: tagihan?.selesai ?? 0,
+          nominalSelesai: tagihan?.nominalSelesai ?? 0,
+          statuses: Array.from(tagihan?.statuses ?? []),
+        },
+      };
+    });
+
     return {
       success: true,
       ...stats,
       data: stats,
+      activities: activityList,
     };
   } catch (error: any) {
     console.error("Error GET /api/kaprodi/dashboard:", error);
