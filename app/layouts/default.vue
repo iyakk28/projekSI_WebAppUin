@@ -124,10 +124,10 @@
             </NuxtLink>
           </template>
           <template v-if="authStore.user?.role === 'ppk'">
-            <NuxtLink to="/ppk/pengajuan" class="mobile-nav-link" @click="mobileMenuOpen = false">
+            <NuxtLink to="/dashboard/ppk/pengajuan" class="mobile-nav-link" @click="mobileMenuOpen = false">
               Pengajuan
             </NuxtLink>
-            <NuxtLink to="/ppk/pencairan" class="mobile-nav-link" @click="mobileMenuOpen = false">
+            <NuxtLink to="/dashboard/ppk/pencairan" class="mobile-nav-link" @click="mobileMenuOpen = false">
               Pencairan
             </NuxtLink>
           </template>

@@ -2,6 +2,10 @@
 import { useAuthStore } from "~/stores/auth";
 
 export default defineNuxtRouteMiddleware(async (to, from) => {
+  if (to.path.startsWith("/uploads/")) {
+    return;
+  }
+
   const authStore = useAuthStore();
   if (!authStore.user) {
     await authStore.fetchUser();
