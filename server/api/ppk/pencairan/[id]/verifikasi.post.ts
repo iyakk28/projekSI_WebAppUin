@@ -1,20 +1,65 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { useDrizzle } from "~~/server/db";
 import {
+  dokumentasiKegiatanTable,
   tagihanPencairanTable,
-  kegiatanTable,
-  pengajuanRabTable,
   usersTable,
-  ormawaTable,
 } from "~~/server/db/schema";
+import {
+  buildDokumenUpload,
+  decodeUrlId,
+  isAllDocsUploaded,
+  readPencairanMeta,
+  resolveTagihanId,
+  routeIdToDokumentasiId,
+  mysqlTimestamp,
+  writePencairanMeta,
+} from "~~/server/utils/pencairanHelpers";
+
+async function assertPpkAksesTagihan(
+  db: ReturnType<typeof useDrizzle>,
+  tagihanId: number,
+  fakultasId: number,
+  dokumentasiId: number | null,
+) {
+  const [tagihan] = await db
+    .select({ kegiatanId: tagihanPencairanTable.kegiatanId })
+    .from(tagihanPencairanTable)
+    .where(eq(tagihanPencairanTable.id, tagihanId));
+
+  if (!tagihan) return false;
+
+  if (dokumentasiId) {
+    const [row] = await db
+      .select({ fakultasId: usersTable.fakultasId })
+      .from(dokumentasiKegiatanTable)
+      .innerJoin(usersTable, eq(dokumentasiKegiatanTable.uploadedBy, usersTable.id))
+      .where(eq(dokumentasiKegiatanTable.id, dokumentasiId));
+    return row?.fakultasId === fakultasId;
+  }
+
+  const [row] = await db
+    .select({ fakultasId: usersTable.fakultasId })
+    .from(dokumentasiKegiatanTable)
+    .innerJoin(usersTable, eq(dokumentasiKegiatanTable.uploadedBy, usersTable.id))
+    .where(
+      and(
+        eq(dokumentasiKegiatanTable.kegiatanId, tagihan.kegiatanId),
+        eq(usersTable.fakultasId, fakultasId),
+      ),
+    )
+    .limit(1);
+
+  return Boolean(row);
+}
 
 export default defineEventHandler(async (event) => {
   try {
-    const id = Number(getRouterParam(event, "id"));
-    if (isNaN(id) || id <= 0) {
+    const routeId = decodeUrlId(getRouterParam(event, "id"));
+    if (Number.isNaN(routeId) || routeId === 0) {
       throw createError({
         statusCode: 400,
-        statusMessage: "ID tagihan tidak valid",
+        statusMessage: "ID pencairan tidak valid",
       });
     }
 
@@ -38,11 +83,10 @@ export default defineEventHandler(async (event) => {
     const user = event.context.user;
     const db = useDrizzle();
 
-    // ✅ Ambil fakultasId PPK yang sedang login
     const [ppkData] = await db
-      .select({ fakultasId: usersTable.fakultasId })
+      .select({ fakultasId: usersTable.fakultasId, id: usersTable.id })
       .from(usersTable)
-      .where(eq(usersTable.users_id, user.id));
+      .where(eq(usersTable.id, Number(user.id)));
 
     if (!ppkData?.fakultasId) {
       throw createError({
@@ -51,31 +95,45 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // ✅ Query tagihan + join ke ormawa untuk validasi fakultas
+    const tagihanId = await resolveTagihanId(
+      db,
+      routeId,
+      ppkData.id,
+      ppkData.fakultasId,
+    );
+
+    if (!tagihanId) {
+      throw createError({
+        statusCode: 404,
+        statusMessage: "Data pencairan tidak ditemukan",
+      });
+    }
+
+    const meta = await readPencairanMeta(tagihanId);
+    const dokumentasiId =
+      routeIdToDokumentasiId(routeId) ?? meta.dokumentasiId ?? null;
+
+    const hasAccess = await assertPpkAksesTagihan(
+      db,
+      tagihanId,
+      ppkData.fakultasId,
+      dokumentasiId,
+    );
+
+    if (!hasAccess) {
+      throw createError({
+        statusCode: 403,
+        statusMessage: "Anda tidak memiliki akses untuk memverifikasi tagihan ini",
+      });
+    }
+
     const [tagihan] = await db
       .select({
         id: tagihanPencairanTable.id,
-        nominal: tagihanPencairanTable.nominal,
         statusTagihan: tagihanPencairanTable.statusTagihan,
-        tipeTagihan: tagihanPencairanTable.tipeTagihan,
-        totalAnggaranRab: pengajuanRabTable.totalAnggaran,
-        ormawaFakultasId: ormawaTable.fakultasId, // ✅ untuk validasi akses
       })
       .from(tagihanPencairanTable)
-      .innerJoin(
-        kegiatanTable,
-        eq(tagihanPencairanTable.kegiatanId, kegiatanTable.id),
-      )
-      .innerJoin(
-        pengajuanRabTable,
-        eq(kegiatanTable.pengajuanRabId, pengajuanRabTable.id),
-      )
-      .innerJoin(
-        usersTable,
-        eq(pengajuanRabTable.usersId, usersTable.users_id),
-      )
-      .leftJoin(ormawaTable, eq(usersTable.ormawaId, ormawaTable.id))
-      .where(eq(tagihanPencairanTable.id, id));
+      .where(eq(tagihanPencairanTable.id, tagihanId));
 
     if (!tagihan) {
       throw createError({
@@ -84,50 +142,77 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // ✅ Validasi: ormawa harus se-fakultas dengan PPK
-    if (tagihan.ormawaFakultasId !== ppkData.fakultasId) {
-      throw createError({
-        statusCode: 403,
-        statusMessage: "Anda tidak memiliki akses untuk memverifikasi tagihan ini",
-      });
-    }
-
-    if (tagihan.statusTagihan !== "WAITING_PEMBAYARAN") {
+    if (!["WAITING_PEMBAYARAN", "DIKEMBALIKAN"].includes(tagihan.statusTagihan ?? "")) {
       throw createError({
         statusCode: 422,
         statusMessage: `Tagihan tidak bisa diverifikasi. Status saat ini: ${tagihan.statusTagihan}`,
       });
     }
 
-    // Cek nominal tidak melebihi RAB
-    const nominalTagihan = Number(tagihan.nominal);
-    const totalRab = Number(tagihan.totalAnggaranRab);
-    if (keputusan === "terverifikasi" && nominalTagihan > totalRab) {
-      throw createError({
-        statusCode: 422,
-        statusMessage: `Nominal tagihan (${nominalTagihan}) melebihi total anggaran RAB (${totalRab}). Tidak bisa diverifikasi.`,
-      });
+    if (keputusan === "terverifikasi" && dokumentasiId) {
+      const [dokumentasi] = await db
+        .select({
+          tipeDokumen: dokumentasiKegiatanTable.tipeDokumen,
+          namaToko: dokumentasiKegiatanTable.namaToko,
+          nomorRekeningToko: dokumentasiKegiatanTable.nomorRekeningToko,
+          namaPemilikRekeningToko: dokumentasiKegiatanTable.namaPemilikRekeningToko,
+          fotoBarangUrl: dokumentasiKegiatanTable.fotoBarangUrl,
+          strukBelanjaUrl: dokumentasiKegiatanTable.strukBelanjaUrl,
+          namaPenyediaJasa: dokumentasiKegiatanTable.namaPenyediaJasa,
+          nomorRekeningJasa: dokumentasiKegiatanTable.nomorRekeningJasa,
+          namaPemilikRekeningJasa: dokumentasiKegiatanTable.namaPemilikRekeningJasa,
+          skUrl: dokumentasiKegiatanTable.skUrl,
+          spmtUrl: dokumentasiKegiatanTable.spmtUrl,
+          amprahUrl: dokumentasiKegiatanTable.amprahUrl,
+          npwpUrl: dokumentasiKegiatanTable.npwpUrl,
+          ktpUrl: dokumentasiKegiatanTable.ktpUrl,
+        })
+        .from(dokumentasiKegiatanTable)
+        .where(eq(dokumentasiKegiatanTable.id, dokumentasiId));
+
+      if (dokumentasi) {
+        const docs = buildDokumenUpload({
+          dokumentasiId,
+          kegiatanId: 0,
+          tipeDokumen: dokumentasi.tipeDokumen,
+          deskripsi: null,
+          createdAt: "",
+          ...dokumentasi,
+        });
+
+        if (!isAllDocsUploaded(docs)) {
+          throw createError({
+            statusCode: 422,
+            statusMessage:
+              "Dokumen ormawa belum lengkap. Minta revisi jika ada yang kurang.",
+          });
+        }
+      }
     }
 
     const statusBaru =
-      keputusan === "terverifikasi" ? "TERVERIFIKASI" : "DIKEMBALIKAN";
+      keputusan === "terverifikasi" ? "DOKUMEN_LENGKAP" : "DIKEMBALIKAN";
+
+    if (dokumentasiId) {
+      await writePencairanMeta(tagihanId, { dokumentasiId });
+    }
 
     await db
       .update(tagihanPencairanTable)
       .set({
         statusTagihan: statusBaru,
-        updatedAt: new Date().toISOString(),
+        updatedAt: mysqlTimestamp(),
       })
-      .where(eq(tagihanPencairanTable.id, id));
+      .where(eq(tagihanPencairanTable.id, tagihanId));
 
     return {
       success: true,
       message:
         keputusan === "terverifikasi"
-          ? "Dokumen terverifikasi, tagihan siap dibayarkan"
+          ? "Dokumen ormawa lengkap. Unggah Surat Perintah Bayar dan kwitansi."
           : "Tagihan dikembalikan ke ormawa untuk diperbaiki",
       data: {
-        tagihanId: id,
+        tagihanId,
         statusBaru,
         catatan: catatan?.trim() ?? null,
       },
