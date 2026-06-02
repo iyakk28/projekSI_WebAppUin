@@ -2,21 +2,32 @@
   import { useUploadLpjStore } from "~/stores/ormawa/uploadLpj";
   import { useRabStore } from "~/stores/ormawa/DetailRab";
   import { useDetailLpgStore } from "~/stores/ormawa/DetailLpg";
+  import { useLogLpjStore } from "~/stores/ormawa/logLpj";
+  import { storeToRefs } from "pinia";
 
   const route = useRoute();
   const uploadLpjStore = useUploadLpjStore();
   const rabStore = useRabStore();
   const detailLpgStore = useDetailLpgStore();
+  const logLpjStore = useLogLpjStore();
 
   const rabId = Number(route.params.id);
 
+  const { logs: lpgLogs, loading: loadingLogs, hasMore: hasMoreLogs, total: totalLogs } = storeToRefs(logLpjStore);
+
   onMounted(() => {
     detailLpgStore.fetchFullLpgData(rabId);
+    logLpjStore.fetchLogs(rabId);
   });
 
   onUnmounted(() => {
     detailLpgStore.cleanupFileUrls();
+    logLpjStore.clearLogs();
   });
+
+  const loadMoreLogs = async () => {
+    await logLpjStore.fetchLogs(rabId, true);
+  };
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "-";
@@ -262,10 +273,11 @@
             >
               <Icon name="lucide:history" class="w-4 h-4 text-blue-500" />
               Riwayat Review
+              <span class="ml-auto px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px]" v-if="totalLogs > 0">{{ totalLogs }}</span>
             </h3>
 
             <div
-              v-if="uploadLpjStore.logs.length === 0"
+              v-if="lpgLogs.length === 0 && !loadingLogs"
               class="text-center py-8"
             >
               <p
@@ -277,13 +289,13 @@
 
             <div v-else class="space-y-4">
               <div
-                v-for="log in uploadLpjStore.logs"
+                v-for="log in lpgLogs"
                 :key="log.id"
                 class="p-4 bg-slate-50 rounded-lg border border-slate-100 space-y-2 relative"
               >
                 <div
                   class="absolute -left-1.5 top-5 w-3 h-3 bg-white border-2 border-slate-200 rounded-full"
-                  v-if="uploadLpjStore.logs.length > 1"
+                  v-if="lpgLogs.length > 1"
                 ></div>
                 <div class="flex items-center justify-between">
                   <span class="text-[10px] font-black text-slate-900">{{
@@ -296,6 +308,18 @@
                 <p class="text-xs text-slate-600 font-medium leading-relaxed">
                   {{ log.catatanRevisi }}
                 </p>
+              </div>
+
+              <!-- Load More Logs Button -->
+              <div v-if="hasMoreLogs" class="flex justify-center pt-4">
+                <button
+                  @click="loadMoreLogs"
+                  :disabled="loadingLogs"
+                  class="flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-200 text-[10px] font-black text-slate-500 hover:bg-slate-50 hover:text-blue-600 transition-all disabled:opacity-50"
+                >
+                  <Icon v-if="loadingLogs" name="lucide:loader-2" class="w-3 h-3 animate-spin" />
+                  Lihat lebih banyak logs
+                </button>
               </div>
             </div>
           </div>

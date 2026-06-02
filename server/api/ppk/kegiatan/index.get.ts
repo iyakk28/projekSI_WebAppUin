@@ -65,7 +65,11 @@ export default defineEventHandler(async (event) => {
 
     // Step 2: Cari ormawa yang prodi_id-nya masuk list
     const ormawaRows = await db
-      .select({ id: ormawaTable.id, nama: ormawaTable.nama, prodiId: ormawaTable.prodiId })
+      .select({
+        id: ormawaTable.id,
+        nama: ormawaTable.nama,
+        prodiId: ormawaTable.prodiId,
+      })
       .from(ormawaTable)
       .where(inArray(ormawaTable.prodiId, prodiIds));
 
@@ -100,7 +104,11 @@ export default defineEventHandler(async (event) => {
 
     const userMap = new Map(ormawaUsers.map((u) => [u.usersId, u]));
     const ormawaDetailRows = await db
-      .select({ id: ormawaTable.id, nama: ormawaTable.nama, kode: ormawaTable.kode })
+      .select({
+        id: ormawaTable.id,
+        nama: ormawaTable.nama,
+        kode: ormawaTable.kode,
+      })
       .from(ormawaTable)
       .where(inArray(ormawaTable.id, ormawaIds));
     const ormawaMap = new Map(ormawaDetailRows.map((o) => [o.id, o]));
@@ -170,12 +178,15 @@ export default defineEventHandler(async (event) => {
           .where(inArray(tagihanPencairanTable.kegiatanId, kegiatanIds))
       : [];
 
-    const tagihanMap = new Map<number, {
-      total: number;
-      selesai: number;
-      nominalSelesai: number;
-      statuses: Set<string>;
-    }>();
+    const tagihanMap = new Map<
+      number,
+      {
+        total: number;
+        selesai: number;
+        nominalSelesai: number;
+        statuses: Set<string>;
+      }
+    >();
 
     for (const item of tagihanRows) {
       const current = tagihanMap.get(item.kegiatanId) ?? {

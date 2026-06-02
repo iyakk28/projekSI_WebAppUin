@@ -10,20 +10,9 @@ interface LpgData {
   submittedAt: string;
 }
 
-interface LpgLog {
-  id: number;
-  catatanRevisi: string;
-  createdAt: string;
-  actor: {
-    fullname: string;
-    role: string;
-  };
-}
-
 export const useUploadLpjStore = defineStore("uploadLpj", {
   state: () => ({
     lpg: null as LpgData | null,
-    logs: [] as LpgLog[],
     loading: false,
     fetching: false,
     error: null as string | null,
@@ -35,7 +24,7 @@ export const useUploadLpjStore = defineStore("uploadLpj", {
       this.fetching = true;
       this.error = null;
       try {
-        const response = await $fetch<{ success: boolean; data: LpgData | null; logs: LpgLog[] }>(
+        const response = await $fetch<{ success: boolean; data: LpgData | null }>(
           "/api/ormawa/Lpg/getLpj",
           {
             method: "POST",
@@ -44,7 +33,6 @@ export const useUploadLpjStore = defineStore("uploadLpj", {
         );
         if (response.success) {
           this.lpg = response.data;
-          this.logs = response.logs;
         }
       } catch (err: any) {
         this.error = err.data?.message || "Gagal mengambil data LPG";
@@ -86,7 +74,6 @@ export const useUploadLpjStore = defineStore("uploadLpj", {
 
     clearState() {
       this.lpg = null;
-      this.logs = [];
       this.error = null;
       this.successMessage = null;
     }

@@ -4,11 +4,11 @@ import {
   usersTable,
 } from "~~/server/db/schema";
 import { useDrizzle } from "~~/server/db";
-import { eq, and, desc, asc } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
-  const { rabId } = body;
+  const { rabId, limit = 5, offset = 0 } = body;
   const { user } = event.context;
   const db = useDrizzle();
 
@@ -45,7 +45,15 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // Ambil approval log untuk RAB tersebut
+  // Hitung total approval log
+  const [totalCount] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(approvalLogTable)
+    .where(eq(approvalLogTable.pengajuanRabId, rabId));
+
+  const total = Number(totalCount?.count || 0);
+
+  // Ambil approval log untuk RAB tersebut dengan pagination
   const applog = await db
     .select({
       approvalLog: approvalLogTable,
@@ -57,10 +65,16 @@ export default defineEventHandler(async (event) => {
     .from(approvalLogTable)
     .innerJoin(usersTable, eq(usersTable.id, approvalLogTable.actorId))
     .where(eq(approvalLogTable.pengajuanRabId, rabId))
-    .orderBy(desc(approvalLogTable.createdAt));
+    .orderBy(desc(approvalLogTable.createdAt))
+    .limit(Number(limit))
+    .offset(Number(offset));
 
   return {
     success: true,
     data: applog,
+    total,
+    limit: Number(limit),
+    offset: Number(offset),
+    hasMore: Number(offset) + applog.length < total,
   };
 });

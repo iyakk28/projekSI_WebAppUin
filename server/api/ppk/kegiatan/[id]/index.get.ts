@@ -18,7 +18,10 @@ export default defineEventHandler(async (event) => {
   try {
     const id = Number(getRouterParam(event, "id"));
     if (isNaN(id) || id <= 0) {
-      throw createError({ statusCode: 400, statusMessage: "ID pengajuan tidak valid" });
+      throw createError({
+        statusCode: 400,
+        statusMessage: "ID pengajuan tidak valid",
+      });
     }
 
     const db = useDrizzle();
@@ -27,7 +30,10 @@ export default defineEventHandler(async (event) => {
     const fakultasId = user.fakultasId;
 
     if (!fakultasId) {
-      throw createError({ statusCode: 403, statusMessage: "PPK tidak memiliki fakultas yang valid" });
+      throw createError({
+        statusCode: 403,
+        statusMessage: "PPK tidak memiliki fakultas yang valid",
+      });
     }
 
     // Query bertahap — pola sama seperti ormawa, tidak pakai join untuk filter
@@ -86,7 +92,10 @@ export default defineEventHandler(async (event) => {
     });
 
     if (!rab) {
-      throw createError({ statusCode: 404, statusMessage: "Pengajuan tidak ditemukan" });
+      throw createError({
+        statusCode: 404,
+        statusMessage: "Pengajuan tidak ditemukan",
+      });
     }
 
     // Ambil info pengaju dan ormawa

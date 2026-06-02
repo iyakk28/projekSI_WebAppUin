@@ -57,6 +57,7 @@ export const useKegiatanStore = defineStore("kegiatan", {
     async submitDokumentasi(fd: FormData) {
       const dokumentasiStore = useDokumentasiStore();
       this.dokumentasiUploading = true;
+      console.log("dokumentasi kegiatan di panggil");
       try {
         await $fetch("/api/ormawa/dokumentasi/dokumentasiKegiatan", {
           method: "POST",
@@ -64,7 +65,6 @@ export const useKegiatanStore = defineStore("kegiatan", {
         });
         this.popupMessage = "Berhasil mengupload dokumentasi kegiatan";
         this.popupVisible = true;
-
         // Refresh list dokumentasi
         const kegiatanId = Number(fd.get("kegiatanId"));
         if (kegiatanId) {

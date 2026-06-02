@@ -17,8 +17,8 @@ import {
 
 const KEPUTUSAN_MAP = {
   disetujui: { statusBaru: "waiting_spi" as const, action: "disetujui" },
-  revisi:    { statusBaru: "revisi_ppk"  as const, action: "revisi"    },
-  tolak:     { statusBaru: "revisi_ppk"  as const, action: "ditolak"   },
+  revisi: { statusBaru: "revisi_ppk" as const, action: "revisi" },
+  tolak: { statusBaru: "revisi_ppk" as const, action: "ditolak" },
 } as const;
 
 type Keputusan = keyof typeof KEPUTUSAN_MAP;
@@ -27,7 +27,10 @@ export default defineEventHandler(async (event) => {
   try {
     const id = Number(getRouterParam(event, "id"));
     if (isNaN(id) || id <= 0) {
-      throw createError({ statusCode: 400, statusMessage: "ID pengajuan tidak valid" });
+      throw createError({
+        statusCode: 400,
+        statusMessage: "ID pengajuan tidak valid",
+      });
     }
 
     const body = await readBody(event);
@@ -53,7 +56,10 @@ export default defineEventHandler(async (event) => {
 
     const fakultasId = user.fakultasId;
     if (!fakultasId) {
-      throw createError({ statusCode: 403, statusMessage: "PPK tidak memiliki data fakultas" });
+      throw createError({
+        statusCode: 403,
+        statusMessage: "PPK tidak memiliki data fakultas",
+      });
     }
 
     // Query bertahap untuk dapat ormawaUserIds — pola sama seperti ormawa
@@ -61,10 +67,7 @@ export default defineEventHandler(async (event) => {
       .select({ prodiId: usersTable.prodiId })
       .from(usersTable)
       .where(
-        and(
-          eq(usersTable.role, "kaprodi"),
-          eq(usersTable.fakultasId, fakultasId),
-        ),
+        and(eq(usersTable.role, "ppk"), eq(usersTable.fakultasId, fakultasId)),
       );
 
     const prodiIds = kaprodiList
@@ -72,7 +75,10 @@ export default defineEventHandler(async (event) => {
       .filter((id): id is number => id !== null);
 
     if (prodiIds.length === 0) {
-      throw createError({ statusCode: 403, statusMessage: "Tidak ada ormawa se-fakultas ditemukan" });
+      throw createError({
+        statusCode: 403,
+        statusMessage: "Tidak ada ormawa se-fakultas ditemukan",
+      });
     }
 
     const ormawaRows = await db
@@ -102,7 +108,8 @@ export default defineEventHandler(async (event) => {
     if (!rab) {
       throw createError({
         statusCode: 404,
-        statusMessage: "Pengajuan tidak ditemukan atau Anda tidak memiliki akses",
+        statusMessage:
+          "Pengajuan tidak ditemukan atau Anda tidak memiliki akses",
       });
     }
 
@@ -136,8 +143,8 @@ export default defineEventHandler(async (event) => {
         action === "disetujui"
           ? "Pengajuan berhasil disetujui dan diteruskan ke SPI"
           : action === "revisi"
-          ? "Pengajuan dikembalikan untuk revisi"
-          : "Pengajuan ditolak",
+            ? "Pengajuan dikembalikan untuk revisi"
+            : "Pengajuan ditolak",
       data: { pengajuanId: id, keputusan: action, statusBaru },
     };
   } catch (error: any) {

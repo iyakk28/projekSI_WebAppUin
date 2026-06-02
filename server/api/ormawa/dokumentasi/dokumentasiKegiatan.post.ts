@@ -5,6 +5,7 @@ import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 export default defineEventHandler(async (event) => {
+  console.log("dokumentasi kegiatan di jalanlkan");
   const db = useDrizzle();
   const formData = await readMultipartFormData(event);
 

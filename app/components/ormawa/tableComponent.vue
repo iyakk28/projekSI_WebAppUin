@@ -40,6 +40,7 @@
             >
               Nama Kegiatan
             </th>
+
             <th
               class="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider"
             >

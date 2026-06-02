@@ -144,7 +144,7 @@
 
             <div v-else class="space-y-4">
               <div
-                v-for="log in logs"
+                v-for="log in lpgLogs"
                 :key="log.id"
                 class="p-4 rounded-xl bg-amber-50 border border-amber-200"
               >
@@ -167,6 +167,18 @@
                   {{ log.catatanRevisi || "Revisi LPJ diminta" }}
                 </p>
               </div>
+
+              <!-- Load More Logs Button -->
+              <div v-if="hasMoreLogs" class="flex justify-center mt-4">
+                <button
+                  @click="loadMoreLogs"
+                  :disabled="loadingLogs"
+                  class="flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-200 text-[10px] font-semibold text-slate-600 hover:bg-slate-50 hover:text-amber-600 transition-all disabled:opacity-50"
+                >
+                  <Icon v-if="loadingLogs" name="heroicons:arrow-path" class="w-3 h-3 animate-spin" />
+                  Lihat lebih banyak logs
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -176,11 +188,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import { useUploadLpjStore } from "~/stores/ormawa/uploadLpj";
+import { useLogLpjStore } from "~/stores/ormawa/logLpj";
+import { storeToRefs } from "pinia";
 
 const route = useRoute();
 const lpjStore = useUploadLpjStore();
+const logLpjStore = useLogLpjStore();
+
+const { logs: lpgLogs, loading: loadingLogs, hasMore: hasMoreLogs } = storeToRefs(logLpjStore);
 
 const isDragging = ref(false);
 const isSubmitting = ref(false);
@@ -188,12 +205,13 @@ const file = ref<File | null>(null);
 const ormawaNotes = ref("");
 const errorMsg = ref("");
 
-const logs = ref<any[]>([]);
-const loadingLogs = ref(false);
-
 const rabId = route.params.id as string;
 
 const goBack = () => navigateTo("/dashboard/ormawa");
+
+const loadMoreLogs = async () => {
+  await logLpjStore.fetchLogs(rabId, true);
+};
 
 const formatFileSize = (bytes: number) => {
   if (bytes === 0) return "0 Bytes";
@@ -245,19 +263,13 @@ const removeFile = () => {
 };
 
 const fetchLpjData = async () => {
-  loadingLogs.value = true;
   try {
-    const res: any = await $fetch("/api/ormawa/Lpg/getLpj", {
-      method: "POST",
-      body: { rabId: Number(rabId) }
-    });
-    if (res.success && res.logs) {
-      logs.value = res.logs;
-    }
+    await Promise.all([
+      lpjStore.fetchLpgDetail(Number(rabId)),
+      logLpjStore.fetchLogs(Number(rabId))
+    ]);
   } catch (error) {
     console.error(error);
-  } finally {
-    loadingLogs.value = false;
   }
 };
 
@@ -281,5 +293,9 @@ const submitLpj = async () => {
 
 onMounted(() => {
   fetchLpjData();
+});
+
+onUnmounted(() => {
+  logLpjStore.clearLogs();
 });
 </script>

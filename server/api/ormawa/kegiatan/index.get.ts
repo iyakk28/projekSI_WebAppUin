@@ -9,9 +9,7 @@ export default defineEventHandler(async (event) => {
     if (!user || !user.id) {
       throw createError({ statusCode: 401, message: "Unauthorized" });
     }
-
     const db = useDrizzle();
-
     const data = await db
       .select({
         kegiatan: kegiatanTable,
@@ -24,7 +22,7 @@ export default defineEventHandler(async (event) => {
       )
       .where(eq(pengajuanRabTable.usersId, user.id))
       .orderBy(desc(kegiatanTable.createdAt));
-    console.log(data);
+ 
     return {
       success: true,
       data: data,

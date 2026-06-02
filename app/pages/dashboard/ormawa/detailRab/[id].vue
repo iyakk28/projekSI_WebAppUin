@@ -92,18 +92,7 @@
                   <Icon name="heroicons:pencil-square" class="w-5 h-5" />
                   Edit
                 </button>
-                <!-- Tombol Upload Dokumentasi: muncul jika sudah disetujui dan acara sudah selesai -->
-                <button
-                  v-if="
-                    rabData.status === 'disetujui' &&
-                    isEventCompleted(rabData.tanggalSelesai)
-                  "
-                  @click="() => navigateTo(`/dashboard/ormawa/detailRab/upload-dokumentasi/${rabData.id}`)"
-                  class="px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-600 hover:text-white transition-all flex items-center gap-2"
-                >
-                  <Icon name="heroicons:cloud-arrow-up" class="w-5 h-5" />
-                  Upload Dokumentasi
-                </button>
+               
               </div>
             </div>
 
@@ -485,20 +474,20 @@
               Riwayat Persetujuan & Revisi
               <span
                 class="ml-2 px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-xs"
-                >{{ approvalLogs.length }}</span
+                >{{ totalLogs }}</span
               >
             </h3>
             <div class="space-y-4">
               <div
                 v-for="log in approvalLogs"
-                :key="log.id"
+                :key="log.approvalLog.id"
                 :class="[
                   'p-4 rounded-xl border-l-4',
-                  log.action === 'revisi'
+                  log.approvalLog.action === 'revisi'
                     ? 'bg-amber-50 border-amber-400'
-                    : log.action === 'tolak'
+                    : log.approvalLog.action === 'tolak'
                       ? 'bg-red-50 border-red-400'
-                      : log.action === 'setuju'
+                      : log.approvalLog.action === 'setuju'
                         ? 'bg-emerald-50 border-emerald-400'
                         : 'bg-slate-50 border-slate-300',
                 ]"
@@ -508,11 +497,11 @@
                     <div
                       :class="[
                         'w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm',
-                        log.action === 'revisi'
+                        log.approvalLog.action === 'revisi'
                           ? 'bg-amber-500'
-                          : log.action === 'tolak'
+                          : log.approvalLog.action === 'tolak'
                             ? 'bg-red-500'
-                            : log.action === 'setuju'
+                            : log.approvalLog.action === 'setuju'
                               ? 'bg-emerald-500'
                               : 'bg-[#3b5988]',
                       ]"
@@ -556,6 +545,25 @@
                   {{ log.approvalLog?.catatanRevisi || "Tidak ada catatan" }}
                 </p>
               </div>
+
+              <div
+                v-if="hasMoreLogs"
+                class="flex justify-center mt-6 pt-2"
+              >
+                <button
+                  @click="loadMoreLogs"
+                  :disabled="loadingLogs"
+                  class="flex items-center gap-2 px-6 py-2 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 hover:text-[#3b5988] transition-all disabled:opacity-50"
+                >
+                  <Icon
+                    v-if="loadingLogs"
+                    name="heroicons:arrow-path"
+                    class="w-4 h-4 animate-spin"
+                  />
+                  Lihat lebih banyak logs
+                </button>
+              </div>
+
               <div
                 v-if="approvalLogs.length === 0 && !loadingLogs"
                 class="text-center py-8 text-slate-500"
@@ -872,8 +880,17 @@
   );
 
   // State dari store Approval Log
-  const { logs: approvalLogs, loading: loadingLogs } =
-    storeToRefs(approveLogStore);
+  const {
+    logs: approvalLogs,
+    loading: loadingLogs,
+    hasMore: hasMoreLogs,
+    total: totalLogs,
+  } = storeToRefs(approveLogStore);
+
+  const loadMoreLogs = async () => {
+    const id = route.params.id;
+    await approveLogStore.fetchApprovalLogs(id, true);
+  };
 
   // UI state lokal
   const showAjukanModal = ref(false);

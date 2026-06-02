@@ -1,34 +1,33 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 
-interface User {
+interface Actor {
   fullname: string;
   role: string;
 }
 
-interface Log {
+interface LpgLog {
   id: number;
-  action: "review" | "approve" | "reject" | "pay" | "revisi";
-  komentar: string;
+  catatanRevisi: string;
   createdAt: string;
-  user: User;
+  actor: Actor;
 }
 
-interface LogResponse {
+interface LpgLogResponse {
   success: boolean;
-  data: Log[];
+  data: LpgLog[];
   total: number;
   hasMore: boolean;
 }
 
-export const useLogDokumentasiTagihanStore = defineStore("logDokumentasiTagihan", () => {
-  const logs = ref<Log[]>([]);
+export const useLogLpjStore = defineStore("logLpj", () => {
+  const logs = ref<LpgLog[]>([]);
   const loading = ref(false);
   const error = ref<string | null>(null);
   const total = ref(0);
   const hasMore = ref(false);
 
-  const fetchLogs = async (id: string, isLoadMore = false) => {
+  const fetchLogs = async (rabId: number | string, isLoadMore = false) => {
     loading.value = true;
     error.value = null;
 
@@ -39,11 +38,11 @@ export const useLogDokumentasiTagihanStore = defineStore("logDokumentasiTagihan"
     const offset = isLoadMore ? logs.value.length : 0;
 
     try {
-      const response = await $fetch<LogResponse>(
-        "/api/ormawa/dokumentasi/getLogs",
+      const response = await $fetch<LpgLogResponse>(
+        "/api/ormawa/Lpg/getLogs",
         {
           method: "POST",
-          body: { id, limit: 5, offset },
+          body: { rabId, limit: 5, offset },
         }
       );
       if (response.success) {
@@ -56,8 +55,8 @@ export const useLogDokumentasiTagihanStore = defineStore("logDokumentasiTagihan"
         hasMore.value = response.hasMore;
       }
     } catch (err: any) {
-      error.value = err.message || "Gagal mengambil log";
-      console.error("Fetch logs error:", err);
+      error.value = err.message || "Gagal mengambil log LPJ";
+      console.error("Fetch LPG logs error:", err);
     } finally {
       loading.value = false;
     }

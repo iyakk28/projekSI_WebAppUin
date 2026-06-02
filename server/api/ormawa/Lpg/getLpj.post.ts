@@ -23,7 +23,7 @@ export default defineEventHandler(async (event) => {
     });
 
     if (!kegiatan) {
-      return { success: true, data: null, logs: [] };
+      return { success: true, data: null };
     }
 
     // Get LPG
@@ -32,29 +32,12 @@ export default defineEventHandler(async (event) => {
     });
 
     if (!lpg) {
-      return { success: true, data: null, logs: [] };
+      return { success: true, data: null };
     }
-
-    // Get Logs
-    const logsData = await db
-      .select({
-        id: revisiLpgLogTable.id,
-        catatanRevisi: revisiLpgLogTable.catatanRevisi,
-        createdAt: revisiLpgLogTable.createdAt,
-        actor: {
-          fullname: usersTable.fullName,
-          role: usersTable.role,
-        },
-      })
-      .from(revisiLpgLogTable)
-      .innerJoin(usersTable, eq(revisiLpgLogTable.requesterId, usersTable.id))
-      .where(eq(revisiLpgLogTable.lpgId, lpg.id))
-      .orderBy(desc(revisiLpgLogTable.createdAt));
 
     return {
       success: true,
       data: lpg,
-      logs: logsData,
     };
   } catch (error: any) {
     console.error("Error fetching LPJ:", error);

@@ -47,19 +47,35 @@
         </div>
 
         <!-- Notification Card for Ongoing Activities -->
-        <div v-if="ongoingActivities.length > 0" class="bg-gradient-to-r from-[#d1a82a] to-[#b89425] rounded-3xl p-6 text-white shadow-lg relative overflow-hidden group">
-          <div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 transition-transform group-hover:scale-110"></div>
-          <div class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div
+          v-if="ongoingActivities.length > 0"
+          class="bg-gradient-to-r from-[#d1a82a] to-[#b89425] rounded-3xl p-6 text-white shadow-lg relative overflow-hidden group"
+        >
+          <div
+            class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 transition-transform group-hover:scale-110"
+          ></div>
+          <div
+            class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6"
+          >
             <div class="space-y-2">
               <div class="flex items-center gap-2">
-                <Icon name="heroicons:megaphone" class="w-6 h-6 animate-bounce" />
+                <Icon
+                  name="heroicons:megaphone"
+                  class="w-6 h-6 animate-bounce"
+                />
                 <h3 class="text-xl font-bold">Dokumentasi Diperlukan!</h3>
               </div>
               <p class="text-sm text-amber-50 leading-relaxed max-w-2xl">
-                Anda memiliki <span class="font-bold underline">{{ ongoingActivities.length }} kegiatan</span> yang sedang berlangsung. Jangan lupa untuk mengunggah dokumentasi (foto, barang, atau jasa) selama kegiatan berlangsung untuk mempermudah proses LPJ nantinya.
+                Anda memiliki
+                <span class="font-bold underline"
+                  >{{ ongoingActivities.length }} kegiatan</span
+                >
+                yang sedang berlangsung. Jangan lupa untuk mengunggah
+                dokumentasi (foto, barang, atau jasa) selama kegiatan
+                berlangsung untuk mempermudah proses LPJ nantinya.
               </p>
             </div>
-            <button 
+            <button
               @click="scrollToActivities"
               class="px-6 py-3 bg-white text-[#d1a82a] rounded-2xl font-bold text-sm hover:bg-[#3b5988] hover:text-white transition-all shadow-md whitespace-nowrap"
             >
@@ -144,17 +160,14 @@
                   </div>
                   <div class="flex gap-2">
                     <button
-                      v-if="item.kegiatan.statusKegiatan === 'SEDANG_DILAKSANAKAN'"
+                      v-if="
+                        item.kegiatan.statusKegiatan === 'SEDANG_DILAKSANAKAN'
+                      "
                       @click="navToUpload(item.kegiatan.id)"
                       class="p-2 rounded-xl bg-amber-50 text-amber-600 hover:bg-[#d1a82a] hover:text-white transition-all shadow-sm group/btn"
                       title="Upload Dokumentasi"
                     >
                       <Icon name="heroicons:camera" class="w-5 h-5" />
-                    </button>
-                    <button
-                      class="p-2 rounded-xl bg-slate-50 text-slate-400 group-hover:bg-[#3b5988] group-hover:text-white transition-all"
-                    >
-                      <Icon name="heroicons:arrow-right" class="w-5 h-5" />
                     </button>
                   </div>
                 </div>
@@ -321,32 +334,26 @@
                     <td class="px-6 py-4">
                       <div class="flex justify-center gap-2">
                         <button
+                          @click="showDetailRab(item.pengajuan.id)"
                           class="p-2 rounded-lg hover:bg-white hover:shadow-md text-slate-400 hover:text-[#3b5988] transition-all border border-transparent hover:border-slate-100"
                           title="Lihat Detail"
                         >
                           <Icon name="heroicons:eye" class="w-5 h-5" />
                         </button>
-                        
+
                         <!-- Upload Button for SELESAI or SEDANG_DILAKSANAKAN -->
                         <button
-                          v-if="['SELESAI', 'SEDANG_DILAKSANAKAN'].includes(item.kegiatan.statusKegiatan)"
+                          v-if="
+                            ['SELESAI', 'SEDANG_DILAKSANAKAN'].includes(
+                              item.kegiatan.statusKegiatan,
+                            )
+                          "
                           @click="navToUpload(item.kegiatan.id)"
                           class="p-2 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all border border-transparent hover:shadow-md"
                           title="Upload Dokumentasi"
                         >
                           <Icon
                             name="heroicons:cloud-arrow-up"
-                            class="w-5 h-5"
-                          />
-                        </button>
-
-                        <button
-                          v-if="item.kegiatan.statusKegiatan === 'SELESAI'"
-                          class="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-[#3b5988] hover:text-white transition-all border border-transparent hover:shadow-md"
-                          title="Ajukan LPJ"
-                        >
-                          <Icon
-                            name="heroicons:document-check"
                             class="w-5 h-5"
                           />
                         </button>
@@ -379,18 +386,26 @@
     await kegiatanListStore.fetchActivities();
   };
 
-  const featuredActivities = computed(() => kegiatanListStore.featuredActivities);
+  const featuredActivities = computed(
+    () => kegiatanListStore.featuredActivities,
+  );
   const allActivities = computed(() => kegiatanListStore.allActivities);
-  const ongoingActivities = computed(() => 
-    allActivities.value.filter(item => item.kegiatan.statusKegiatan === 'SEDANG_DILAKSANAKAN')
+  const ongoingActivities = computed(() =>
+    allActivities.value.filter(
+      (item) => item.kegiatan.statusKegiatan === "SELESAI",
+    ),
   );
 
+  const showDetailRab = (item: number) => {
+    return navigateTo(`detailRab/${item}`);
+  };
   const filteredActivities = computed(() => {
     if (!searchQuery.value) return allActivities.value;
     const query = searchQuery.value.toLowerCase();
-    return allActivities.value.filter(item => 
-      item.pengajuan.judulKegiatan.toLowerCase().includes(query) ||
-      item.pengajuan.nomorPengajuan.toLowerCase().includes(query)
+    return allActivities.value.filter(
+      (item) =>
+        item.pengajuan.judulKegiatan.toLowerCase().includes(query) ||
+        item.pengajuan.nomorPengajuan.toLowerCase().includes(query),
     );
   });
 
@@ -398,12 +413,14 @@
   const error = computed(() => kegiatanListStore.error);
 
   const scrollToActivities = () => {
-    const el = document.getElementById('all-activities');
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
+    const el = document.getElementById("all-activities");
+    if (el) el.scrollIntoView({ behavior: "smooth" });
   };
 
   const navToUpload = (kegiatanId: number) => {
-     return navigateTo(`/dashboard/ormawa/detailRab/upload-dokumentasi/${kegiatanId}`);
+    return navigateTo(
+      `/dashboard/ormawa/detailRab/upload-dokumentasi/${kegiatanId}`,
+    );
   };
 
   const formatCurrency = (val: string | number) => {
