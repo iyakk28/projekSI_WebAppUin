@@ -336,7 +336,7 @@
                       class="border-b border-slate-100 hover:bg-slate-50"
                     >
                       <td class="py-2 font-medium text-slate-800">
-                        {{ row.kode }}
+                        {{ row.nama }}
                       </td>
                       <td class="py-2 text-center text-slate-600">
                         {{ row.kegiatan }}
@@ -368,6 +368,70 @@
             </div>
           </div>
         </div>
+
+        <!-- Daftar Kegiatan Ormawa -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+            <div>
+              <h3 class="text-lg font-bold text-slate-900">Daftar Kegiatan Ormawa</h3>
+              <p class="text-sm text-slate-500">
+                Seluruh pengajuan RAB/TOR dari ormawa fakultas Anda, beserta status, pencairan, dan status SPI/LPJ.
+              </p>
+            </div>
+            <span class="px-3 py-1 text-xs font-semibold bg-slate-100 text-slate-600 rounded-full">
+              {{ activityRows.length }} kegiatan
+            </span>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="min-w-full text-sm">
+              <thead>
+                <tr class="border-b border-slate-200 text-left text-slate-500">
+                  <th class="py-2 font-semibold">Ormawa</th>
+                  <th class="py-2 font-semibold">Judul Kegiatan</th>
+                  <th class="py-2 font-semibold">Status RAB</th>
+                  <th class="py-2 font-semibold">Status Kegiatan</th>
+                  <th class="py-2 font-semibold">Pencairan</th>
+                  <th class="py-2 font-semibold">SPI / LPJ</th>
+                  <th class="py-2 font-semibold text-right">Detail</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-if="activityRows.length === 0">
+                  <td colspan="6" class="py-8 text-center text-slate-500">
+                    Belum ada pengajuan kegiatan dari ormawa di fakultas Anda.
+                  </td>
+                </tr>
+                <tr
+                  v-for="item in activityRows"
+                  :key="item.id"
+                  class="border-b border-slate-100 hover:bg-slate-50"
+                >
+                  <td class="py-3 font-medium text-slate-800">{{ item.ormawa.nama }}</td>
+                  <td class="py-3 text-slate-700">{{ item.judulKegiatan }}</td>
+                  <td class="py-3 text-slate-600 capitalize">{{ item.status.replaceAll("_", " ") }}</td>
+                  <td class="py-3 text-slate-600">{{ item.statusKegiatan || "Belum dibuat" }}</td>
+                  <td class="py-3 text-slate-600">
+                    <div>{{ item.pencairanLabel }}</div>
+                    <div class="text-xs text-slate-400">
+                      {{ formatRpShort(item.pencairanNominal) }}
+                    </div>
+                  </td>
+                  <td class="py-3 text-slate-600">{{ item.lpjStatus }}</td>
+                  <td class="py-3 text-right">
+                    <button
+                      type="button"
+                      class="px-3 py-1 rounded-lg bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition"
+                      @click="navigateTo(`/dashboard/ppk/detailPengajuan/${item.id}`)"
+                    >
+                      Detail
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </main>
     </div>
   </div>
@@ -386,11 +450,19 @@
     disetujuiCount?: number;
   }
 
-  interface FakultasData {
-    id: number;
-    nama: string;
-    ormawa: OrmawaAnggaran[];
-  }
+// ✅ PERBAIKAN — buat interface sesuai shape asli dari API
+interface FakultasApiResponse {
+  fakultas: { id: number; nama: string };
+  ormawa: OrmawaAnggaran[];
+}
+
+// Flattened shape used in components
+interface FakultasData {
+  id: number;
+  nama: string;
+  ormawa: OrmawaAnggaran[];
+}
+
 
   interface DashboardData {
     total: number;
@@ -406,14 +478,41 @@
     totalSisaKeseluruhan: number;
   }
 
+  interface PpkActivity {
+    id: number;
+    nomorPengajuan: string;
+    judulKegiatan: string;
+    status: string;
+    statusKegiatan: string | null;
+    ormawa: { id: number | null; nama: string; kode: string };
+    totalAnggaran: number;
+    tanggalMulai: string | null;
+    tanggalSelesai: string | null;
+    pencairan: {
+      totalTagihan: number;
+      selesaiTagihan: number;
+      nominalSelesai: number;
+      statuses: string[];
+    };
+  }
+
   // API calls (sesuai asli)
-  const { data: dashData } = await useFetch<{ data: DashboardData }>(
-    "/api/ppk/dashboard",
-  );
-  const { data: ormawaData } = await useFetch<{
-    data: FakultasData[];
-    summary: SummaryData;
-  }>("/api/ppk/ormawa-anggaran");
+const { data: dashData } = await useFetch<DashboardData>("/api/ppk/dashboard");
+const { data: ormawaData } = await useFetch<{
+  data: FakultasApiResponse[];
+  summary: SummaryData;
+}>("/api/ppk/ormawa-anggaran");
+const { data: kegiatanData } = await useFetch<{
+  success: boolean;
+  summary: {
+    totalMasuk: number;
+    totalWaitingPPK: number;
+    totalRevisiPPK: number;
+    totalWaitingSPI: number;
+    totalSelesaiSPI: number;
+  };
+  data: PpkActivity[];
+}>("/api/ppk/kegiatan");
 
   // State
   const selectedOrmawaId = ref<string>("");
@@ -429,13 +528,12 @@
     }),
   );
 
-  const ormawaList = computed<FakultasData[]>(
-    () =>
-      ormawaData.value?.data?.map((fak) => ({
-        id: fak.fakultas.id,
-        nama: fak.fakultas.nama,
-        ormawa: fak.ormawa,
-      })) || [],
+  const ormawaList = computed<FakultasData[]>(() =>
+    ormawaData.value?.data?.map((fak) => ({
+      id: fak.fakultas.id,
+      nama: fak.fakultas.nama,
+      ormawa: fak.ormawa,
+    })) || [],
   );
 
   const allOrmawa = computed<OrmawaAnggaran[]>(() =>
@@ -453,13 +551,13 @@
   };
 
   const currentData = computed(() => {
-    const s = ormawaData.value?.summary || {};
+    const s = ormawaData.value?.summary as SummaryData | undefined;
     if (!selectedOrmawa.value) {
       return {
-        totalAnggaran: s.totalAnggaranKeseluruhan || 0,
-        terpakai: s.totalTerpakaiKeseluruhan || 0,
-        sisa: s.totalSisaKeseluruhan || 0,
-        totalKegiatan: dashData.value?.data?.total || 0,
+        totalAnggaran: s?.totalAnggaranKeseluruhan || 0,
+        terpakai: s?.totalTerpakaiKeseluruhan || 0,
+        sisa: s?.totalSisaKeseluruhan || 0,
+        totalKegiatan: dashData.value?.total || 0,
       };
     }
     const o = selectedOrmawa.value;
@@ -493,7 +591,7 @@
   });
 
   const statusData = computed(() => {
-    const d = dashData.value?.data || {};
+   const d = dashData.value || {} as DashboardData;
     const total = d.total || 1;
     return [
       {
@@ -526,13 +624,33 @@
   const ormawaRows = computed(() =>
     allOrmawa.value.map((o) => ({
       id: o.id,
-      kode: o.kode,
+      nama: o.nama,
       kegiatan: o.totalKegiatan || 0,
       disetujui: o.disetujuiCount || 0,
       progPct: o.totalKegiatan
         ? Math.round(((o.disetujuiCount || 0) / o.totalKegiatan) * 100)
         : 0,
-    })),
+    }))
+  );
+
+  const activityRows = computed(() =>
+    kegiatanData.value?.data
+      ? kegiatanData.value.data.map((item) => ({
+          ...item,
+          lpjStatus:
+            item.status === "selesai_spi"
+              ? "LPJ Selesai"
+              : item.status === "waiting_spi"
+              ? "Menunggu SPI"
+              : item.status === "ditolak_spi"
+              ? "Ditolak SPI"
+              : "Belum sampai SPI",
+          pencairanLabel: item.pencairan.selesaiTagihan
+            ? `${item.pencairan.selesaiTagihan} / ${item.pencairan.totalTagihan}`
+            : "Belum cair",
+          pencairanNominal: item.pencairan.nominalSelesai || 0,
+        }))
+      : [],
   );
 
   // Helpers

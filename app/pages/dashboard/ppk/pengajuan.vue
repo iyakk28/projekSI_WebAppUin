@@ -46,6 +46,7 @@
                 <option value="disetujui">Disetujui</option>
                 <option value="revisi">Revisi</option>
                 <option value="ditolak">Ditolak</option>
+                <option value="dikirim_spi">Dikirim ke SPI</option>
               </select>
             </div>
             <div
@@ -265,10 +266,10 @@
                   </td>
                   <td class="py-3 px-4 text-center">
                     <button
-                      @click="openDetail(item)"
+                     @click="() => navigateTo(`/dashboard/ppk/detailPengajuan/${item.id}`)"
                       class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#d1a82a]/10 text-[#d1a82a] hover:bg-[#d1a82a]/20 transition font-medium text-sm"
-                    >
-                      <Icon name="heroicons:eye" class="w-4 h-4" /> Detail
+                        >
+                     <Icon name="heroicons:eye" class="w-4 h-4" /> Detail
                     </button>
                   </td>
                 </tr>
@@ -353,20 +354,11 @@
                 <p class="font-medium">{{ selected?.namaKegiatan }}</p>
               </div>
               <div>
-                <p class="text-xs font-semibold uppercase text-slate-400">
-                  Jenis Kegiatan
-                </p>
-                <p class="font-medium">{{ selected?.jenisKegiatan }}</p>
-              </div>
-              <div>
-                <p class="text-xs font-semibold uppercase text-slate-400">
-                  Tanggal Kegiatan
-                </p>
-                <p class="font-medium">
+                <!-- <p class="font-medium">
                   {{ formatDate(selected?.tanggalKegiatan) }}
-                </p>
+                </p> -->
               </div>
-              <div>
+              <!-- <div>
                 <p class="text-xs font-semibold uppercase text-slate-400">
                   Lokasi
                 </p>
@@ -377,7 +369,7 @@
                   Peserta
                 </p>
                 <p class="font-medium">{{ selected?.jumlahPeserta }} orang</p>
-              </div>
+              </div> -->
               <div>
                 <p class="text-xs font-semibold uppercase text-slate-400">
                   Dana Diajukan
@@ -616,7 +608,7 @@
                   Revisi
                 </button>
                 <button
-                  @click="handleDecision('ditolak')"
+                  @click="handleDecision('tolak')"
                   :disabled="loadingAction"
                   class="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition"
                 >
@@ -666,18 +658,30 @@
     tanggal: string;
   }
 
+  type KegiatanStatus =
+    | "waiting_ppk"
+    | "revisi_ppk"
+    | "waiting_spi"
+    | "ditolak_spi"
+    | "disetujui"
+    | "menunggu"
+    | "revisi"
+    | "ditolak"
+    | "dikirim_spi"
+    | "draft";
+
   interface KegiatanItem {
     id: number;
     namaKegiatan: string;
-    jenisKegiatan: string;
-    tanggalKegiatan: string;
-    lokasi: string;
-    jumlahPeserta: number;
+    // jenisKegiatan?: string;
+    tanggalKegiatan?: string;
+    // lokasi?: string;
+    // jumlahPeserta?: number;
     totalDana: number;
-    deskripsi: string;
+    deskripsi?: string;
     pengaju: string;
     tanggalPengajuan: string;
-    status: "menunggu" | "disetujui" | "revisi" | "ditolak" | "dikirim_spi";
+    status: KegiatanStatus;
     namaOrmawa: string;
     kodeOrmawa: string;
     rabItems: RabItem[];
@@ -686,9 +690,65 @@
     color?: string;
   }
 
+  const normalizeStatus = (status?: string): KegiatanStatus => {
+    switch (status) {
+      case "waiting_ppk":
+      case "menunggu":
+        return "menunggu";
+      case "revisi_ppk":
+      case "revisi":
+        return "revisi";
+      case "waiting_spi":
+      case "dikirim_spi":
+        return "dikirim_spi";
+      case "ditolak_spi":
+      case "ditolak":
+      case "tolak":
+        return "ditolak";
+      case "disetujui":
+        return "disetujui";
+      default:
+        return "menunggu";
+    }
+  };
+
+  const mapStatusLabel = (status?: string) => {
+    switch (status) {
+      case "waiting_ppk":
+        return "Menunggu";
+      case "revisi_ppk":
+        return "Revisi";
+      case "waiting_spi":
+        return "Dikirim ke SPI";
+      case "ditolak_spi":
+        return "Ditolak";
+      case "disetujui":
+        return "Disetujui";
+      default:
+        return "Menunggu";
+    }
+  };
+
+  const mapStatusColor = (status?: string) => {
+    switch (status) {
+      case "waiting_ppk":
+        return "yellow";
+      case "disetujui":
+        return "mint";
+      case "revisi_ppk":
+        return "orange";
+      case "ditolak_spi":
+        return "coral";
+      case "waiting_spi":
+        return "blue";
+      default:
+        return "blue";
+    }
+  };
+
   // API call
   const { data: kegiatanData, refresh } = await useFetch<{
-    data: KegiatanItem[];
+    data: Record<string, any>[];
   }>("/api/ppk/kegiatan");
 
   // State
@@ -723,7 +783,45 @@
     year: "numeric",
   });
 
-  const kegiatanList = computed(() => kegiatanData.value?.data || []);
+  const kegiatanList = computed<KegiatanItem[]>(() =>
+    (kegiatanData.value?.data || []).map((item) => ({
+      id: item.id,
+      namaKegiatan: item.judulKegiatan || item.namaKegiatan || "",
+      // jenisKegiatan: item.jenisKegiatan || "",
+      tanggalKegiatan: item.tanggalKegiatan || item.tanggalMulai || "",
+      // lokasi: item.lokasi || "",
+      // jumlahPeserta: item.jumlahPeserta ?? 0,
+      totalDana: Number(item.totalDana ?? item.totalAnggaran ?? 0),
+      deskripsi: item.deskripsi || item.catatan || "",
+      pengaju:
+        item.pengaju?.nama || item.pengaju?.fullName || item.pengaju?.email || "",
+      tanggalPengajuan:
+        item.tanggalPengajuan || item.tanggalMulai || item.createdAt || "",
+      status: normalizeStatus(item.status),
+      namaOrmawa: item.namaOrmawa || item.ormawa?.nama || "",
+      kodeOrmawa: item.kodeOrmawa || item.ormawa?.kode || "",
+      rabItems: item.rabItems || [],
+      dokumen: item.dokumen?.length ? item.dokumen : [
+  ...(item.fileRabUrl ? [{
+    id: 1,
+    nama: "File RAB",
+    tipe: "PDF",
+    ukuran: "",
+    url: `/${item.fileRabUrl}`,
+  }] : []),
+  ...(item.fileTorUrl ? [{
+    id: 2,
+    nama: "File TOR",
+    tipe: "PDF",
+    ukuran: "",
+    url: `/${item.fileTorUrl}`,
+  }] : []),
+],
+      riwayat: item.riwayat || [],
+      color: item.color,
+    })),
+  );
+
   const totalKegiatan = computed(() => kegiatanList.value.length);
   const countByStatus = (status: string) =>
     kegiatanList.value.filter((k) => k.status === status).length;
@@ -756,11 +854,12 @@
     if (!selected.value) return;
     loadingAction.value = true;
     try {
-      await $fetch(`/api/ppk/kegiatan/${selected.value.id}/keputusan`, {
-        method: "POST",
-        body: { status: keputusan, catatan: catatanPPK.value },
-      });
-      selected.value.status = keputusan as any;
+// ✅ PERBAIKAN
+    await $fetch(`/api/ppk/kegiatan/${selected.value.id}/keputusan`, {
+      method: "POST",
+      body: { keputusan: keputusan, catatan: catatanPPK.value },  // ← "keputusan" benar
+    });
+      selected.value.status = normalizeStatus(keputusan as string);
       if (keputusan === "disetujui") activeTab.value = "keputusan";
       await refresh();
     } catch (e) {
@@ -778,7 +877,7 @@
       ditolak: "coral",
       dikirim_spi: "blue",
     };
-    return map[s || ""] || "blue";
+    return map[normalizeStatus(s) || "menunggu"] || "blue";
   };
 
   const statusLabel = (s?: string) => {
@@ -789,7 +888,7 @@
       ditolak: "Ditolak",
       dikirim_spi: "Dikirim ke SPI",
     };
-    return map[s || ""] || s || "-";
+    return map[normalizeStatus(s) || "menunggu"] || "-";
   };
 
   const formatRp = (n?: number) =>

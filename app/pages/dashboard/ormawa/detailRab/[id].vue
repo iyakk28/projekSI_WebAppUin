@@ -92,6 +92,18 @@
                   <Icon name="heroicons:pencil-square" class="w-5 h-5" />
                   Edit
                 </button>
+                <!-- Tombol Upload Dokumentasi: muncul jika sudah disetujui dan acara sudah selesai -->
+                <button
+                  v-if="
+                    rabData.status === 'disetujui' &&
+                    isEventCompleted(rabData.tanggalSelesai)
+                  "
+                  @click="() => navigateTo(`/dashboard/ormawa/detailRab/upload-dokumentasi/${rabData.id}`)"
+                  class="px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-600 hover:text-white transition-all flex items-center gap-2"
+                >
+                  <Icon name="heroicons:cloud-arrow-up" class="w-5 h-5" />
+                  Upload Dokumentasi
+                </button>
               </div>
             </div>
 

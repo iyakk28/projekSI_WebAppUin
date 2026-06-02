@@ -42,7 +42,7 @@
             </NuxtLink>
           </template>
           <template v-if="authStore.user?.role === 'kaprodi'">
-            <NuxtLink to="/kaprodi/verifikasi" class="nav-link">
+            <NuxtLink to="/dashboard/kaprodi/pengajuan" class="nav-link">
               Verifikasi RAB
             </NuxtLink>
           </template>

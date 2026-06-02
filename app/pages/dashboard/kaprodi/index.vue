@@ -98,8 +98,9 @@
           </div>
 
           <!-- Total Kegiatan -->
-          <div
-            class="relative overflow-hidden bg-white rounded-2xl shadow-sm border border-slate-200 p-6 group hover:shadow-lg transition-all duration-300"
+          <NuxtLink
+            to="/dashboard/kaprodi/pengajuan"
+            class="relative overflow-hidden bg-white rounded-2xl shadow-sm border border-slate-200 p-6 group hover:shadow-lg transition-all duration-300 block cursor-pointer"
           >
             <div
               class="absolute top-0 right-0 w-32 h-32 bg-purple-500/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"
@@ -109,16 +110,19 @@
                 <div class="p-3 rounded-xl bg-purple-500/10 text-purple-600">
                   <Icon name="heroicons:document-text" class="w-6 h-6" />
                 </div>
+                <div class="text-xs font-semibold text-[#d1a82a] group-hover:underline flex items-center gap-1">
+                  Lihat Semua <Icon name="heroicons:arrow-right" class="w-3.5 h-3.5" />
+                </div>
               </div>
               <h3 class="text-2xl font-bold text-slate-900 mb-1">
-                {{ dashboardData.total }}
+                {{ dashboardData?.total || 0 }}
               </h3>
               <p class="text-sm text-slate-500">Total Kegiatan</p>
               <span class="inline-block mt-1 text-xs text-slate-400"
                 >Proposal aktif</span
               >
             </div>
-          </div>
+          </NuxtLink>
         </div>
 
         <!-- Budget Progress Hero -->
@@ -337,6 +341,70 @@
             </div>
           </div>
         </div>
+
+        <!-- Daftar Kegiatan Ormawa Binaan -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+            <div>
+              <h3 class="text-lg font-bold text-slate-900">Kegiatan Ormawa Binaan</h3>
+              <p class="text-sm text-slate-500">
+                Seluruh pengajuan RAB/TOR dari ormawa yang kamu bina, beserta status, pencairan, dan status SPI/LPJ.
+              </p>
+            </div>
+            <span class="px-3 py-1 text-xs font-semibold bg-slate-100 text-slate-600 rounded-full">
+              {{ activityRows.length }} kegiatan
+            </span>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="min-w-full text-sm">
+              <thead>
+                <tr class="border-b border-slate-200 text-left text-slate-500">
+                  <th class="py-2 font-semibold">Ormawa</th>
+                  <th class="py-2 font-semibold">Judul Kegiatan</th>
+                  <th class="py-2 font-semibold">Status RAB</th>
+                  <th class="py-2 font-semibold">Status Kegiatan</th>
+                  <th class="py-2 font-semibold">Pencairan</th>
+                  <th class="py-2 font-semibold">SPI / LPJ</th>
+                  <th class="py-2 font-semibold text-right">Detail</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-if="activityRows.length === 0">
+                  <td colspan="7" class="py-8 text-center text-slate-500">
+                    Belum ada pengajuan kegiatan dari ormawa binaan kamu.
+                  </td>
+                </tr>
+                <tr
+                  v-for="item in activityRows"
+                  :key="item.id"
+                  class="border-b border-slate-100 hover:bg-slate-50"
+                >
+                  <td class="py-3 font-medium text-slate-800">{{ item.ormawa.nama }}</td>
+                  <td class="py-3 text-slate-700">{{ item.judulKegiatan }}</td>
+                  <td class="py-3 text-slate-600 capitalize">{{ item.status.replaceAll("_", " ") }}</td>
+                  <td class="py-3 text-slate-600">{{ item.statusKegiatan || "Belum dibuat" }}</td>
+                  <td class="py-3 text-slate-600">
+                    <div>{{ item.pencairan.selesaiTagihan }} / {{ item.pencairan.totalTagihan }} tagihan</div>
+                    <div class="text-xs text-slate-400">
+                      {{ formatRpShort(item.pencairan.nominalSelesai) }}
+                    </div>
+                  </td>
+                  <td class="py-3 text-slate-600">{{ getLpjStatus(item.status) }}</td>
+                  <td class="py-3 text-right">
+                    <button
+                      type="button"
+                      class="px-3 py-1 rounded-lg bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition"
+                      @click="navigateTo(`/dashboard/kaprodi/detailPengajuan/${item.id}`)"
+                    >
+                      Detail
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </main>
     </div>
   </div>
@@ -369,6 +437,24 @@
     totalSisaKeseluruhan: number;
   }
 
+  interface KaprodiActivity {
+    id: number;
+    nomorPengajuan: string;
+    judulKegiatan: string;
+    status: string;
+    statusKegiatan: string | null;
+    ormawa: { id: number | null; nama: string; kode: string };
+    totalAnggaran: number;
+    tanggalMulai: string | null;
+    tanggalSelesai: string | null;
+    pencairan: {
+      totalTagihan: number;
+      selesaiTagihan: number;
+      nominalSelesai: number;
+      statuses: string[];
+    };
+  }
+
   interface ProdiData {
     id: number;
     nama: string;
@@ -377,17 +463,18 @@
   }
 
   // API calls
-  const { data: dashboardData } = await useFetch<{ data: DashboardData }>(
-    "/api/kaprodi/dashboard",
-  );
+  const { data: dashboardData } = await useFetch<{
+    data: DashboardData;
+    activities: KaprodiActivity[];
+  }>("/api/kaprodi/dashboard");
   const { data: ormawaDataResponse } = await useFetch<{
     data: OrmawaData[];
     summary: SummaryData;
     prodi: ProdiData;
   }>("/api/kaprodi/ormawa-anggaran");
 
-  // State
-  const currentProdi = ref<ProdiData | null>(null);
+  // Computed & State
+  const currentProdi = computed(() => ormawaDataResponse.value?.prodi || null);
 
   // Computed
   const todayStr = computed(() =>
@@ -477,8 +564,33 @@
       progPct: o.totalKegiatan
         ? Math.round(((o.disetujuiCount || 0) / o.totalKegiatan) * 100)
         : 0,
-    })),
+    }))
   );
+
+  const activityRows = computed(() => dashboardData.value?.activities || []);
+
+  const getLpjStatus = (status: string) => {
+    switch (status) {
+      case "waiting_spi":
+        return "Menunggu SPI";
+      case "selesai_spi":
+        return "LPJ Selesai";
+      case "disetujui":
+        return "Disetujui PPK";
+      case "waiting_ppk":
+        return "Menunggu PPK";
+      case "revisi_ppk":
+        return "Revisi PPK";
+      case "waiting_kaprodi":
+        return "Menunggu Kaprodi";
+      case "revisi_kaprodi":
+        return "Revisi Kaprodi";
+      case "ditolak_spi":
+        return "Ditolak SPI";
+      default:
+        return status.replaceAll("_", " ");
+    }
+  };
 
   // Helpers
   const formatRp = (n: number) =>

@@ -1,34 +1,60 @@
-import { eq, sql, and, ne } from "drizzle-orm";
+// FILE: server/api/ppk/ormawa-anggaran/index.get.ts
+//
+// Pola mengikuti index.get.ts milik ormawa:
+// - Query bertahap tanpa join untuk filter
+// - Subquery SQL untuk hitung agregat per ormawa
+
+import { eq, sql, inArray, and } from "drizzle-orm";
 import { useDrizzle } from "~~/server/db";
-import {
-  ormawaTable,
-  programStudiTable,
-  fakultasTable,
-  pengajuanRabTable,
-  usersTable,
-} from "~~/server/db/schema";
+import { ormawaTable, usersTable } from "~~/server/db/schema";
 
 export default defineEventHandler(async (event) => {
   try {
     const db = useDrizzle();
+    const { user } = event.context;
 
-    // Ambil user PPK yang sedang login beserta fakultasnya
-    const user = event.context.user;
     const fakultasId = user.fakultasId;
 
-    // Ambil semua ormawa beserta data prodi dan fakultas
-    // yang se-fakultas dengan PPK yang login
+    if (!fakultasId) {
+      return {
+        success: true,
+        summary: { totalAnggaranKeseluruhan: 0, totalTerpakaiKeseluruhan: 0, totalSisaKeseluruhan: 0 },
+        data: [],
+      };
+    }
+
+    // Step 1-2: dapat ormawaIds se-fakultas PPK
+    const kaprodiList = await db
+      .select({ prodiId: usersTable.prodiId })
+      .from(usersTable)
+      .where(
+        and(
+          eq(usersTable.role, "kaprodi"),
+          eq(usersTable.fakultasId, fakultasId),
+        ),
+      );
+
+    const prodiIds = kaprodiList
+      .map((k) => k.prodiId)
+      .filter((id): id is number => id !== null);
+
+    if (prodiIds.length === 0) {
+      return {
+        success: true,
+        summary: { totalAnggaranKeseluruhan: 0, totalTerpakaiKeseluruhan: 0, totalSisaKeseluruhan: 0 },
+        data: [],
+      };
+    }
+
+    // Ambil data ormawa beserta kalkulasi anggaran via subquery
+    // Pola subquery SQL sama seperti index.get.ts ormawa yang hitung count pengajuan
     const ormawaList = await db
       .select({
         ormawaId: ormawaTable.id,
         ormawaName: ormawaTable.nama,
         ormawaKode: ormawaTable.kode,
         totalAnggaranOrmawa: ormawaTable.totalAnggaran,
-        prodiId: programStudiTable.id,
-        prodiNama: programStudiTable.nama,
-        fakultasId: fakultasTable.id,
-        fakultasNama: fakultasTable.nama,
-        // Hitung total yang diajukan (semua status kecuali draft)
+        prodiId: ormawaTable.prodiId,
         totalDiajukan: sql<number>`
           COALESCE((
             SELECT SUM(pr.total_anggaran)
@@ -38,7 +64,6 @@ export default defineEventHandler(async (event) => {
             AND pr.status != 'draft'
           ), 0)
         `,
-        // Hitung yang sudah disetujui SPI (terpakai)
         totalTerpakai: sql<number>`
           COALESCE((
             SELECT SUM(pr.total_anggaran)
@@ -48,7 +73,6 @@ export default defineEventHandler(async (event) => {
             AND pr.status IN ('disetujui', 'selesai_spi')
           ), 0)
         `,
-        // Hitung jumlah kegiatan (semua kecuali draft)
         totalKegiatan: sql<number>`
           COALESCE((
             SELECT COUNT(*)
@@ -58,7 +82,6 @@ export default defineEventHandler(async (event) => {
             AND pr.status != 'draft'
           ), 0)
         `,
-        // Hitung kegiatan yang sudah disetujui
         totalDisetujui: sql<number>`
           COALESCE((
             SELECT COUNT(*)
@@ -70,74 +93,40 @@ export default defineEventHandler(async (event) => {
         `,
       })
       .from(ormawaTable)
-      .innerJoin(programStudiTable, eq(ormawaTable.prodiId, programStudiTable.id))
-      .innerJoin(
-        fakultasTable,
-        and(
-          eq(programStudiTable.fakultasId, fakultasTable.id),
-          eq(fakultasTable.id, fakultasId), // filter hanya fakultas PPK
-        ),
-      )
-      .orderBy(fakultasTable.id, ormawaTable.nama);
+      .where(inArray(ormawaTable.prodiId, prodiIds))
+      .orderBy(ormawaTable.nama);
 
-    // Kelompokkan per fakultas
-   const fakultasMap = new Map<
-  number,
-  {
-    id: number;
-    nama: string;
-    ormawa: typeof ormawaList;
-  }
->();
-
-    for (const row of ormawaList) {
-      if (!fakultasMap.has(row.fakultasId)) {
-        fakultasMap.set(row.fakultasId, {
-          id: row.fakultasId,
-          nama: row.fakultasNama,
-          ormawa: [],
-        });
-      }
-      fakultasMap.get(row.fakultasId)!.ormawa.push(row);
-    }
-
-    // Hitung summary keseluruhan (hanya se-fakultas PPK)
     const totalAnggaranKeseluruhan = ormawaList.reduce(
-      (sum, o) => sum + Number(o.totalAnggaranOrmawa),
-      0,
+      (sum, o) => sum + Number(o.totalAnggaranOrmawa), 0,
     );
     const totalTerpakaiKeseluruhan = ormawaList.reduce(
-      (sum, o) => sum + Number(o.totalTerpakai),
-      0,
+      (sum, o) => sum + Number(o.totalTerpakai), 0,
     );
-    const totalSisaKeseluruhan =
-      totalAnggaranKeseluruhan - totalTerpakaiKeseluruhan;
 
     return {
       success: true,
       summary: {
         totalAnggaranKeseluruhan,
         totalTerpakaiKeseluruhan,
-        totalSisaKeseluruhan,
+        totalSisaKeseluruhan: totalAnggaranKeseluruhan - totalTerpakaiKeseluruhan,
       },
-      data: Array.from(fakultasMap.values()).map((fak) => ({
-        fakultas: {
-          id: fak.id,
-          nama: fak.nama,
+      data: [
+        {
+          fakultas: { id: fakultasId, nama: "" },
+          ormawa: ormawaList.map((o) => ({
+            id: o.ormawaId,
+            nama: o.ormawaName,
+            kode: o.ormawaKode,
+            anggaran: {
+              total: Number(o.totalAnggaranOrmawa),
+              terpakai: Number(o.totalTerpakai),
+              sisa: Number(o.totalAnggaranOrmawa) - Number(o.totalTerpakai),
+            },
+            totalKegiatan: Number(o.totalKegiatan),
+            disetujuiCount: Number(o.totalDisetujui),
+          })),
         },
-        ormawa: fak.ormawa.map((o) => ({
-          id: o.ormawaId,
-          nama: o.ormawaName,
-          kode: o.ormawaKode,
-          anggaran: {
-            total: Number(o.totalAnggaranOrmawa),
-            terpakai: Number(o.totalTerpakai),
-            sisa: Number(o.totalAnggaranOrmawa) - Number(o.totalTerpakai),
-          },
-          totalKegiatan: Number(o.totalKegiatan),
-          disetujuiCount: Number(o.totalDisetujui),
-        })),
-      })),
+      ],
     };
   } catch (error: any) {
     console.error("Error GET /api/ppk/ormawa-anggaran:", error);
