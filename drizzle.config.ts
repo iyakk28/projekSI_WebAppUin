@@ -6,10 +6,10 @@ export default defineConfig({
   schema: "./server/db/schema/*.ts",
   dialect: "mysql",
   dbCredentials: {
-    host: "localhost", // alamat server MySQL
-    port: 3306, // port default MySQL
-    user: "root", // username MySQL
-    password: "Admin1234", // password MySQL
-    database: "e_administrasi", // nama database yang kamu buat
+    host: "127.0.0.1",
+    port: 3306,
+    user: "root",
+    password: "admin1234", // Sudah dikosongkan agar sesuai dengan Laragon/HeidiSQL Anda
+    database: "e_administrasi",
   },
 });

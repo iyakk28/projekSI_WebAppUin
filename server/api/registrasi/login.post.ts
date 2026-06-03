@@ -102,6 +102,7 @@ export default defineEventHandler(async (event) => {
       },
     };
   } catch (error: any) {
+    console.error("Login error:", error);
     // If it's already an H3 error (from createError), just rethrow it or return its data
     if (error.statusCode) {
       return {

@@ -18,8 +18,9 @@
               </p>
             </div>
           </div>
+
           <div class="flex items-center gap-3">
-            <!-- Search & Filter -->
+            <!-- Search -->
             <div
               class="flex items-center gap-2 bg-white rounded-full border border-slate-200 px-4 py-2 shadow-sm"
             >
@@ -34,6 +35,8 @@
                 class="bg-transparent border-none text-sm text-slate-700 focus:outline-none w-40 sm:w-56"
               />
             </div>
+
+            <!-- Filter -->
             <div
               class="flex items-center gap-2 bg-white rounded-full border border-slate-200 px-4 py-2 shadow-sm"
             >
@@ -49,6 +52,7 @@
                 <option value="ditolak">Ditolak SPI</option>
               </select>
             </div>
+
             <div
               class="bg-[#d1a82a] text-white text-xs font-bold px-4 py-2 rounded-full shadow-md"
             >
@@ -71,19 +75,21 @@
             <div
               class="absolute top-0 right-0 w-32 h-32 bg-[#3b5988]/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"
             ></div>
+
             <div class="relative">
               <div class="flex items-center justify-between mb-4">
                 <div class="p-3 rounded-xl bg-[#3b5988]/10 text-[#3b5988]">
                   <Icon name="heroicons:document-text" class="w-6 h-6" />
                 </div>
               </div>
+
               <h3 class="text-2xl font-bold text-slate-900 mb-1">
                 {{ totalKegiatan }}
               </h3>
               <p class="text-sm text-slate-500">Total Kegiatan</p>
-              <span class="inline-block mt-1 text-xs text-slate-400"
-                >Binaan prodi</span
-              >
+              <span class="inline-block mt-1 text-xs text-slate-400">
+                Binaan prodi
+              </span>
             </div>
           </div>
 
@@ -94,20 +100,23 @@
             <div
               class="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"
             ></div>
+
             <div class="relative">
               <div class="flex items-center justify-between mb-4">
                 <div class="p-3 rounded-xl bg-amber-500/10 text-amber-600">
                   <Icon name="heroicons:clock" class="w-6 h-6" />
                 </div>
               </div>
+
               <h3 class="text-2xl font-bold text-slate-900 mb-1">
                 {{ countByStatus("menunggu") }}
               </h3>
               <p class="text-sm text-slate-500">Menunggu Review</p>
               <span
                 class="inline-block mt-1 text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full"
-                >Perlu keputusan</span
               >
+                Perlu keputusan
+              </span>
             </div>
           </div>
 
@@ -118,20 +127,23 @@
             <div
               class="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"
             ></div>
+
             <div class="relative">
               <div class="flex items-center justify-between mb-4">
                 <div class="p-3 rounded-xl bg-emerald-500/10 text-emerald-600">
                   <Icon name="heroicons:check-circle" class="w-6 h-6" />
                 </div>
               </div>
+
               <h3 class="text-2xl font-bold text-slate-900 mb-1">
                 {{ countByStatus("disetujui") }}
               </h3>
               <p class="text-sm text-slate-500">Telah Disetujui</p>
               <span
                 class="inline-block mt-1 text-xs text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full"
-                >Diteruskan ke PPK</span
               >
+                Diteruskan ke PPK
+              </span>
             </div>
           </div>
 
@@ -142,20 +154,23 @@
             <div
               class="absolute top-0 right-0 w-32 h-32 bg-orange-500/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"
             ></div>
+
             <div class="relative">
               <div class="flex items-center justify-between mb-4">
                 <div class="p-3 rounded-xl bg-orange-500/10 text-orange-600">
                   <Icon name="heroicons:arrow-path" class="w-6 h-6" />
                 </div>
               </div>
+
               <h3 class="text-2xl font-bold text-slate-900 mb-1">
                 {{ countByStatus("revisi") }}
               </h3>
               <p class="text-sm text-slate-500">Minta Revisi</p>
               <span
                 class="inline-block mt-1 text-xs text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full"
-                >Menunggu perbaikan</span
               >
+                Menunggu perbaikan
+              </span>
             </div>
           </div>
         </div>
@@ -173,10 +188,12 @@
                 {{ filteredList.length }} pengajuan ditampilkan
               </p>
             </div>
+
             <span
               class="px-3 py-1 text-xs font-semibold bg-slate-100 text-slate-600 rounded-full"
-              >{{ totalKegiatan }} total</span
             >
+              {{ totalKegiatan }} total
+            </span>
           </div>
 
           <div class="overflow-x-auto">
@@ -195,18 +212,15 @@
                   <th class="text-right py-3 px-4 font-semibold text-slate-500">
                     Anggaran Biaya
                   </th>
-                  <th
-                    class="text-center py-3 px-4 font-semibold text-slate-500"
-                  >
+                  <th class="text-center py-3 px-4 font-semibold text-slate-500">
                     Status Verifikasi
                   </th>
-                  <th
-                    class="text-center py-3 px-4 font-semibold text-slate-500"
-                  >
+                  <th class="text-center py-3 px-4 font-semibold text-slate-500">
                     Aksi
                   </th>
                 </tr>
               </thead>
+
               <tbody>
                 <tr
                   v-for="item in filteredList"
@@ -221,6 +235,7 @@
                       No: {{ item.nomorPengajuan }}
                     </p>
                   </td>
+
                   <td class="py-3 px-4">
                     <div class="flex items-center gap-2">
                       <div
@@ -228,6 +243,7 @@
                       >
                         {{ item.kodeOrmawa?.charAt(0) }}
                       </div>
+
                       <div>
                         <p class="font-medium text-slate-800">
                           {{ item.namaOrmawa }}
@@ -238,12 +254,15 @@
                       </div>
                     </div>
                   </td>
+
                   <td class="py-3 px-4 text-slate-600">
                     {{ formatDate(item.tanggalPengajuan) }}
                   </td>
+
                   <td class="py-3 px-4 text-right font-semibold text-[#d1a82a]">
                     {{ formatRp(item.totalDana) }}
                   </td>
+
                   <td class="py-3 px-4 text-center">
                     <span
                       class="inline-flex text-xs font-semibold px-2 py-1 rounded-full"
@@ -263,15 +282,26 @@
                       {{ statusLabel(item.status) }}
                     </span>
                   </td>
+
                   <td class="py-3 px-4 text-center">
                     <button
-                      @click="() => navigateTo(`/dashboard/kaprodi/detailPengajuan/${item.id}`)"
+                      @click="
+                        () =>
+                          navigateTo(
+                            `/dashboard/kaprodi/detailPengajuan/${item.id}`,
+                          )
+                      "
                       class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#d1a82a]/10 text-[#d1a82a] hover:bg-[#d1a82a]/20 transition font-medium text-sm"
                     >
-                      <Icon name="heroicons:magnifying-glass-circle-solid" class="w-4 h-4" /> Tinjau
+                      <Icon
+                        name="heroicons:magnifying-glass-circle-solid"
+                        class="w-4 h-4"
+                      />
+                      Tinjau
                     </button>
                   </td>
                 </tr>
+
                 <tr v-if="filteredList.length === 0">
                   <td colspan="6" class="py-12 text-center text-slate-400">
                     <Icon
@@ -291,175 +321,43 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, computed } from "vue";
+import { storeToRefs } from "pinia";
+import { useKaprodiPengajuanStore } from "~/stores/kaprodi/pengajuan";
 
-  // Types
-  type KegiatanStatus =
-    | "waiting_kaprodi"
-    | "revisi_kaprodi"
-    | "waiting_ppk"
-    | "revisi_ppk"
-    | "waiting_spi"
-    | "ditolak_spi"
-    | "disetujui"
-    | "selesai_spi"
-    | "menunggu"
-    | "revisi"
-    | "ditolak"
-    | "draft";
+const pengajuanStore = useKaprodiPengajuanStore();
 
-  interface KegiatanItem {
-    id: number;
-    nomorPengajuan: string;
-    namaKegiatan: string;
-    totalDana: number;
-    deskripsi?: string;
-    pengaju: string;
-    tanggalPengajuan: string;
-    status: KegiatanStatus;
-    namaOrmawa: string;
-    kodeOrmawa: string;
-  }
+const { searchQuery, filterStatus, todayStr, filteredList, totalKegiatan } =
+  storeToRefs(pengajuanStore);
 
-  const normalizeStatus = (status?: string): "menunggu" | "revisi" | "disetujui" | "ditolak" => {
-    switch (status) {
-      case "waiting_kaprodi":
-        return "menunggu";
-      case "revisi_kaprodi":
-        return "revisi";
-      case "waiting_ppk":
-      case "revisi_ppk":
-      case "waiting_spi":
-      case "disetujui":
-      case "selesai_spi":
-        return "disetujui";
-      case "ditolak_spi":
-        return "ditolak";
-      default:
-        return "menunggu";
-    }
-  };
+const {
+  fetchKegiatan,
+  countByStatus,
+  statusLabel,
+  statusColor,
+  formatRp,
+  formatDate,
+} = pengajuanStore;
 
-  const statusLabel = (status?: string) => {
-    switch (status) {
-      case "waiting_kaprodi":
-        return "Menunggu Review Anda";
-      case "revisi_kaprodi":
-        return "Direvisi (Kaprodi)";
-      case "waiting_ppk":
-        return "Menunggu PPK";
-      case "revisi_ppk":
-        return "Direvisi (PPK)";
-      case "waiting_spi":
-        return "Dikirim ke SPI";
-      case "ditolak_spi":
-        return "Ditolak SPI";
-      case "disetujui":
-      case "selesai_spi":
-        return "Selesai / Disetujui";
-      default:
-        return "Menunggu";
-    }
-  };
-
-  const statusColor = (status?: string) => {
-    switch (status) {
-      case "waiting_kaprodi":
-        return "yellow";
-      case "revisi_kaprodi":
-        return "orange";
-      case "waiting_ppk":
-      case "waiting_spi":
-        return "blue";
-      case "revisi_ppk":
-        return "orange";
-      case "ditolak_spi":
-        return "coral";
-      case "disetujui":
-      case "selesai_spi":
-        return "mint";
-      default:
-        return "blue";
-    }
-  };
-
-  // API call
-  const { data: kegiatanData, refresh } = await useFetch<{
-    data: Record<string, any>[];
-  }>("/api/kaprodi/kegiatan");
-
-  // State
-  const searchQuery = ref("");
-  const filterStatus = ref("");
-
-  // Helpers
-  const todayStr = new Date().toLocaleDateString("id-ID", {
-    weekday: "short",
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-
-  const kegiatanList = computed<KegiatanItem[]>(() =>
-    (kegiatanData.value?.data || []).map((item) => ({
-      id: item.id,
-      nomorPengajuan: item.nomorPengajuan || "",
-      namaKegiatan: item.judulKegiatan || item.namaKegiatan || "",
-      totalDana: Number(item.totalDana ?? item.totalAnggaran ?? 0),
-      deskripsi: item.deskripsi || "",
-      pengaju: item.pengaju?.nama || "",
-      tanggalPengajuan: item.createdAt || "",
-      status: item.status,
-      namaOrmawa: item.ormawa?.nama || "",
-      kodeOrmawa: item.ormawa?.kode || "",
-    })),
-  );
-
-  const totalKegiatan = computed(() => kegiatanList.value.length);
-  const countByStatus = (status: "menunggu" | "revisi" | "disetujui" | "ditolak") =>
-    kegiatanList.value.filter((k) => normalizeStatus(k.status) === status).length;
-
-  const filteredList = computed(() => {
-    return kegiatanList.value.filter((item) => {
-      const q = searchQuery.value.toLowerCase();
-      const matchSearch =
-        !q ||
-        item.namaKegiatan.toLowerCase().includes(q) ||
-        item.namaOrmawa.toLowerCase().includes(q) ||
-        item.nomorPengajuan.toLowerCase().includes(q);
-      const matchStatus =
-        !filterStatus.value || normalizeStatus(item.status) === filterStatus.value;
-      return matchSearch && matchStatus;
-    });
-  });
-
-  const formatRp = (n?: number) =>
-    "Rp " + new Intl.NumberFormat("id-ID").format(n || 0);
-
-  const formatDate = (d?: string) =>
-    d
-      ? new Date(d).toLocaleDateString("id-ID", {
-          day: "numeric",
-          month: "short",
-          year: "numeric",
-        })
-      : "-";
+await fetchKegiatan();
 </script>
 
 <style scoped>
-  /* Custom scrollbar */
-  ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-  ::-webkit-scrollbar-track {
-    background: #f1f5f9;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 4px;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
-  }
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
 </style>
