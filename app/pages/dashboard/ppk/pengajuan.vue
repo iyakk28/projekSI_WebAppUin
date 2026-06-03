@@ -1,3 +1,4 @@
+<!-- FILE: app/pages/dashboard/ppk/pengajuan.vue -->
 <template>
   <div class="min-h-screen bg-slate-50 font-sans">
     <!-- Main Content -->
@@ -17,8 +18,9 @@
               </p>
             </div>
           </div>
+
           <div class="flex items-center gap-3">
-            <!-- Search & Filter -->
+            <!-- Search -->
             <div
               class="flex items-center gap-2 bg-white rounded-full border border-slate-200 px-4 py-2 shadow-sm"
             >
@@ -33,6 +35,8 @@
                 class="bg-transparent border-none text-sm text-slate-700 focus:outline-none w-40 sm:w-56"
               />
             </div>
+
+            <!-- Filter -->
             <div
               class="flex items-center gap-2 bg-white rounded-full border border-slate-200 px-4 py-2 shadow-sm"
             >
@@ -49,6 +53,7 @@
                 <option value="dikirim_spi">Dikirim ke SPI</option>
               </select>
             </div>
+
             <div
               class="bg-[#d1a82a] text-white text-xs font-bold px-4 py-2 rounded-full shadow-md"
             >
@@ -71,19 +76,21 @@
             <div
               class="absolute top-0 right-0 w-32 h-32 bg-[#3b5988]/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"
             ></div>
+
             <div class="relative">
               <div class="flex items-center justify-between mb-4">
                 <div class="p-3 rounded-xl bg-[#3b5988]/10 text-[#3b5988]">
                   <Icon name="heroicons:document-text" class="w-6 h-6" />
                 </div>
               </div>
+
               <h3 class="text-2xl font-bold text-slate-900 mb-1">
                 {{ totalKegiatan }}
               </h3>
               <p class="text-sm text-slate-500">Total Kegiatan</p>
-              <span class="inline-block mt-1 text-xs text-slate-400"
-                >Semua proposal</span
-              >
+              <span class="inline-block mt-1 text-xs text-slate-400">
+                Semua proposal
+              </span>
             </div>
           </div>
 
@@ -94,20 +101,23 @@
             <div
               class="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"
             ></div>
+
             <div class="relative">
               <div class="flex items-center justify-between mb-4">
                 <div class="p-3 rounded-xl bg-amber-500/10 text-amber-600">
                   <Icon name="heroicons:clock" class="w-6 h-6" />
                 </div>
               </div>
+
               <h3 class="text-2xl font-bold text-slate-900 mb-1">
                 {{ countByStatus("menunggu") }}
               </h3>
               <p class="text-sm text-slate-500">Menunggu</p>
               <span
                 class="inline-block mt-1 text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full"
-                >Perlu ditinjau</span
               >
+                Perlu ditinjau
+              </span>
             </div>
           </div>
 
@@ -118,20 +128,23 @@
             <div
               class="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"
             ></div>
+
             <div class="relative">
               <div class="flex items-center justify-between mb-4">
                 <div class="p-3 rounded-xl bg-emerald-500/10 text-emerald-600">
                   <Icon name="heroicons:check-circle" class="w-6 h-6" />
                 </div>
               </div>
+
               <h3 class="text-2xl font-bold text-slate-900 mb-1">
                 {{ countByStatus("disetujui") }}
               </h3>
               <p class="text-sm text-slate-500">Disetujui</p>
               <span
                 class="inline-block mt-1 text-xs text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full"
-                >Lanjut SPI</span
               >
+                Lanjut SPI
+              </span>
             </div>
           </div>
 
@@ -142,20 +155,23 @@
             <div
               class="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110"
             ></div>
+
             <div class="relative">
               <div class="flex items-center justify-between mb-4">
                 <div class="p-3 rounded-xl bg-red-500/10 text-red-600">
                   <Icon name="heroicons:x-circle" class="w-6 h-6" />
                 </div>
               </div>
+
               <h3 class="text-2xl font-bold text-slate-900 mb-1">
                 {{ countByStatus("ditolak") }}
               </h3>
               <p class="text-sm text-slate-500">Ditolak</p>
               <span
                 class="inline-block mt-1 text-xs text-red-600 bg-red-50 px-2 py-0.5 rounded-full"
-                >Tidak diproses</span
               >
+                Tidak diproses
+              </span>
             </div>
           </div>
         </div>
@@ -173,10 +189,12 @@
                 {{ filteredList.length }} kegiatan ditampilkan
               </p>
             </div>
+
             <span
               class="px-3 py-1 text-xs font-semibold bg-slate-100 text-slate-600 rounded-full"
-              >{{ totalKegiatan }} total</span
             >
+              {{ totalKegiatan }} total
+            </span>
           </div>
 
           <div class="overflow-x-auto">
@@ -195,18 +213,15 @@
                   <th class="text-right py-3 px-4 font-semibold text-slate-500">
                     Dana Diajukan
                   </th>
-                  <th
-                    class="text-center py-3 px-4 font-semibold text-slate-500"
-                  >
+                  <th class="text-center py-3 px-4 font-semibold text-slate-500">
                     Status
                   </th>
-                  <th
-                    class="text-center py-3 px-4 font-semibold text-slate-500"
-                  >
+                  <th class="text-center py-3 px-4 font-semibold text-slate-500">
                     Aksi
                   </th>
                 </tr>
               </thead>
+
               <tbody>
                 <tr
                   v-for="item in filteredList"
@@ -218,9 +233,10 @@
                       {{ item.namaKegiatan }}
                     </p>
                     <p class="text-xs text-slate-500">
-                      {{ item.jenisKegiatan }}
+                      {{ item.jenisKegiatan || "-" }}
                     </p>
                   </td>
+
                   <td class="py-3 px-4">
                     <div class="flex items-center gap-2">
                       <div
@@ -229,6 +245,7 @@
                       >
                         {{ item.kodeOrmawa?.charAt(0) }}
                       </div>
+
                       <div>
                         <p class="font-medium text-slate-800">
                           {{ item.namaOrmawa }}
@@ -239,12 +256,15 @@
                       </div>
                     </div>
                   </td>
+
                   <td class="py-3 px-4 text-slate-600">
                     {{ formatDate(item.tanggalPengajuan) }}
                   </td>
+
                   <td class="py-3 px-4 text-right font-semibold text-[#d1a82a]">
                     {{ formatRp(item.totalDana) }}
                   </td>
+
                   <td class="py-3 px-4 text-center">
                     <span
                       class="inline-flex text-xs font-semibold px-2 py-1 rounded-full"
@@ -264,15 +284,18 @@
                       {{ statusLabel(item.status) }}
                     </span>
                   </td>
+
                   <td class="py-3 px-4 text-center">
                     <button
-                     @click="() => navigateTo(`/dashboard/ppk/detailPengajuan/${item.id}`)"
+                      @click="openDetail(item)"
                       class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#d1a82a]/10 text-[#d1a82a] hover:bg-[#d1a82a]/20 transition font-medium text-sm"
-                        >
-                     <Icon name="heroicons:eye" class="w-4 h-4" /> Detail
+                    >
+                      <Icon name="heroicons:eye" class="w-4 h-4" />
+                      Detail
                     </button>
                   </td>
                 </tr>
+
                 <tr v-if="filteredList.length === 0">
                   <td colspan="6" class="py-12 text-center text-slate-400">
                     <Icon
@@ -308,6 +331,7 @@
             >
               <Icon name="heroicons:document-check" class="w-5 h-5" />
             </div>
+
             <div>
               <h3 class="font-bold text-slate-800">
                 {{ selected?.namaKegiatan }}
@@ -317,6 +341,7 @@
               </p>
             </div>
           </div>
+
           <button
             @click="closeModal"
             class="p-1 rounded-full hover:bg-slate-100"
@@ -338,11 +363,12 @@
                 : 'border-transparent text-slate-500 hover:text-slate-700'
             "
           >
-            <Icon :name="tab.icon" class="w-4 h-4" /> {{ tab.label }}
+            <Icon :name="tab.icon" class="w-4 h-4" />
+            {{ tab.label }}
           </button>
         </div>
 
-        <!-- Modal Body (scrollable) -->
+        <!-- Modal Body -->
         <div class="flex-1 overflow-y-auto p-5 space-y-5">
           <!-- TAB INFO KEGIATAN -->
           <div v-if="activeTab === 'info'" class="space-y-5">
@@ -351,25 +377,34 @@
                 <p class="text-xs font-semibold uppercase text-slate-400">
                   Nama Kegiatan
                 </p>
-                <p class="font-medium">{{ selected?.namaKegiatan }}</p>
-              </div>
-              <div>
-                <!-- <p class="font-medium">
-                  {{ formatDate(selected?.tanggalKegiatan) }}
-                </p> -->
-              </div>
-              <!-- <div>
-                <p class="text-xs font-semibold uppercase text-slate-400">
-                  Lokasi
+                <p class="font-medium">
+                  {{ selected?.namaKegiatan }}
                 </p>
-                <p class="font-medium">{{ selected?.lokasi }}</p>
               </div>
+
               <div>
                 <p class="text-xs font-semibold uppercase text-slate-400">
-                  Peserta
+                  Status
                 </p>
-                <p class="font-medium">{{ selected?.jumlahPeserta }} orang</p>
-              </div> -->
+                <span
+                  class="inline-flex text-xs font-semibold px-2 py-1 rounded-full"
+                  :class="{
+                    'bg-amber-100 text-amber-700':
+                      statusColor(selected?.status) === 'yellow',
+                    'bg-emerald-100 text-emerald-700':
+                      statusColor(selected?.status) === 'mint',
+                    'bg-orange-100 text-orange-700':
+                      statusColor(selected?.status) === 'orange',
+                    'bg-red-100 text-red-700':
+                      statusColor(selected?.status) === 'coral',
+                    'bg-blue-100 text-blue-700':
+                      statusColor(selected?.status) === 'blue',
+                  }"
+                >
+                  {{ statusLabel(selected?.status) }}
+                </span>
+              </div>
+
               <div>
                 <p class="text-xs font-semibold uppercase text-slate-400">
                   Dana Diajukan
@@ -378,24 +413,40 @@
                   {{ formatRp(selected?.totalDana) }}
                 </p>
               </div>
-              <div class="md:col-span-2">
-                <p class="text-xs font-semibold uppercase text-slate-400">
-                  Deskripsi Kegiatan
-                </p>
-                <p class="text-slate-700">{{ selected?.deskripsi }}</p>
-              </div>
+
               <div>
                 <p class="text-xs font-semibold uppercase text-slate-400">
                   Diajukan oleh
                 </p>
-                <p class="font-medium">{{ selected?.pengaju }}</p>
+                <p class="font-medium">
+                  {{ selected?.pengaju || "-" }}
+                </p>
               </div>
+
               <div>
                 <p class="text-xs font-semibold uppercase text-slate-400">
                   Tanggal Pengajuan
                 </p>
                 <p class="font-medium">
                   {{ formatDate(selected?.tanggalPengajuan) }}
+                </p>
+              </div>
+
+              <div>
+                <p class="text-xs font-semibold uppercase text-slate-400">
+                  Ormawa
+                </p>
+                <p class="font-medium">
+                  {{ selected?.namaOrmawa || "-" }}
+                </p>
+              </div>
+
+              <div class="md:col-span-2">
+                <p class="text-xs font-semibold uppercase text-slate-400">
+                  Deskripsi Kegiatan
+                </p>
+                <p class="text-slate-700">
+                  {{ selected?.deskripsi || "-" }}
                 </p>
               </div>
             </div>
@@ -409,43 +460,41 @@
                   name="heroicons:calculator"
                   class="w-4 h-4 text-[#d1a82a]"
                 />
-                <span class="font-semibold text-slate-700"
-                  >Rincian Anggaran Biaya (RAB)</span
-                >
+                <span class="font-semibold text-slate-700">
+                  Rincian Anggaran Biaya (RAB)
+                </span>
               </div>
+
               <table class="min-w-full text-sm">
                 <thead class="bg-slate-50">
                   <tr>
-                    <th
-                      class="text-left py-2 px-4 font-semibold text-slate-500"
-                    >
+                    <th class="text-left py-2 px-4 font-semibold text-slate-500">
                       Item
                     </th>
-                    <th
-                      class="text-right py-2 px-4 font-semibold text-slate-500"
-                    >
+                    <th class="text-right py-2 px-4 font-semibold text-slate-500">
                       Qty
                     </th>
-                    <th
-                      class="text-right py-2 px-4 font-semibold text-slate-500"
-                    >
+                    <th class="text-right py-2 px-4 font-semibold text-slate-500">
                       Harga Satuan
                     </th>
-                    <th
-                      class="text-right py-2 px-4 font-semibold text-slate-500"
-                    >
+                    <th class="text-right py-2 px-4 font-semibold text-slate-500">
                       Subtotal
                     </th>
                   </tr>
                 </thead>
+
                 <tbody>
                   <tr
                     v-for="rab in selected?.rabItems || []"
                     :key="rab.id"
                     class="border-t border-slate-100"
                   >
-                    <td class="py-2 px-4">{{ rab.nama }}</td>
-                    <td class="py-2 px-4 text-right">{{ rab.qty }}</td>
+                    <td class="py-2 px-4">
+                      {{ rab.nama }}
+                    </td>
+                    <td class="py-2 px-4 text-right">
+                      {{ rab.qty }}
+                    </td>
                     <td class="py-2 px-4 text-right">
                       {{ formatRp(rab.harga) }}
                     </td>
@@ -453,7 +502,17 @@
                       {{ formatRp(rab.qty * rab.harga) }}
                     </td>
                   </tr>
+
+                  <tr v-if="!selected?.rabItems?.length">
+                    <td
+                      colspan="4"
+                      class="py-6 text-center text-slate-400"
+                    >
+                      RAB belum tersedia.
+                    </td>
+                  </tr>
                 </tbody>
+
                 <tfoot class="bg-slate-50 border-t border-slate-200">
                   <tr>
                     <td colspan="3" class="py-2 px-4 text-right font-bold">
@@ -473,6 +532,7 @@
             <h4 class="text-xs font-bold uppercase text-slate-400 mb-3">
               Lampiran Dokumen Proposal
             </h4>
+
             <div v-if="selected?.dokumen?.length" class="space-y-3">
               <div
                 v-for="doc in selected.dokumen"
@@ -484,20 +544,26 @@
                 >
                   <Icon name="heroicons:document-text" class="w-5 h-5" />
                 </div>
+
                 <div class="flex-1">
-                  <p class="font-medium text-slate-800">{{ doc.nama }}</p>
+                  <p class="font-medium text-slate-800">
+                    {{ doc.nama }}
+                  </p>
                   <p class="text-xs text-slate-500">
-                    {{ doc.tipe }} · {{ doc.ukuran }}
+                    {{ doc.tipe }} · {{ doc.ukuran || "-" }}
                   </p>
                 </div>
+
                 <div class="flex gap-2">
                   <a
                     :href="doc.url"
                     target="_blank"
                     class="text-sm text-[#3b5988] hover:underline flex items-center gap-1"
                   >
-                    <Icon name="heroicons:eye" class="w-4 h-4" /> Lihat
+                    <Icon name="heroicons:eye" class="w-4 h-4" />
+                    Lihat
                   </a>
+
                   <a
                     :href="doc.url"
                     download
@@ -509,6 +575,7 @@
                 </div>
               </div>
             </div>
+
             <div v-else class="text-center py-8 text-slate-400">
               <Icon
                 name="heroicons:folder-open"
@@ -520,13 +587,14 @@
 
           <!-- TAB KEPUTUSAN -->
           <div v-if="activeTab === 'keputusan'" class="space-y-5">
-            <!-- Status saat ini -->
+            <!-- Status Saat Ini -->
             <div
               class="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-200"
             >
-              <span class="text-xs font-semibold uppercase text-slate-400"
-                >Status Saat Ini</span
-              >
+              <span class="text-xs font-semibold uppercase text-slate-400">
+                Status Saat Ini
+              </span>
+
               <span
                 class="inline-flex text-sm font-semibold px-3 py-1 rounded-full"
                 :class="{
@@ -538,6 +606,8 @@
                     statusColor(selected?.status) === 'orange',
                   'bg-red-100 text-red-700':
                     statusColor(selected?.status) === 'coral',
+                  'bg-blue-100 text-blue-700':
+                    statusColor(selected?.status) === 'blue',
                 }"
               >
                 {{ statusLabel(selected?.status) }}
@@ -549,6 +619,7 @@
               <h4 class="text-xs font-bold uppercase text-slate-400 mb-2">
                 Riwayat Keputusan
               </h4>
+
               <div class="space-y-3">
                 <div
                   v-for="rw in selected.riwayat"
@@ -564,6 +635,7 @@
                       'bg-slate-300': rw.status === 'menunggu',
                     }"
                   ></div>
+
                   <div>
                     <p class="text-sm font-medium text-slate-800">
                       {{ rw.keterangan }}
@@ -576,43 +648,48 @@
               </div>
             </div>
 
-            <!-- Form keputusan (hanya jika menunggu) -->
+            <!-- Form Keputusan -->
             <div
               v-if="selected?.status === 'menunggu'"
               class="bg-slate-50 rounded-xl p-4 border border-slate-200 space-y-3"
             >
-              <label class="text-sm font-semibold text-slate-700 block"
-                >Catatan / Alasan (opsional)</label
-              >
+              <label class="text-sm font-semibold text-slate-700 block">
+                Catatan / Alasan
+              </label>
+
               <textarea
                 v-model="catatanPPK"
                 rows="3"
                 class="w-full border border-slate-300 rounded-lg p-2 text-sm"
                 placeholder="Masukkan catatan atau alasan keputusan..."
               ></textarea>
+
               <div class="flex flex-wrap gap-3">
                 <button
                   @click="handleDecision('disetujui')"
                   :disabled="loadingAction"
-                  class="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold transition"
+                  class="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-lg font-semibold transition"
                 >
-                  <Icon name="heroicons:check-circle" class="w-5 h-5" /> Setujui
-                  — Teruskan ke SPI
+                  <Icon name="heroicons:check-circle" class="w-5 h-5" />
+                  Setujui — Teruskan ke SPI
                 </button>
+
                 <button
                   @click="handleDecision('revisi')"
                   :disabled="loadingAction"
-                  class="flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-semibold transition"
+                  class="flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white rounded-lg font-semibold transition"
                 >
-                  <Icon name="heroicons:arrow-path" class="w-5 h-5" /> Minta
-                  Revisi
+                  <Icon name="heroicons:arrow-path" class="w-5 h-5" />
+                  Minta Revisi
                 </button>
+
                 <button
                   @click="handleDecision('tolak')"
                   :disabled="loadingAction"
-                  class="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition"
+                  class="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white rounded-lg font-semibold transition"
                 >
-                  <Icon name="heroicons:x-circle" class="w-5 h-5" /> Tolak
+                  <Icon name="heroicons:x-circle" class="w-5 h-5" />
+                  Tolak
                 </button>
               </div>
             </div>
@@ -632,291 +709,60 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, computed } from "vue";
+import { storeToRefs } from "pinia";
+import { usePpkPengajuanStore } from "~/stores/ppk/pengajuan";
 
-  // Types
-  interface RabItem {
-    id: number;
-    nama: string;
-    qty: number;
-    harga: number;
-  }
+const pengajuanStore = usePpkPengajuanStore();
 
-  interface DokumenItem {
-    id: number;
-    nama: string;
-    tipe: string;
-    ukuran: string;
-    url: string;
-  }
+const {
+  searchQuery,
+  filterStatus,
 
-  interface RiwayatKeputusan {
-    id: number;
-    status: string;
-    keterangan: string;
-    oleh: string;
-    tanggal: string;
-  }
+  showModal,
+  selected,
+  activeTab,
+  catatanPPK,
+  loadingAction,
 
-  type KegiatanStatus =
-    | "waiting_ppk"
-    | "revisi_ppk"
-    | "waiting_spi"
-    | "ditolak_spi"
-    | "disetujui"
-    | "menunggu"
-    | "revisi"
-    | "ditolak"
-    | "dikirim_spi"
-    | "draft";
+  tabs,
+  todayStr,
 
-  interface KegiatanItem {
-    id: number;
-    namaKegiatan: string;
-    // jenisKegiatan?: string;
-    tanggalKegiatan?: string;
-    // lokasi?: string;
-    // jumlahPeserta?: number;
-    totalDana: number;
-    deskripsi?: string;
-    pengaju: string;
-    tanggalPengajuan: string;
-    status: KegiatanStatus;
-    namaOrmawa: string;
-    kodeOrmawa: string;
-    rabItems: RabItem[];
-    dokumen: DokumenItem[];
-    riwayat: RiwayatKeputusan[];
-    color?: string;
-  }
+  filteredList,
+  totalKegiatan,
+} = storeToRefs(pengajuanStore);
 
-  const normalizeStatus = (status?: string): KegiatanStatus => {
-    switch (status) {
-      case "waiting_ppk":
-      case "menunggu":
-        return "menunggu";
-      case "revisi_ppk":
-      case "revisi":
-        return "revisi";
-      case "waiting_spi":
-      case "dikirim_spi":
-        return "dikirim_spi";
-      case "ditolak_spi":
-      case "ditolak":
-      case "tolak":
-        return "ditolak";
-      case "disetujui":
-        return "disetujui";
-      default:
-        return "menunggu";
-    }
-  };
+const {
+  fetchKegiatan,
+  countByStatus,
+  openDetail,
+  closeModal,
+  handleDecision,
+  statusColor,
+  statusLabel,
+  formatRp,
+  formatDate,
+} = pengajuanStore;
 
-  const mapStatusLabel = (status?: string) => {
-    switch (status) {
-      case "waiting_ppk":
-        return "Menunggu";
-      case "revisi_ppk":
-        return "Revisi";
-      case "waiting_spi":
-        return "Dikirim ke SPI";
-      case "ditolak_spi":
-        return "Ditolak";
-      case "disetujui":
-        return "Disetujui";
-      default:
-        return "Menunggu";
-    }
-  };
-
-  const mapStatusColor = (status?: string) => {
-    switch (status) {
-      case "waiting_ppk":
-        return "yellow";
-      case "disetujui":
-        return "mint";
-      case "revisi_ppk":
-        return "orange";
-      case "ditolak_spi":
-        return "coral";
-      case "waiting_spi":
-        return "blue";
-      default:
-        return "blue";
-    }
-  };
-
-  // API call
-  const { data: kegiatanData, refresh } = await useFetch<{
-    data: Record<string, any>[];
-  }>("/api/ppk/kegiatan");
-
-  // State
-  const searchQuery = ref("");
-  const filterStatus = ref("");
-  const showModal = ref(false);
-  const selected = ref<KegiatanItem | null>(null);
-  const activeTab = ref<"info" | "dokumen" | "keputusan">("info");
-  const catatanPPK = ref("");
-  const loadingAction = ref(false);
-
-  // Tabs
-  const tabs = [
-    {
-      key: "info" as const,
-      label: "Info Kegiatan",
-      icon: "heroicons:information-circle",
-    },
-    {
-      key: "dokumen" as const,
-      label: "Dokumen",
-      icon: "heroicons:document-text",
-    },
-    { key: "keputusan" as const, label: "Keputusan", icon: "heroicons:scale" },
-  ];
-
-  // Helpers
-  const todayStr = new Date().toLocaleDateString("id-ID", {
-    weekday: "short",
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-
-  const kegiatanList = computed<KegiatanItem[]>(() =>
-    (kegiatanData.value?.data || []).map((item) => ({
-      id: item.id,
-      namaKegiatan: item.judulKegiatan || item.namaKegiatan || "",
-      // jenisKegiatan: item.jenisKegiatan || "",
-      tanggalKegiatan: item.tanggalKegiatan || item.tanggalMulai || "",
-      // lokasi: item.lokasi || "",
-      // jumlahPeserta: item.jumlahPeserta ?? 0,
-      totalDana: Number(item.totalDana ?? item.totalAnggaran ?? 0),
-      deskripsi: item.deskripsi || item.catatan || "",
-      pengaju:
-        item.pengaju?.nama || item.pengaju?.fullName || item.pengaju?.email || "",
-      tanggalPengajuan:
-        item.tanggalPengajuan || item.tanggalMulai || item.createdAt || "",
-      status: normalizeStatus(item.status),
-      namaOrmawa: item.namaOrmawa || item.ormawa?.nama || "",
-      kodeOrmawa: item.kodeOrmawa || item.ormawa?.kode || "",
-      rabItems: item.rabItems || [],
-      dokumen: item.dokumen?.length ? item.dokumen : [
-  ...(item.fileRabUrl ? [{
-    id: 1,
-    nama: "File RAB",
-    tipe: "PDF",
-    ukuran: "",
-    url: `/${item.fileRabUrl}`,
-  }] : []),
-  ...(item.fileTorUrl ? [{
-    id: 2,
-    nama: "File TOR",
-    tipe: "PDF",
-    ukuran: "",
-    url: `/${item.fileTorUrl}`,
-  }] : []),
-],
-      riwayat: item.riwayat || [],
-      color: item.color,
-    })),
-  );
-
-  const totalKegiatan = computed(() => kegiatanList.value.length);
-  const countByStatus = (status: string) =>
-    kegiatanList.value.filter((k) => k.status === status).length;
-
-  const filteredList = computed(() => {
-    return kegiatanList.value.filter((item) => {
-      const q = searchQuery.value.toLowerCase();
-      const matchSearch =
-        !q ||
-        item.namaKegiatan.toLowerCase().includes(q) ||
-        item.namaOrmawa.toLowerCase().includes(q);
-      const matchStatus =
-        !filterStatus.value || item.status === filterStatus.value;
-      return matchSearch && matchStatus;
-    });
-  });
-
-  const openDetail = (item: KegiatanItem) => {
-    selected.value = item;
-    activeTab.value = "info";
-    catatanPPK.value = "";
-    showModal.value = true;
-  };
-  const closeModal = () => {
-    showModal.value = false;
-    selected.value = null;
-  };
-
-  const handleDecision = async (keputusan: string) => {
-    if (!selected.value) return;
-    loadingAction.value = true;
-    try {
-// ✅ PERBAIKAN
-    await $fetch(`/api/ppk/kegiatan/${selected.value.id}/keputusan`, {
-      method: "POST",
-      body: { keputusan: keputusan, catatan: catatanPPK.value },  // ← "keputusan" benar
-    });
-      selected.value.status = normalizeStatus(keputusan as string);
-      if (keputusan === "disetujui") activeTab.value = "keputusan";
-      await refresh();
-    } catch (e) {
-      console.error(e);
-    } finally {
-      loadingAction.value = false;
-    }
-  };
-
-  const statusColor = (s?: string) => {
-    const map: Record<string, string> = {
-      menunggu: "yellow",
-      disetujui: "mint",
-      revisi: "orange",
-      ditolak: "coral",
-      dikirim_spi: "blue",
-    };
-    return map[normalizeStatus(s) || "menunggu"] || "blue";
-  };
-
-  const statusLabel = (s?: string) => {
-    const map: Record<string, string> = {
-      menunggu: "Menunggu",
-      disetujui: "Disetujui",
-      revisi: "Revisi",
-      ditolak: "Ditolak",
-      dikirim_spi: "Dikirim ke SPI",
-    };
-    return map[normalizeStatus(s) || "menunggu"] || "-";
-  };
-
-  const formatRp = (n?: number) =>
-    "Rp " + new Intl.NumberFormat("id-ID").format(n || 0);
-  const formatDate = (d?: string) =>
-    d
-      ? new Date(d).toLocaleDateString("id-ID", {
-          day: "numeric",
-          month: "short",
-          year: "numeric",
-        })
-      : "-";
+await fetchKegiatan();
 </script>
 
 <style scoped>
-  /* Custom scrollbar (opsional, sama seperti dokumen pertama) */
-  ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-  ::-webkit-scrollbar-track {
-    background: #f1f5f9;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 4px;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
-  }
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
 </style>
