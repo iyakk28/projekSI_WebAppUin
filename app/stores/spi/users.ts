@@ -19,7 +19,6 @@ export const useSpiUsersStore = defineStore("spi-users", () => {
       loading.value = false;
     }
   };
-
   return {
     loading,
     error,
