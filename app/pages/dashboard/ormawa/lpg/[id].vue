@@ -183,7 +183,7 @@
 
         <!-- Riwayat Catatan SPI -->
         <div
-          v-if="uploadLpjStore.logs.length > 0"
+          v-if="lpgLogs.length > 0"
           class="bg-white border border-gray-200 rounded-lg p-5"
         >
           <h3
@@ -191,20 +191,33 @@
           >
             <Icon name="heroicons:chat-bubble-left-right" class="w-5 h-5" />
             Riwayat Review SPI
+            <span class="ml-auto px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px]" v-if="totalLogs > 0">{{ totalLogs }}</span>
           </h3>
           <div class="space-y-3">
             <div
-              v-for="log in uploadLpjStore.logs"
+              v-for="log in lpgLogs"
               :key="log.id"
               class="border-l-2 border-gray-200 pl-3 py-1"
             >
               <div class="flex justify-between text-xs text-gray-500">
                 <span class="font-medium">{{
-                  log.actor?.fullName || "SPI"
+                  log.actor?.fullname || "SPI"
                 }}</span>
                 <span>{{ formatDate(log.createdAt) }}</span>
               </div>
               <p class="text-sm text-gray-700">{{ log.catatanRevisi }}</p>
+            </div>
+
+            <!-- Load More Logs Button -->
+            <div v-if="hasMoreLogs" class="flex justify-center pt-2">
+              <button
+                @click="loadMoreLogs"
+                :disabled="loadingLogs"
+                class="flex items-center gap-2 px-4 py-1.5 rounded-lg border border-slate-200 text-[10px] font-semibold text-slate-500 hover:bg-slate-50 hover:text-blue-600 transition-all disabled:opacity-50"
+              >
+                <Icon v-if="loadingLogs" name="heroicons:arrow-path" class="w-3 h-3 animate-spin" />
+                Lihat lebih banyak logs
+              </button>
             </div>
           </div>
         </div>
@@ -235,13 +248,19 @@
 <script setup lang="ts">
   import { useUploadLpjStore } from "~/stores/ormawa/uploadLpj";
   import { useRabStore } from "~/stores/ormawa/DetailRab";
+  import { useLogLpjStore } from "~/stores/ormawa/logLpj";
+  import { storeToRefs } from "pinia";
 
   const route = useRoute();
   const router = useRouter();
   const uploadLpjStore = useUploadLpjStore();
   const rabStore = useRabStore();
+  const logLpjStore = useLogLpjStore();
 
   const rabId = Number(route.params.id);
+
+  const { logs: lpgLogs, loading: loadingLogs, hasMore: hasMoreLogs, total: totalLogs } = storeToRefs(logLpjStore);
+
   const fileLpj = ref<File | null>(null);
   const ormawaNotes = ref("");
   const dragover = ref(false);
@@ -250,11 +269,20 @@
     await Promise.all([
       rabStore.fetchFullRabData(rabId),
       uploadLpjStore.fetchLpgDetail(rabId),
+      logLpjStore.fetchLogs(rabId),
     ]);
     if (uploadLpjStore.lpg?.ormawaNotes) {
       ormawaNotes.value = uploadLpjStore.lpg.ormawaNotes;
     }
   });
+
+  onUnmounted(() => {
+    logLpjStore.clearLogs();
+  });
+
+  const loadMoreLogs = async () => {
+    await logLpjStore.fetchLogs(rabId, true);
+  };
 
   const onFileChange = (e: Event) => {
     const target = e.target as HTMLInputElement;

@@ -1,17 +1,27 @@
 <script setup lang="ts">
 import { useSpiLpgStore } from '~/stores/spi/lpg';
+import { useSpiLpgFileStore } from '~/stores/spi/filePreview';
 
 const route = useRoute();
 const router = useRouter();
 const spiLpgStore = useSpiLpgStore();
+const spiLpgFileStore = useSpiLpgFileStore();
 
 const lpgId = Number(route.params.id);
 
 const notes = ref("");
 const reviewAction = ref<'approve' | 'revision'>('approve');
+const selectedFile = ref<string | null>(null);
 
-onMounted(() => {
-  spiLpgStore.fetchLpgDetail(lpgId);
+onMounted(async () => {
+  await Promise.all([
+    spiLpgStore.fetchLpgDetail(lpgId),
+    spiLpgFileStore.fetchLpgFiles(lpgId)
+  ]);
+  
+  if (spiLpgFileStore.files.length > 0) {
+    selectedFile.value = spiLpgFileStore.files[0].url;
+  }
 });
 
 const formatDate = (dateString: string) => {
@@ -51,15 +61,15 @@ const submitReview = async () => {
 const getStatusBadgeClass = (status: string) => {
   switch (status) {
     case 'WAITING_SPI': return 'bg-blue-50 text-blue-700 border-blue-200';
-    case 'APPROVED': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
-    case 'REVISION': return 'bg-rose-50 text-rose-700 border-rose-200';
+    case 'DISETUJUI': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+    case 'REVISI_SPI': return 'bg-rose-50 text-rose-700 border-rose-200';
     default: return 'bg-slate-50 text-slate-700 border-slate-200';
   }
 };
 </script>
 
 <template>
-  <div class="p-8 max-w-6xl mx-auto min-h-screen">
+  <div class="p-8 max-w-[90rem] mx-auto min-h-screen">
     <div v-if="spiLpgStore.loading && !spiLpgStore.detail" class="flex flex-col items-center justify-center py-32">
        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-600 mb-4"></div>
        <p class="text-slate-500 text-sm font-medium">Memuat detail LPG...</p>
@@ -89,58 +99,46 @@ const getStatusBadgeClass = (status: string) => {
         </div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div class="lg:col-span-2 space-y-6">
-          <!-- Main Info Card -->
-          <div class="bg-white border border-slate-200 rounded-lg p-8 shadow-sm">
-            <div class="mb-8">
-              <span class="text-[10px] font-bold text-emerald-600 uppercase tracking-widest block mb-2">Informasi Kegiatan</span>
-              <h2 class="text-2xl font-bold text-slate-900 leading-tight">{{ spiLpgStore.detail.rab.judulKegiatan }}</h2>
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- PDF Preview Panel (Large) -->
+        <div class="lg:col-span-8 space-y-6">
+          <div class="bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm h-[800px] flex flex-col">
+            <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div class="flex items-center gap-2">
+                <Icon name="lucide:file-text" class="w-5 h-5 text-emerald-600" />
+                <h3 class="text-sm font-bold text-slate-900">Preview Dokumen LPG</h3>
+              </div>
+              <div v-if="spiLpgFileStore.files.length > 1" class="flex items-center gap-2">
+                <select v-model="selectedFile" class="text-xs p-1.5 border rounded bg-white font-medium">
+                  <option v-for="file in spiLpgFileStore.files" :key="file.name" :value="file.url">
+                    {{ file.name }}
+                  </option>
+                </select>
+              </div>
             </div>
             
-            <div class="grid grid-cols-2 gap-8 mb-8 pb-8 border-b border-slate-100">
-              <div class="space-y-1">
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Anggaran Disetujui</p>
-                <p class="text-xl font-bold text-emerald-600 font-mono">{{ formatRupiah(spiLpgStore.detail.rab.totalAnggaran) }}</p>
+            <div class="flex-1 bg-slate-100 relative">
+              <div v-if="spiLpgFileStore.loading" class="absolute inset-0 flex items-center justify-center">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
               </div>
-              <div class="space-y-1">
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Periode Pelaksanaan</p>
-                <p class="text-sm font-bold text-slate-900">{{ spiLpgStore.detail.rab.tanggalMulai }} — {{ spiLpgStore.detail.rab.tanggalSelesai }}</p>
+              <div v-else-if="spiLpgFileStore.error" class="absolute inset-0 flex flex-col items-center justify-center p-8 text-center">
+                <Icon name="lucide:alert-triangle" class="w-12 h-12 text-rose-500 mb-4" />
+                <p class="text-slate-900 font-bold">Gagal Memuat Preview</p>
+                <p class="text-slate-500 text-sm">{{ spiLpgFileStore.error }}</p>
               </div>
-            </div>
-
-            <!-- File Section -->
-            <div class="space-y-4">
-              <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Dokumen Pertanggungjawaban (PDF)</p>
-              <div class="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-200 hover:border-emerald-200 transition-all group">
-                <div class="flex items-center gap-4">
-                  <div class="w-10 h-10 bg-white rounded border border-slate-200 flex items-center justify-center shadow-sm">
-                    <span class="i-lucide-file-text w-5 h-5 text-emerald-600"></span>
-                  </div>
-                  <div>
-                    <p class="text-sm font-bold text-slate-900">Laporan_Pertanggungjawaban.pdf</p>
-                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Diterima: {{ formatDate(spiLpgStore.detail.lpg.submittedAt) }}</p>
-                  </div>
-                </div>
-                <a 
-                  :href="`/${spiLpgStore.detail.lpg.fileLpgUrl}`" 
-                  target="_blank"
-                  class="px-4 py-2 bg-white border border-slate-200 rounded text-xs font-bold text-slate-700 hover:bg-slate-900 hover:text-white hover:border-slate-900 transition-all shadow-sm flex items-center gap-2"
-                >
-                  Buka Dokumen
-                  <Icon name="lucide:external-link" class="w-3.5 h-3.5" />
-                </a>
+              <iframe 
+                v-else-if="selectedFile"
+                :src="selectedFile" 
+                class="w-full h-full border-none"
+              ></iframe>
+              <div v-else class="absolute inset-0 flex flex-col items-center justify-center p-8 text-center">
+                <Icon name="lucide:file-x" class="w-12 h-12 text-slate-300 mb-4" />
+                <p class="text-slate-400 font-medium">Tidak ada dokumen untuk ditampilkan</p>
               </div>
-            </div>
-
-            <!-- Ormawa Notes -->
-            <div v-if="spiLpgStore.detail.lpg.ormawaNotes" class="mt-8 p-5 bg-blue-50/50 rounded-lg border-l-4 border-blue-500">
-              <p class="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-1">Catatan Pengaju</p>
-              <p class="text-sm text-slate-700 leading-relaxed font-medium italic">"{{ spiLpgStore.detail.lpg.ormawaNotes }}"</p>
             </div>
           </div>
 
-          <!-- History Review Table-like -->
+          <!-- History Review -->
           <div class="space-y-4">
             <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2 px-1">
               <span class="i-lucide-history w-4 h-4 text-emerald-500"></span>
@@ -166,8 +164,31 @@ const getStatusBadgeClass = (status: string) => {
           </div>
         </div>
 
-        <!-- Sidebar Actions -->
-        <div class="space-y-6">
+        <!-- Sidebar Actions & Info -->
+        <div class="lg:col-span-4 space-y-6">
+          <!-- Quick Info Card -->
+          <div class="bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
+            <span class="text-[10px] font-bold text-emerald-600 uppercase tracking-widest block mb-2">Informasi Kegiatan</span>
+            <h2 class="text-lg font-bold text-slate-900 leading-tight mb-4">{{ spiLpgStore.detail.rab.judulKegiatan }}</h2>
+            
+            <div class="space-y-4 border-t border-slate-50 pt-4">
+              <div class="space-y-1">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Anggaran</p>
+                <p class="text-lg font-bold text-emerald-600 font-mono">{{ formatRupiah(spiLpgStore.detail.rab.totalAnggaran) }}</p>
+              </div>
+              <div class="space-y-1">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Periode Pelaksanaan</p>
+                <p class="text-xs font-bold text-slate-900">{{ spiLpgStore.detail.rab.tanggalMulai }} — {{ spiLpgStore.detail.rab.tanggalSelesai }}</p>
+              </div>
+            </div>
+
+            <div v-if="spiLpgStore.detail.lpg.ormawaNotes" class="mt-6 p-4 bg-blue-50/50 rounded-lg border-l-4 border-blue-500">
+              <p class="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-1">Catatan Pengaju</p>
+              <p class="text-xs text-slate-700 leading-relaxed font-medium italic">"{{ spiLpgStore.detail.lpg.ormawaNotes }}"</p>
+            </div>
+          </div>
+
+          <!-- Review Action Card -->
           <div v-if="spiLpgStore.detail.lpg.statusLpg === 'WAITING_SPI'" class="bg-white border border-slate-200 rounded-lg p-6 shadow-md sticky top-8">
             <h3 class="text-base font-bold text-slate-900 mb-6 border-b border-slate-100 pb-3">Keputusan Review</h3>
             
@@ -227,12 +248,17 @@ const getStatusBadgeClass = (status: string) => {
           <!-- Already Reviewed -->
           <div v-else class="bg-slate-50 border border-slate-200 rounded-lg p-8 text-center space-y-4">
              <div class="w-12 h-12 bg-white rounded-lg flex items-center justify-center mx-auto border border-slate-100 shadow-sm">
-                <span v-if="spiLpgStore.detail.lpg.statusLpg === 'APPROVED'" class="i-lucide-check-circle w-6 h-6 text-emerald-600"></span>
+                <span v-if="spiLpgStore.detail.lpg.statusLpg === 'DISETUJUI'" class="i-lucide-check-circle w-6 h-6 text-emerald-600"></span>
                 <span v-else class="i-lucide-alert-circle w-6 h-6 text-rose-600"></span>
              </div>
              <div>
                 <h4 class="text-sm font-bold text-slate-900">Pemeriksaan Selesai</h4>
                 <p class="text-[11px] text-slate-500 font-medium leading-relaxed mt-1">LPG ini telah diproses dengan status akhir <span class="font-bold text-slate-900">{{ spiLpgStore.detail.lpg.statusLpg }}</span>.</p>
+                
+                <div v-if="spiLpgStore.detail.lpg.spiNotes" class="mt-4 p-3 bg-white border border-slate-200 rounded text-left">
+                  <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Catatan SPI</p>
+                  <p class="text-xs text-slate-600 font-medium">{{ spiLpgStore.detail.lpg.spiNotes }}</p>
+                </div>
              </div>
           </div>
 

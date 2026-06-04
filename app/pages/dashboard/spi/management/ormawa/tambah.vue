@@ -4,12 +4,12 @@
       <!-- Header -->
       <div class="flex items-center justify-between">
         <div>
-          <NuxtLink to="/dashboard/spi" class="text-sm text-[#c41e3a] hover:underline flex items-center gap-1 mb-2">
+          <NuxtLink to="/dashboard/spi/management/ormawa" class="text-sm text-[#c41e3a] hover:underline flex items-center gap-1 mb-2">
             <Icon name="heroicons:arrow-left" class="w-4 h-4" />
-            Kembali ke Dashboard
+            Kembali ke Daftar Ormawa
           </NuxtLink>
           <h1 class="text-2xl font-bold text-slate-900">Manajemen Ormawa</h1>
-          <p class="text-slate-500 text-sm">Tambah dan kelola data Organisasi Mahasiswa</p>
+          <p class="text-slate-500 text-sm">Tambah data Organisasi Mahasiswa baru</p>
         </div>
       </div>
 
@@ -102,42 +102,16 @@
         </form>
       </div>
 
-      <!-- Tabel Data -->
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div class="p-6 border-b border-slate-100">
-          <h2 class="text-lg font-bold text-slate-900">Daftar Ormawa</h2>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse">
-            <thead>
-              <tr class="bg-slate-50 text-slate-600 text-sm font-semibold">
-                <th class="px-6 py-4 border-b">No</th>
-                <th class="px-6 py-4 border-b">Nama Ormawa</th>
-                <th class="px-6 py-4 border-b">Fakultas / Prodi</th>
-                <th class="px-6 py-4 border-b">Anggaran</th>
-                <th class="px-6 py-4 border-b">Kode</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-100">
-              <tr v-for="(item, index) in store.ormawa" :key="item.id" class="hover:bg-slate-50 transition-colors">
-                <td class="px-6 py-4 text-sm text-slate-600">{{ index + 1 }}</td>
-                <td class="px-6 py-4 text-sm font-medium text-slate-900">{{ item.nama }}</td>
-                <td class="px-6 py-4 text-sm text-slate-600">
-                  <div class="text-xs text-slate-400 uppercase font-semibold">{{ item.namaFakultas }}</div>
-                  <div :class="!item.namaProdi ? 'text-slate-400 italic text-xs' : ''">
-                    {{ item.namaProdi || 'Tingkat Fakultas' }}
-                  </div>
-                </td>
-                <td class="px-6 py-4 text-sm text-slate-900 font-semibold">{{ formatRp(item.totalAnggaran) }}</td>
-                <td class="px-6 py-4 text-sm text-slate-600">
-                  <span class="px-2 py-1 bg-slate-100 rounded text-xs font-mono uppercase">{{ item.kode }}</span>
-                </td>
-              </tr>
-              <tr v-if="store.ormawa.length === 0">
-                <td colspan="5" class="px-6 py-8 text-center text-slate-500 italic">Belum ada data ormawa</td>
-              </tr>
-            </tbody>
-          </table>
+      <!-- Info Card -->
+      <div class="bg-blue-50 rounded-2xl border border-blue-100 p-6 flex items-start gap-4">
+        <Icon name="heroicons:information-circle" class="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" />
+        <div>
+          <h3 class="font-bold text-blue-900 mb-1">Panduan Pengisian</h3>
+          <ul class="text-sm text-blue-800 list-disc list-inside space-y-1">
+            <li><strong>Ormawa Fakultas:</strong> Pilih Fakultas, namun kosongkan pilihan Program Studi.</li>
+            <li><strong>Ormawa Prodi:</strong> Pilih Fakultas terlebih dahulu, kemudian pilih Program Studi yang sesuai.</li>
+            <li><strong>Anggaran:</strong> Masukkan total pagu anggaran yang dialokasikan untuk satu tahun anggaran.</li>
+          </ul>
         </div>
       </div>
     </div>

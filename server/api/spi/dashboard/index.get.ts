@@ -1,5 +1,9 @@
 import { useDrizzle } from "~~/server/db/index";
-import { pengajuanRabTable, kegiatanTable, dokumentasiKegiatanTable } from "~~/server/db/schema/index";
+import {
+  pengajuanRabTable,
+  kegiatanTable,
+  dokumentasiKegiatanTable,
+} from "~~/server/db/schema/index";
 import { eq, and, gt } from "drizzle-orm";
 
 export default defineEventHandler(async (event) => {
@@ -17,20 +21,24 @@ export default defineEventHandler(async (event) => {
       .select({
         id: kegiatanTable.id,
         statusKegiatan: kegiatanTable.statusKegiatan,
-        tanggalMulai: kegiatanTable.tanggalMulai,
-        tanggalSelesai: kegiatanTable.tanggalSelesai,
+        tanggalMulai: pengajuanRabTable.tanggalMulai,
+        tanggalSelesai: pengajuanRabTable.tanggalSelesai,
         judulKegiatan: pengajuanRabTable.judulKegiatan,
         deskripsi: pengajuanRabTable.deskripsi,
         totalAnggaran: pengajuanRabTable.totalAnggaran,
         fileTorUrl: pengajuanRabTable.fileTorUrl,
       })
       .from(kegiatanTable)
-      .innerJoin(pengajuanRabTable, eq(kegiatanTable.pengajuanRabId, pengajuanRabTable.id))
+      .innerJoin(
+        pengajuanRabTable,
+        eq(kegiatanTable.pengajuanRabId, pengajuanRabTable.id),
+      )
+
       .where(
         and(
           eq(pengajuanRabTable.status, "disetujui"),
-          eq(kegiatanTable.statusKegiatan, "BELUM_DILAKSANAKAN")
-        )
+          eq(kegiatanTable.statusKegiatan, "BELUM_DILAKSANAKAN"),
+        ),
       )
       .limit(10);
 
@@ -38,30 +46,34 @@ export default defineEventHandler(async (event) => {
     const ongoingActivities = await db
       .select()
       .from(kegiatanTable)
-      .innerJoin(pengajuanRabTable, eq(kegiatanTable.pengajuanRabId, pengajuanRabTable.id))
+      .innerJoin(
+        pengajuanRabTable,
+        eq(kegiatanTable.pengajuanRabId, pengajuanRabTable.id),
+      )
       .where(
         and(
           eq(pengajuanRabTable.status, "disetujui"),
-          eq(kegiatanTable.statusKegiatan, "SEDANG_BERJALAN")
-        )
+          eq(kegiatanTable.statusKegiatan, "SEDANG_DILAKSANAKAN"),
+        ),
       );
 
     // 4. Total kegiatan selesai
     const completedActivities = await db
       .select()
       .from(kegiatanTable)
-      .innerJoin(pengajuanRabTable, eq(kegiatanTable.pengajuanRabId, pengajuanRabTable.id))
+      .innerJoin(
+        pengajuanRabTable,
+        eq(kegiatanTable.pengajuanRabId, pengajuanRabTable.id),
+      )
       .where(
         and(
           eq(pengajuanRabTable.status, "disetujui"),
-          eq(kegiatanTable.statusKegiatan, "SELESAI")
-        )
+          eq(kegiatanTable.statusKegiatan, "SELESAI"),
+        ),
       );
 
     // 5. Total dokumentasi
-    const totalDocumentation = await db
-      .select()
-      .from(dokumentasiKegiatanTable);
+    const totalDocumentation = await db.select().from(dokumentasiKegiatanTable);
 
     return {
       success: true,

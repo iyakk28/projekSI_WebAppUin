@@ -4,9 +4,9 @@
       <!-- Header -->
       <div class="flex items-center justify-between">
         <div>
-          <NuxtLink to="/dashboard/spi" class="text-sm text-[#c41e3a] hover:underline flex items-center gap-1 mb-2">
+          <NuxtLink to="/dashboard/spi/management/users" class="text-sm text-[#c41e3a] hover:underline flex items-center gap-1 mb-2">
             <Icon name="heroicons:arrow-left" class="w-4 h-4" />
-            Kembali ke Dashboard
+            Kembali ke Daftar User
           </NuxtLink>
           <h1 class="text-2xl font-bold text-slate-900">Manajemen User</h1>
           <p class="text-slate-500 text-sm">Tambah user baru dengan role spesifik</p>

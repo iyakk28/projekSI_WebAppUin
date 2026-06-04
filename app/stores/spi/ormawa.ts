@@ -29,7 +29,7 @@ export const useSpiOrmawaStore = defineStore("spi-ormawa", () => {
   }) => {
     loading.value = true;
     try {
-      const response = await $fetch<any>("/api/spi/ormawa", {
+      const response = await $fetch<any>("/api/spi/management/ormawa", {
         method: "POST",
         body: data,
       });

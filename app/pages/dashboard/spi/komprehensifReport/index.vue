@@ -4,9 +4,9 @@
       <!-- Header -->
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 class="text-3xl font-bold text-slate-900 tracking-tight">Manajemen LPG</h1>
+          <h1 class="text-3xl font-bold text-slate-900 tracking-tight">Komprehensif Report</h1>
           <p class="text-slate-500 mt-1 text-sm font-medium">
-            Verifikasi dan validasi Laporan Pertanggungjawaban (LPG) dari seluruh Unit Kerja/Ormawa.
+            Laporan lengkap seluruh tahapan kegiatan, mulai dari RAB hingga LPG.
           </p>
         </div>
         <div class="flex items-center gap-3">
@@ -23,8 +23,8 @@
       <!-- Filters Section -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
         <div class="flex items-center gap-2 text-slate-800 font-bold mb-2">
-          <Icon name="heroicons:funnel" class="w-5 h-5 text-emerald-600" />
-          Filter Data LPG
+          <Icon name="heroicons:funnel" class="w-5 h-5 text-blue-600" />
+          Filter Data Laporan
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -37,7 +37,7 @@
                 v-model="filters.search"
                 type="text"
                 placeholder="No. Pengajuan / Judul..."
-                class="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 outline-none transition-all"
+                class="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 outline-none transition-all"
                 @input="debouncedSearch"
               />
             </div>
@@ -45,17 +45,16 @@
 
           <!-- Status Filter -->
           <div class="space-y-1.5">
-            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Status LPG</label>
+            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Status Akhir</label>
             <select
               v-model="filters.status"
-              class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 outline-none transition-all appearance-none cursor-pointer"
-              @change="lpgStore.fetchLpgList()"
+              class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 outline-none transition-all appearance-none cursor-pointer"
+              @change="reportStore.fetchReportList()"
             >
-              <option value="all">Semua Status</option>
-              <option value="BELUM_UPLOAD">Belum Upload</option>
-              <option value="WAITING_SPI">Menunggu Review</option>
-              <option value="DISETUJUI">Disetujui</option>
-              <option value="REVISI_SPI">Revisi SPI</option>
+              <option value="all">Semua Status Selesai</option>
+              <option value="disetujui">RAB Disetujui</option>
+              <option value="lunas_ppk">Dana Cair (Lunas PPK)</option>
+              <option value="selesai_spi">Selesai (LPG Disetujui)</option>
             </select>
           </div>
 
@@ -64,7 +63,7 @@
             <label class="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Fakultas</label>
             <select
               v-model="filters.fakultasId"
-              class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 outline-none transition-all appearance-none cursor-pointer"
+              class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 outline-none transition-all appearance-none cursor-pointer"
               @change="onFakultasChange"
             >
               <option value="">Semua Fakultas</option>
@@ -77,8 +76,8 @@
             <label class="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Program Studi</label>
             <select
               v-model="filters.prodiId"
-              class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 outline-none transition-all appearance-none cursor-pointer"
-              @change="lpgStore.fetchLpgList()"
+              class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 outline-none transition-all appearance-none cursor-pointer"
+              @change="reportStore.fetchReportList()"
             >
               <option value="">Semua Prodi</option>
               <option v-for="p in filteredProdi" :key="p.id" :value="p.id">{{ p.nama }}</option>
@@ -90,8 +89,8 @@
             <label class="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Unit Kerja / Ormawa</label>
             <select
               v-model="filters.ormawaId"
-              class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 outline-none transition-all appearance-none cursor-pointer"
-              @change="lpgStore.fetchLpgList()"
+              class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 outline-none transition-all appearance-none cursor-pointer"
+              @change="reportStore.fetchReportList()"
             >
               <option value="">Semua Ormawa</option>
               <option v-for="o in filteredOrmawa" :key="o.id" :value="o.id">{{ o.nama }}</option>
@@ -100,12 +99,12 @@
 
           <!-- Date Start -->
           <div class="space-y-1.5">
-            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Dikirim Mulai Dari</label>
+            <label class="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Mulai Dari</label>
             <input
               v-model="filters.startDate"
               type="date"
-              class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 outline-none transition-all"
-              @change="lpgStore.fetchLpgList()"
+              class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 outline-none transition-all"
+              @change="reportStore.fetchReportList()"
             />
           </div>
 
@@ -115,16 +114,16 @@
             <input
               v-model="filters.endDate"
               type="date"
-              class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 outline-none transition-all"
-              @change="lpgStore.fetchLpgList()"
+              class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 outline-none transition-all"
+              @change="reportStore.fetchReportList()"
             />
           </div>
 
           <!-- Reset -->
           <div class="flex items-end pb-0.5">
             <button
-              @click="lpgStore.resetFilters()"
-              class="w-full px-4 py-2.5 text-sm font-bold text-rose-600 hover:bg-rose-50 border border-rose-100 rounded-xl transition-all flex items-center justify-center gap-2"
+              @click="reportStore.resetFilters()"
+              class="w-full px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50 border border-red-100 rounded-xl transition-all flex items-center justify-center gap-2"
             >
               <Icon name="heroicons:trash" class="w-4 h-4" />
               Reset Filter
@@ -143,38 +142,40 @@
                 <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Kegiatan</th>
                 <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Unit / Ormawa</th>
                 <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Anggaran</th>
-                <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Status LPG</th>
-                <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Tanggal Kirim</th>
+                <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Status</th>
                 <th class="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">Aksi</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
-              <tr v-if="lpgStore.loading" v-for="i in 5" :key="i" class="animate-pulse">
-                <td colspan="7" class="px-6 py-4">
+              <tr v-if="reportStore.loading" v-for="i in 5" :key="i" class="animate-pulse">
+                <td colspan="6" class="px-6 py-4">
                   <div class="h-4 bg-slate-100 rounded w-full"></div>
                 </td>
               </tr>
-              <tr v-else-if="lpgStore.lpgList.length === 0">
-                <td colspan="7" class="px-6 py-12 text-center">
+              <tr v-else-if="reportStore.reportList.length === 0">
+                <td colspan="6" class="px-6 py-12 text-center">
                   <div class="flex flex-col items-center gap-3">
                     <div class="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center">
                       <Icon name="heroicons:document-text" class="w-8 h-8 text-slate-300" />
                     </div>
-                    <p class="text-slate-500 font-medium">Tidak ada data LPG yang ditemukan.</p>
+                    <p class="text-slate-500 font-medium">Tidak ada data laporan yang ditemukan.</p>
                   </div>
                 </td>
               </tr>
-              <tr v-else v-for="item in lpgStore.lpgList" :key="item.rabId" class="hover:bg-slate-50 transition-colors">
+              <tr v-else v-for="item in reportStore.reportList" :key="item.id" class="hover:bg-slate-50 transition-colors">
                 <td class="px-6 py-4 whitespace-nowrap">
                   <span class="text-sm font-bold text-slate-900">{{ item.nomorPengajuan }}</span>
                 </td>
                 <td class="px-6 py-4">
                   <p class="text-sm font-semibold text-slate-900 line-clamp-1">{{ item.judulKegiatan }}</p>
+                  <p class="text-[10px] text-slate-400 font-bold uppercase tracking-tighter mt-0.5">
+                    {{ formatDate(item.tanggalMulai) }} - {{ formatDate(item.tanggalSelesai) }}
+                  </p>
                 </td>
                 <td class="px-6 py-4">
                   <div class="flex flex-col">
-                    <span class="text-sm font-bold text-slate-700">{{ item.ormawaLabel || item.ormawaName }}</span>
-                    <span class="text-[10px] text-slate-500 font-medium">{{ item.fakultasName }}</span>
+                    <span class="text-sm font-bold text-slate-700">{{ item.ormawa }}</span>
+                    <span class="text-[10px] text-slate-500 font-medium">{{ item.fakultas }}</span>
                   </div>
                 </td>
                 <td class="px-6 py-4 text-right whitespace-nowrap">
@@ -185,30 +186,19 @@
                 <td class="px-6 py-4 text-center whitespace-nowrap">
                   <span
                     class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border"
-                    :class="getStatusBadgeClass(item.statusLpg)"
+                    :class="getStatusBadgeClass(item.status)"
                   >
-                    {{ getStatusLabel(item.statusLpg) }}
+                    {{ formatStatus(item.status) }}
                   </span>
                 </td>
                 <td class="px-6 py-4 text-center whitespace-nowrap">
-                  <span class="text-xs font-medium text-slate-500">{{ formatDate(item.submittedAt) }}</span>
-                </td>
-                <td class="px-6 py-4 text-center whitespace-nowrap">
-                  <div v-if="item.lpgId">
-                    <NuxtLink
-                      :to="`/dashboard/spi/lpg/${item.lpgId}`"
-                      class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-all shadow-md shadow-emerald-200"
-                    >
-                      Detail Review
-                      <Icon name="heroicons:chevron-right" class="w-3.5 h-3.5" />
-                    </NuxtLink>
-                  </div>
-                  <div v-else>
-                     <span class="inline-flex items-center gap-1.5 text-xs font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded-lg border border-amber-100">
-                       <Icon name="heroicons:clock" class="w-3.5 h-3.5" />
-                       Belum Upload
-                     </span>
-                  </div>
+                  <NuxtLink
+                    :to="`/dashboard/spi/komprehensifReport/${item.id}`"
+                    class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all shadow-md shadow-blue-200"
+                  >
+                    Lihat Report
+                    <Icon name="heroicons:chevron-right" class="w-3.5 h-3.5" />
+                  </NuxtLink>
                 </td>
               </tr>
             </tbody>
@@ -216,20 +206,20 @@
         </div>
 
         <!-- Pagination -->
-        <div v-if="lpgStore.total > 0" class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+        <div v-if="reportStore.total > 0" class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
           <div class="text-sm text-slate-500 font-medium">
             Menampilkan
-            <span class="font-bold text-slate-900">{{ (lpgStore.page - 1) * lpgStore.limit + 1 }}</span>
+            <span class="font-bold text-slate-900">{{ (reportStore.page - 1) * reportStore.limit + 1 }}</span>
             -
-            <span class="font-bold text-slate-900">{{ Math.min(lpgStore.page * lpgStore.limit, lpgStore.total) }}</span>
+            <span class="font-bold text-slate-900">{{ Math.min(reportStore.page * reportStore.limit, reportStore.total) }}</span>
             dari
-            <span class="font-bold text-slate-900">{{ lpgStore.total }}</span>
+            <span class="font-bold text-slate-900">{{ reportStore.total }}</span>
             data
           </div>
           <div class="flex items-center gap-2">
             <button
-              @click="lpgStore.changePage(lpgStore.page - 1)"
-              :disabled="lpgStore.page === 1"
+              @click="reportStore.changePage(reportStore.page - 1)"
+              :disabled="reportStore.page === 1"
               class="p-2 rounded-lg border border-slate-200 bg-white text-slate-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 transition-all"
             >
               <Icon name="heroicons:chevron-left" class="w-5 h-5" />
@@ -238,11 +228,11 @@
               <button
                 v-for="p in totalPages"
                 :key="p"
-                @click="lpgStore.changePage(p)"
+                @click="reportStore.changePage(p)"
                 :class="[
                   'w-9 h-9 rounded-lg text-sm font-bold transition-all',
-                  lpgStore.page === p
-                    ? 'bg-emerald-600 text-white shadow-md shadow-emerald-200'
+                  reportStore.page === p
+                    ? 'bg-blue-600 text-white shadow-md shadow-blue-200'
                     : 'text-slate-600 hover:bg-slate-100',
                 ]"
               >
@@ -250,8 +240,8 @@
               </button>
             </div>
             <button
-              @click="lpgStore.changePage(lpgStore.page + 1)"
-              :disabled="lpgStore.page === totalPages"
+              @click="reportStore.changePage(reportStore.page + 1)"
+              :disabled="reportStore.page === totalPages"
               class="p-2 rounded-lg border border-slate-200 bg-white text-slate-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 transition-all"
             >
               <Icon name="heroicons:chevron-right" class="w-5 h-5" />
@@ -264,21 +254,21 @@
 </template>
 
 <script setup lang="ts">
-import { useSpiAllLpgStore } from '~/stores/spi/allLpg';
+import { useSpiKomprehensifReportStore } from '~/stores/spi/komprehensifReport';
 import { useSpiFakultasStore } from "~/stores/spi/fakultas";
 import { useSpiProdiStore } from "~/stores/spi/prodi";
 import { useSpiOrmawaStore } from "~/stores/spi/ormawa";
 import { ref, computed, onMounted } from "vue";
 import { storeToRefs } from "pinia";
 
-const lpgStore = useSpiAllLpgStore();
+const reportStore = useSpiKomprehensifReportStore();
 const fakultasStore = useSpiFakultasStore();
 const prodiStore = useSpiProdiStore();
 const ormawaStore = useSpiOrmawaStore();
 
-const { filters } = storeToRefs(lpgStore);
+const { filters } = storeToRefs(reportStore);
 
-const totalPages = computed(() => Math.ceil(lpgStore.total / lpgStore.limit));
+const totalPages = computed(() => Math.ceil(reportStore.total / reportStore.limit));
 
 const filteredProdi = computed(() => {
   if (!filters.value.fakultasId) return prodiStore.prodi;
@@ -301,32 +291,32 @@ const filteredOrmawa = computed(() => {
 const onFakultasChange = () => {
   filters.value.prodiId = "";
   filters.value.ormawaId = "";
-  lpgStore.fetchLpgList();
+  reportStore.fetchReportList();
 };
 
 let searchTimeout: any = null;
 const debouncedSearch = () => {
   clearTimeout(searchTimeout);
   searchTimeout = setTimeout(() => {
-    lpgStore.fetchLpgList();
+    reportStore.fetchReportList();
   }, 500);
 };
 
 onMounted(async () => {
   await Promise.all([
-    lpgStore.fetchLpgList(),
+    reportStore.fetchReportList(),
     fakultasStore.fetchFakultas(),
     prodiStore.fetchProdi(),
     ormawaStore.fetchOrmawa(),
   ]);
 });
 
-const formatDate = (dateString: string | null) => {
-  if (!dateString) return '-';
-  return new Date(dateString).toLocaleDateString('id-ID', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric'
+const formatDate = (date: string | Date | null) => {
+  if (!date) return "-";
+  return new Date(date).toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
   });
 };
 
@@ -338,23 +328,21 @@ const formatRupiah = (amount: string | number) => {
   }).format(Number(amount));
 };
 
-const getStatusBadgeClass = (status: string | null) => {
-  if (!status) return 'bg-amber-50 text-amber-700 border-amber-200';
-  switch (status) {
-    case 'WAITING_SPI': return 'bg-blue-50 text-blue-700 border-blue-200';
-    case 'DISETUJUI': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
-    case 'REVISI_SPI': return 'bg-rose-50 text-rose-700 border-rose-200';
-    default: return 'bg-slate-50 text-slate-700 border-slate-200';
-  }
+const formatStatus = (status: string) => {
+  const map: Record<string, string> = {
+    disetujui: "RAB Disetujui",
+    lunas_ppk: "Dana Cair",
+    selesai_spi: "Selesai (LPG)",
+  };
+  return map[status] || status;
 };
 
-const getStatusLabel = (status: string | null) => {
-  if (!status) return 'Belum Upload';
+const getStatusBadgeClass = (status: string) => {
   switch (status) {
-    case 'WAITING_SPI': return 'Menunggu Review';
-    case 'DISETUJUI': return 'Disetujui';
-    case 'REVISI_SPI': return 'Revisi';
-    default: return status;
+    case 'selesai_spi': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+    case 'lunas_ppk': return 'bg-blue-50 text-blue-700 border-blue-200';
+    case 'disetujui': return 'bg-amber-50 text-amber-700 border-amber-200';
+    default: return 'bg-slate-50 text-slate-700 border-slate-200';
   }
 };
 </script>

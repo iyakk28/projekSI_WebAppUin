@@ -22,16 +22,30 @@ export default defineEventHandler(async (event) => {
   const db = useDrizzle();
 
   try {
-    const status = action === "approve" ? "APPROVED" : "REVISION";
+    const status = action === "approve" ? "DISETUJUI" : "REVISI_SPI";
+    const finalNotes = action === "approve" ? (notes || "Laporan Pertanggungjawaban telah disetujui oleh SPI.") : notes;
+
+    if (action === "revision" && !notes) {
+      throw createError({ statusCode: 400, message: "Catatan revisi wajib diisi" });
+    }
     
     await db.transaction(async (tx) => {
       // Update LPG status
+      const updateData: any = { 
+        statusLpg: status,
+        spiNotes: finalNotes,
+        updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
+      };
+
+      if (action === "approve") {
+        updateData.approvedBy = Number(user.id);
+        updateData.approvedAt = new Date().toISOString().slice(0, 19).replace('T', ' ');
+      } else {
+        updateData.lastRevisedBy = Number(user.id);
+      }
+
       await tx.update(lpgTable)
-        .set({ 
-          statusLpg: status,
-          spiNotes: notes || null,
-          updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
-        })
+        .set(updateData)
         .where(eq(lpgTable.id, lpgId));
 
       // If revision, add to log
@@ -39,7 +53,7 @@ export default defineEventHandler(async (event) => {
         await tx.insert(revisiLpgLogTable).values({
           lpgId,
           requesterId: Number(user.id),
-          catatanRevisi: notes || "Revisi diminta oleh SPI",
+          catatanRevisi: finalNotes,
         });
       }
 

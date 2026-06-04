@@ -8,7 +8,7 @@ export const useSpiUsersStore = defineStore("spi-users", () => {
   const addUser = async (data: any) => {
     loading.value = true;
     try {
-      const response = await $fetch<any>("/api/spi/users", {
+      const response = await $fetch<any>("/api/spi/management/users", {
         method: "POST",
         body: data,
       });

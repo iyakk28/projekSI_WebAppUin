@@ -56,6 +56,23 @@
           <div
             class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-8 gap-3 sm:gap-4"
           >
+            <!-- Monitoring -->
+            <NuxtLink
+              to="/dashboard/spi/komprehensifReport"
+              class="flex flex-col items-center justify-start p-4 rounded-2xl bg-white border border-slate-200 hover:border-blue-500 hover:shadow-md transition-all group text-center"
+            >
+              <div
+                class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform"
+              >
+                <Icon
+                  name="heroicons:document-chart-bar"
+                  class="w-6 h-6 text-blue-600"
+                />
+              </div>
+              <span class="text-xs font-bold text-slate-700 leading-tight"
+                >Komprehensif Report</span
+              >
+            </NuxtLink>
             <!-- Manajemen RAB -->
             <NuxtLink
               to="/dashboard/spi/rab"
@@ -89,24 +106,6 @@
               </div>
               <span class="text-xs font-bold text-slate-700 leading-tight"
                 >Manajemen LPG</span
-              >
-            </NuxtLink>
-
-            <!-- Monitoring -->
-            <NuxtLink
-              to="/dashboard/spi/monitorings"
-              class="flex flex-col items-center justify-start p-4 rounded-2xl bg-white border border-slate-200 hover:border-blue-500 hover:shadow-md transition-all group text-center"
-            >
-              <div
-                class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform"
-              >
-                <Icon
-                  name="heroicons:video-camera"
-                  class="w-6 h-6 text-blue-600"
-                />
-              </div>
-              <span class="text-xs font-bold text-slate-700 leading-tight"
-                >Monitoring Kegiatan</span
               >
             </NuxtLink>
 
@@ -248,6 +247,21 @@
             >
           </div>
           <spi-rab-table />
+        </div>
+
+        <!-- List LPG Section -->
+        <div class="w-full">
+          <div class="flex items-center justify-between mb-4 px-1">
+            <h3 class="text-lg font-bold text-slate-900">
+              Antrean LPG (Menunggu Review)
+            </h3>
+            <NuxtLink
+              to="/dashboard/spi/lpg"
+              class="text-sm font-medium text-emerald-600 hover:underline"
+              >Lihat Semua LPG &rarr;</NuxtLink
+            >
+          </div>
+          <spi-lpg-table />
         </div>
 
         <!-- Content Section -->

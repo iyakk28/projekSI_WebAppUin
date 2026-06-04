@@ -41,34 +41,7 @@ export default defineEventHandler(async (event) => {
           or(isNull(lpgTable.id), eq(lpgTable.statusLpg, "REVISI_SPI")),
         ),
       );
-    const revisiResults = await db
-      .select({
-        rabId: pengajuanRabTable.id,
-        nomorPengajuan: pengajuanRabTable.nomorPengajuan,
-        judulKegiatan: pengajuanRabTable.judulKegiatan,
-        totalAnggaran: pengajuanRabTable.totalAnggaran,
-        tanggalMulai: pengajuanRabTable.tanggalMulai,
-        tanggalSelesai: pengajuanRabTable.tanggalSelesai,
-        statusRab: pengajuanRabTable.status,
-        statusKegiatan: kegiatanTable.statusKegiatan,
-        kegiatanId: kegiatanTable.id,
-        lpgStatus: lpgTable.statusLpg,
-        lpgId: lpgTable.id,
-      })
-      .from(lpgTable)
-      .innerJoin(kegiatanTable, eq(lpgTable.kegiatanId, kegiatanTable.id)) // LPG → Kegiatan
-      .innerJoin(
-        pengajuanRabTable,
-        eq(kegiatanTable.pengajuanRabId, pengajuanRabTable.id),
-      )
-      .where(
-        and(
-          eq(lpgTable.uploadedBy, user.id),
-          eq(lpgTable.statusLpg, "REVISI_SPI"),
-        ),
-      );
 
-    // 2. Query untuk RIWAYAT LPG (Semua yang sudah pernah diupload)
     const historyResults = await db
       .select({
         rabId: pengajuanRabTable.id,
@@ -95,7 +68,7 @@ export default defineEventHandler(async (event) => {
     return {
       success: true,
       data: {
-        ready: [...readyResults, ...revisiResults],
+        ready: [...readyResults],
         history: historyResults,
       },
     };
