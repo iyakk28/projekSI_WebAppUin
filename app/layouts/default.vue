@@ -1,20 +1,13 @@
 <template>
-  <div style="display: flex; flex-direction: column; min-height: 100vh">
+  <div class="flex flex-col min-h-screen">
     <!-- Header -->
     <header
-      style="
-        background: linear-gradient(
-          135deg,
-          #0f1f3d 0%,
-          #1e3a6e 60%,
-          #2d4f8e 100%
-        );
-        box-shadow: 0 2px 16px rgba(15, 31, 61, 0.35);
-        border-bottom: 2px solid rgba(201, 162, 39, 0.35);
-        position: sticky;
-        top: 0;
-        z-index: 50;
-      "
+      class="sticky top-0 z-50 border-b-2 shadow-md"
+      :style="{
+        background:
+          'linear-gradient(135deg, #0f1f3d 0%, #1e3a6e 60%, #2d4f8e 100%)',
+        borderBottomColor: 'rgba(201, 162, 39, 0.35)',
+      }"
     >
       <nav class="mx-auto flex items-center justify-between px-4 py-3 md:px-8">
         <!-- Logo dan Nama -->
@@ -25,7 +18,7 @@
             height="32"
             width="32"
           />
-          <span class="text-lg font-bold hidden sm:inline" style="color: #fff">
+          <span class="text-lg font-bold hidden sm:inline text-white">
             UIN Mahmud Yunus
           </span>
         </div>
@@ -69,84 +62,38 @@
               class="flex items-center space-x-2 focus:outline-none"
             >
               <div
-                style="
-                  height: 34px;
-                  width: 34px;
-                  border-radius: 9px;
-                  background: rgba(201, 162, 39, 0.2);
-                  border: 1.5px solid rgba(201, 162, 39, 0.5);
-                  display: flex;
-                  align-items: center;
-                  justify-content: center;
-                  color: #e4c96a;
-                  font-weight: 700;
-                  font-size: 13px;
-                "
+                class="h-[34px] w-[34px] rounded-lg flex items-center justify-center font-bold text-sm"
+                :style="{
+                  background: 'rgba(201, 162, 39, 0.2)',
+                  border: '1.5px solid rgba(201, 162, 39, 0.5)',
+                  color: '#e4c96a',
+                }"
               >
                 {{ authStore.user?.username?.charAt(0).toUpperCase() || "U" }}
               </div>
-              <span
-                style="
-                  color: rgba(255, 255, 255, 0.9);
-                  font-weight: 500;
-                  font-size: 14px;
-                "
-              >
+              <span class="text-white/90 font-medium text-sm">
                 {{ authStore.user?.username }}
               </span>
               <Icon
                 name="heroicons:chevron-down"
-                class="h-4 w-4"
-                style="color: rgba(255, 255, 255, 0.5)"
+                class="h-4 w-4 text-white/50"
               />
             </button>
             <div
               v-if="dropdownOpen"
-              style="
-                position: absolute;
-                right: 0;
-                margin-top: 8px;
-                width: 192px;
-                background: #fff;
-                border-radius: 12px;
-                box-shadow: 0 12px 36px rgba(15, 31, 61, 0.18);
-                border: 1px solid #e2eaf6;
-                overflow: hidden;
-                z-index: 10;
-              "
+              class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-100 overflow-hidden z-10"
             >
-              <div style="padding: 12px 16px; border-bottom: 1px solid #f0f4fb">
-                <p style="font-size: 13px; font-weight: 600; color: #1a2f5a">
+              <div class="px-4 py-3 border-b border-slate-50">
+                <p class="text-xs font-semibold text-slate-700">
                   {{ authStore.user?.username }}
                 </p>
-                <p
-                  style="
-                    font-size: 11px;
-                    color: #7c93b4;
-                    margin-top: 2px;
-                    text-transform: capitalize;
-                  "
-                >
+                <p class="text-[11px] text-slate-400 mt-0.5 capitalize">
                   {{ authStore.user?.role }}
                 </p>
               </div>
               <button
                 @click="handleLogout"
-                style="
-                  width: 100%;
-                  text-align: left;
-                  padding: 10px 16px;
-                  font-size: 13px;
-                  color: #dc2626;
-                  background: none;
-                  border: none;
-                  cursor: pointer;
-                  display: flex;
-                  align-items: center;
-                  gap: 8px;
-                "
-                onmouseover="this.style.background = '#fff5f5'"
-                onmouseout="this.style.background = 'none'"
+                class="w-full text-left px-4 py-2.5 text-xs text-red-600 hover:bg-red-50 flex items-center gap-2"
               >
                 <Icon
                   name="heroicons:arrow-right-on-rectangle"
@@ -162,8 +109,7 @@
         <div class="md:hidden">
           <button
             @click="mobileMenuOpen = !mobileMenuOpen"
-            class="focus:outline-none"
-            style="color: #fff"
+            class="focus:outline-none text-white"
           >
             <Icon
               v-if="!mobileMenuOpen"
@@ -178,13 +124,7 @@
       <!-- Mobile Menu Panel -->
       <div
         v-if="mobileMenuOpen"
-        style="
-          background: rgba(10, 20, 50, 0.6);
-          backdrop-filter: blur(8px);
-          border-top: 1px solid rgba(255, 255, 255, 0.1);
-          padding: 8px 16px 12px;
-        "
-        class="md:hidden"
+        class="md:hidden bg-black/40 backdrop-blur-md border-t border-white/10 px-4 pb-3 pt-2"
       >
         <div class="space-y-1">
           <NuxtLink
@@ -244,25 +184,14 @@
               Verifikasi LPJ
             </NuxtLink>
           </template>
-          <hr style="margin: 8px 0; border-color: rgba(255, 255, 255, 0.1)" />
-          <div style="padding-top: 8px">
-            <p style="font-size: 13px; color: rgba(255, 255, 255, 0.5)">
+          <hr class="my-2 border-white/10" />
+          <div class="pt-2">
+            <p class="text-xs text-white/50">
               {{ authStore.user?.username }} ({{ authStore.user?.role }})
             </p>
             <button
               @click="handleLogout"
-              style="
-                margin-top: 8px;
-                width: 100%;
-                border-radius: 8px;
-                background: rgba(255, 255, 255, 0.1);
-                padding: 8px 12px;
-                font-size: 13px;
-                font-weight: 500;
-                color: #fff;
-                border: none;
-                cursor: pointer;
-              "
+              class="mt-2 w-full rounded-lg bg-white/10 py-2 text-xs font-medium text-white hover:bg-white/20"
             >
               Logout
             </button>
@@ -272,86 +201,61 @@
     </header>
 
     <!-- Main Content -->
-    <div style="flex: 1">
+    <div class="flex-1">
       <slot />
     </div>
 
     <!-- Footer -->
     <footer
-      style="
-        background: linear-gradient(
-          135deg,
-          #0f1f3d 0%,
-          #1e3a6e 60%,
-          #2d4f8e 100%
-        );
-        color: #fff;
-        border-top: 2px solid rgba(201, 162, 39, 0.35);
-      "
+      class="text-white border-t-2"
+      :style="{
+        background:
+          'linear-gradient(135deg, #0f1f3d 0%, #1e3a6e 60%, #2d4f8e 100%)',
+        borderTopColor: 'rgba(201, 162, 39, 0.35)',
+      }"
     >
-      <!-- Bagian atas footer -->
       <div class="mx-auto max-w-7xl px-4 py-8 md:px-8">
         <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
-          <!-- Kolom Alamat -->
+          <!-- Alamat -->
           <div>
-            <h3 class="mb-3 text-lg font-semibold" style="color: #e4c96a">
-              Alamat
-            </h3>
-            <p
-              class="text-sm leading-relaxed"
-              style="color: rgba(255, 255, 255, 0.8)"
-            >
+            <h3 class="mb-3 text-lg font-semibold text-[#e4c96a]">Alamat</h3>
+            <p class="text-sm leading-relaxed text-white/80">
               Jl. Sudirman No.137 Lima Kaum, <br />
               Batusangkar, Tanah Datar, <br />
               Sumatera Barat, Indonesia
             </p>
           </div>
 
-          <!-- Kolom Kontak -->
+          <!-- Kontak -->
           <div>
-            <h3 class="mb-3 text-lg font-semibold" style="color: #e4c96a">
+            <h3 class="mb-3 text-lg font-semibold text-[#e4c96a]">
               Kontak Kami
             </h3>
             <ul class="space-y-2 text-sm">
               <li class="flex items-center gap-2">
-                <Icon
-                  name="proicons:phone"
-                  class="h-5 w-5"
-                  style="color: #e4c96a"
-                />
+                <Icon name="proicons:phone" class="h-5 w-5 text-[#e4c96a]" />
                 <a
                   href="tel:075271150"
-                  style="color: rgba(255, 255, 255, 0.8)"
-                  class="hover:text-secondary transition"
+                  class="text-white/80 hover:text-white transition"
                 >
                   0752-71150
                 </a>
               </li>
               <li class="flex items-center gap-2">
-                <Icon
-                  name="proicons:email"
-                  class="h-5 w-5"
-                  style="color: #e4c96a"
-                />
+                <Icon name="proicons:email" class="h-5 w-5 text-[#e4c96a]" />
                 <a
                   href="mailto:info@uinmybatusangkar.ac.id"
-                  style="color: rgba(255, 255, 255, 0.8)"
-                  class="hover:text-secondary transition"
+                  class="text-white/80 hover:text-white transition"
                 >
                   info@uinmybatusangkar.ac.id
                 </a>
               </li>
               <li class="flex items-center gap-2">
-                <Icon
-                  name="proicons:globe"
-                  class="h-5 w-5"
-                  style="color: #e4c96a"
-                />
+                <Icon name="proicons:globe" class="h-5 w-5 text-[#e4c96a]" />
                 <a
                   href="https://uinmybatusangkar.ac.id"
                   target="_blank"
-                  style="color: rgba(255, 255, 255, 0.8)"
-                  class="hover:text-secondary transition"
+                  class="text-white/80 hover:text-white transition"
                 >
                   uinmybatusangkar.ac.id
                 </a>
@@ -359,66 +263,22 @@
             </ul>
           </div>
 
-          <!-- Kolom Sosial Media -->
+          <!-- Sosial Media -->
           <div>
-            <h3 class="mb-3 text-lg font-semibold" style="color: #e4c96a">
+            <h3 class="mb-3 text-lg font-semibold text-[#e4c96a]">
               Ikuti Kami
             </h3>
             <div class="flex space-x-4">
-              <a
-                href="#"
-                style="
-                  border-radius: 9999px;
-                  background: rgba(255, 255, 255, 0.1);
-                  padding: 8px;
-                  display: inline-flex;
-                  transition: background 0.15s;
-                "
-                onmouseover="this.style.background = 'rgba(201,162,39,0.5)'"
-                onmouseout="this.style.background = 'rgba(255,255,255,0.1)'"
-              >
+              <a href="#" class="social-icon">
                 <Icon name="mdi:facebook" class="h-5 w-5" />
               </a>
-              <a
-                href="#"
-                style="
-                  border-radius: 9999px;
-                  background: rgba(255, 255, 255, 0.1);
-                  padding: 8px;
-                  display: inline-flex;
-                  transition: background 0.15s;
-                "
-                onmouseover="this.style.background = 'rgba(201,162,39,0.5)'"
-                onmouseout="this.style.background = 'rgba(255,255,255,0.1)'"
-              >
+              <a href="#" class="social-icon">
                 <Icon name="mdi:instagram" class="h-5 w-5" />
               </a>
-              <a
-                href="#"
-                style="
-                  border-radius: 9999px;
-                  background: rgba(255, 255, 255, 0.1);
-                  padding: 8px;
-                  display: inline-flex;
-                  transition: background 0.15s;
-                "
-                onmouseover="this.style.background = 'rgba(201,162,39,0.5)'"
-                onmouseout="this.style.background = 'rgba(255,255,255,0.1)'"
-              >
+              <a href="#" class="social-icon">
                 <Icon name="mdi:youtube" class="h-5 w-5" />
               </a>
-              <a
-                href="#"
-                style="
-                  border-radius: 9999px;
-                  background: rgba(255, 255, 255, 0.1);
-                  padding: 8px;
-                  display: inline-flex;
-                  transition: background 0.15s;
-                "
-                onmouseover="this.style.background = 'rgba(201,162,39,0.5)'"
-                onmouseout="this.style.background = 'rgba(255,255,255,0.1)'"
-              >
+              <a href="#" class="social-icon">
                 <Icon name="mdi:twitter" class="h-5 w-5" />
               </a>
             </div>
@@ -428,13 +288,7 @@
 
       <!-- Copyright -->
       <div
-        style="
-          border-top: 1px solid rgba(255, 255, 255, 0.15);
-          padding: 16px;
-          text-align: center;
-          font-size: 12px;
-          color: rgba(255, 255, 255, 0.6);
-        "
+        class="border-t border-white/15 py-4 text-center text-xs text-white/60"
       >
         <p>
           &copy; {{ new Date().getFullYear() }} Universitas Islam Negeri Mahmud
@@ -483,47 +337,31 @@
 </script>
 
 <style scoped>
+  @import "tailwindcss";
   /* Nav links desktop */
   .nav-link {
-    color: rgba(255, 255, 255, 0.72);
-    font-weight: 500;
-    font-size: 14px;
-    padding: 6px 14px;
-    border-radius: 8px;
-    text-decoration: none;
-    transition:
-      background 0.15s,
-      color 0.15s;
+    @apply text-white/70 font-medium text-sm px-3.5 py-1.5 rounded-lg transition-all;
   }
   .nav-link:hover {
-    color: #fff;
-    background: rgba(255, 255, 255, 0.1);
+    @apply text-white bg-white/10;
   }
   .nav-link.router-link-active {
-    color: #e4c96a;
-    background: rgba(201, 162, 39, 0.15);
-    font-weight: 600;
+    @apply text-[#e4c96a] bg-[rgba(201,162,39,0.15)] font-semibold;
   }
 
   /* Mobile nav links */
   .mobile-nav-link {
-    display: block;
-    padding: 9px 12px;
-    border-radius: 8px;
-    color: rgba(255, 255, 255, 0.8);
-    font-weight: 500;
-    font-size: 14px;
-    text-decoration: none;
-    transition:
-      background 0.15s,
-      color 0.15s;
+    @apply block px-3 py-2 rounded-lg text-white/80 font-medium text-sm transition-all;
   }
   .mobile-nav-link:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #fff;
+    @apply bg-white/10 text-white;
   }
   .mobile-nav-link.router-link-active {
-    color: #e4c96a;
-    background: rgba(201, 162, 39, 0.12);
+    @apply text-[#e4c96a] bg-[rgba(201,162,39,0.12)];
+  }
+
+  /* Social icons */
+  .social-icon {
+    @apply rounded-full bg-white/10 p-2 inline-flex transition-all hover:bg-[rgba(201,162,39,0.5)];
   }
 </style>

@@ -4,7 +4,9 @@
 Aplikasi ini mengelola alur pengajuan proposal kegiatan ORMAWA mulai dari pembuatan proposal/TOR/RAB, persetujuan berjenjang (Kaprodi → PPK → SPI) dengan mekanisme revisi/penolakan (looping), pelaksanaan kegiatan, pencairan dana dengan verifikasi persyaratan oleh PPK, hingga pengumpulan LPJ sebagai arsip.
 
 ## 📌 Deskripsi
+
 ORMAWA mengajukan proposal kegiatan beserta TOR dan RAB. Proposal melalui proses persetujuan:
+
 1. **Kaprodi** – menyetujui/menolak/revisi
 2. **PPK** – menyetujui/menolak/revisi
 3. **SPI** – menyetujui/menolak/revisi
@@ -15,11 +17,12 @@ Kemudian ORMAWA mengajukan pencairan dana dengan melengkapi persyaratan. PPK men
 Setelah pencairan, ORMAWA wajib mengumpulkan **LPJ** (Laporan Pertanggungjawaban) sebagai arsip bukti kegiatan terlaksana dan dana telah cair.
 
 ## 🚀 Fitur
+
 - **Multi-role authentication** (ORMawa, Kaprodi, PPK, SPI) menggunakan Supabase Auth
 - **Dashboard role-based** dengan notifikasi status proposal/pencairan
 - **Pengajuan proposal** (unggah file TOR, RAB, deskripsi kegiatan)
 - **Alur persetujuan berjenjang** dengan status:  
-  *Menunggu ACC Kaprodi → Revisi (looping) → Menunggu ACC PPK → Menunggu ACC SPI → ACC → Ditolak*
+  _Menunggu ACC Kaprodi → Revisi (looping) → Menunggu ACC PPK → Menunggu ACC SPI → ACC → Ditolak_
 - **Manajemen revisi** – setiap penolakan disertai catatan revisi
 - **Pencairan dana** – ORMAWA upload persyaratan (KTP, NPWP, dll.), PPK verifikasi kelengkapan
 - **Pencatatan LPJ** – upload file LPJ setelah pencairan, tersimpan sebagai arsip
@@ -27,6 +30,7 @@ Setelah pencairan, ORMAWA wajib mengumpulkan **LPJ** (Laporan Pertanggungjawaban
 - **Responsive UI** – Vue 3 + Tailwind CSS / Bootstrap
 
 ## 🛠 Teknologi
+
 - **Frontend**: Nuxt.js 3 (Vue 3, Composition API, SSR/CSR)
 - **Backend/API**: Nuxt Nitro server routes (server/api)
 - **Database & ORM**: Supabase (MySQL) + **Drizzle ORM**
@@ -35,6 +39,7 @@ Setelah pencairan, ORMAWA wajib mengumpulkan **LPJ** (Laporan Pertanggungjawaban
 - **State Management**: Pinia (opsional)
 
 ## 👩‍💻 Developer
+
 - Akbar Maulana
 - Hafis Syaifullah
 - Nindya Dwi Putri
@@ -42,6 +47,7 @@ Setelah pencairan, ORMAWA wajib mengumpulkan **LPJ** (Laporan Pertanggungjawaban
 ## 📌 Cara Menjalankan
 
 ### Prasyarat
+
 - Node.js (v18+)
 - Akun Supabase (buat project baru, dapatkan `URL` dan `anon key` / `service role key`)
 
@@ -51,3 +57,4 @@ Setelah pencairan, ORMAWA wajib mengumpulkan **LPJ** (Laporan Pertanggungjawaban
    ```bash
    git clone https://github.com/username/projekSI_WebAppUin.git
    cd projekSI_WebAppUin
+   ```

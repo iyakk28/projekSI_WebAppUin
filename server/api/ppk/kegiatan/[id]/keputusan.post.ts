@@ -32,28 +32,23 @@ export default defineEventHandler(async (event) => {
         statusMessage: "ID pengajuan tidak valid",
       });
     }
-
     const body = await readBody(event);
     // field: "keputusan" — value: "disetujui" | "revisi" | "tolak"
     const { keputusan, catatan } = body ?? {};
-
     if (!keputusan || !Object.keys(KEPUTUSAN_MAP).includes(keputusan)) {
       throw createError({
         statusCode: 400,
         statusMessage: `Keputusan tidak valid. Pilihan: ${Object.keys(KEPUTUSAN_MAP).join(", ")}`,
       });
     }
-
     if ((keputusan === "revisi" || keputusan === "tolak") && !catatan?.trim()) {
       throw createError({
         statusCode: 400,
         statusMessage: "Catatan wajib diisi untuk keputusan revisi atau tolak",
       });
     }
-
     const db = useDrizzle();
     const { user } = event.context;
-
     const fakultasId = user.fakultasId;
     if (!fakultasId) {
       throw createError({
@@ -61,13 +56,15 @@ export default defineEventHandler(async (event) => {
         statusMessage: "PPK tidak memiliki data fakultas",
       });
     }
-
     // Query bertahap untuk dapat ormawaUserIds — pola sama seperti ormawa
     const kaprodiList = await db
       .select({ prodiId: usersTable.prodiId })
       .from(usersTable)
       .where(
-        and(eq(usersTable.role, "ppk"), eq(usersTable.fakultasId, fakultasId)),
+        and(
+          eq(usersTable.role, "kaprodi"),
+          eq(usersTable.fakultasId, fakultasId),
+        ),
       );
 
     const prodiIds = kaprodiList

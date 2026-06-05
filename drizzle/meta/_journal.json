@@ -211,6 +211,13 @@
       "when": 1780329005611,
       "tag": "0029_low_captain_america",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "5",
+      "when": 1780673708674,
+      "tag": "0030_harsh_karnak",
+      "breakpoints": true
     }
   ]
 }

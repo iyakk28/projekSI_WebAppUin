@@ -233,11 +233,7 @@
             </div>
 
             <div class="space-y-4">
-              <div
-                v-for="(bar, idx) in barData"
-                :key="idx"
-                class="space-y-1"
-              >
+              <div v-for="(bar, idx) in barData" :key="idx" class="space-y-1">
                 <div class="flex justify-between text-sm">
                   <span class="font-semibold text-slate-700">
                     {{ bar.kode }}
@@ -411,10 +407,7 @@
                     </tr>
 
                     <tr v-if="ormawaRows.length === 0">
-                      <td
-                        colspan="4"
-                        class="py-6 text-center text-slate-500"
-                      >
+                      <td colspan="4" class="py-6 text-center text-slate-500">
                         Belum ada data progress Ormawa.
                       </td>
                     </tr>
@@ -522,47 +515,47 @@
 </template>
 
 <script setup lang="ts">
-import { storeToRefs } from "pinia";
-import { usePpkDashboardStore } from "~/stores/ppk/dashboard";
+  import { storeToRefs } from "pinia";
+  import { usePpkDashboardStore } from "~/stores/ppk/dashboard";
 
-const ppkDashboardStore = usePpkDashboardStore();
+  const ppkDashboardStore = usePpkDashboardStore();
 
-const {
-  selectedOrmawaId,
-  selectedOrmawa,
-  todayStr,
-  ormawaList,
-  currentData,
-  usedPct,
-  barData,
-  statusData,
-  ormawaRows,
-  activityRows,
-} = storeToRefs(ppkDashboardStore);
+  const {
+    selectedOrmawaId,
+    selectedOrmawa,
+    todayStr,
+    ormawaList,
+    currentData,
+    usedPct,
+    barData,
+    statusData,
+    ormawaRows,
+    activityRows,
+  } = storeToRefs(ppkDashboardStore);
 
-const { fetchAll, onOrmawaChange, formatRp, formatRpShort } =
-  ppkDashboardStore;
+  const { fetchAll, onOrmawaChange, formatRp, formatRpShort } =
+    ppkDashboardStore;
 
-await fetchAll();
+  await fetchAll();
 </script>
 
 <style scoped>
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
 
-::-webkit-scrollbar-track {
-  background: #f1f5f9;
-}
+  ::-webkit-scrollbar-track {
+    background: #f1f5f9;
+  }
 
-::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
-}
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+  }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
+  ::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
 </style>

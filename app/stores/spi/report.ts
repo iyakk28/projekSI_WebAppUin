@@ -47,6 +47,17 @@ export interface FakultasFinancialBreakdown {
   realized: number | null;
 }
 
+export interface ReportDocumentItem {
+  nomorPengajuan: string;
+  judulKegiatan: string;
+  ormawa: string;
+  fakultas: string;
+  totalAnggaran: string;
+  statusRab: string;
+  statusLpg: string | null;
+  tanggalPengajuan: string;
+}
+
 export const useSpiReportStore = defineStore("spi-report", () => {
   const loading = ref(false);
   const error = ref<string | null>(null);
@@ -63,12 +74,17 @@ export const useSpiReportStore = defineStore("spi-report", () => {
     fakultasBreakdown: FakultasFinancialBreakdown[];
   } | null>(null);
 
+  const detailedDocuments = ref<ReportDocumentItem[]>([]);
+
   const filters = ref({
     fakultasId: "",
     prodiId: "",
     ormawaId: "",
     startDate: "",
     endDate: "",
+    status: "all",
+    reportCategory: "overview", // overview, rab_list, lpg_list
+    financialCategory: "ormawa", // ormawa, fakultas
   });
 
   const fetchRabLpgReport = async () => {
@@ -77,15 +93,13 @@ export const useSpiReportStore = defineStore("spi-report", () => {
     try {
       const query = { ...filters.value };
       const response = await $fetch<any>("/api/spi/report/rabLpg", { query });
-      console.log(response);
       if (response.success) {
         rabLpgData.value = response.data;
       } else {
         error.value = response.message;
       }
     } catch (err: any) {
-      error.value =
-        err.data?.message || err.message || "Gagal mengambil laporan RAB & LPG";
+      error.value = err.data?.message || err.message || "Gagal mengambil laporan RAB & LPG";
     } finally {
       loading.value = false;
     }
@@ -96,18 +110,44 @@ export const useSpiReportStore = defineStore("spi-report", () => {
     error.value = null;
     try {
       const query = { ...filters.value };
-      const response = await $fetch<any>("/api/spi/report/financial", {
-        query,
-      });
-      console.log(response);
+      const response = await $fetch<any>("/api/spi/report/financial", { query });
       if (response.success) {
         financialData.value = response.data;
       } else {
         error.value = response.message;
       }
     } catch (err: any) {
-      error.value =
-        err.data?.message || err.message || "Gagal mengambil laporan keuangan";
+      error.value = err.data?.message || err.message || "Gagal mengambil laporan keuangan";
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const fetchDetailedDocuments = async () => {
+    loading.value = true;
+    error.value = null;
+    try {
+      const query = { 
+        ...filters.value,
+        type: filters.value.reportCategory === 'rab_list' ? 'rab' : 'lpg'
+      };
+      const response = await $fetch<any>("/api/spi/report/rawExport", { query });
+      if (response.success) {
+        let data = response.data;
+        // Client side status filtering if needed, or backend handles it
+        if (filters.value.status !== 'all') {
+          if (filters.value.reportCategory === 'rab_list') {
+            data = data.filter((d: any) => d.statusRab === filters.value.status);
+          } else {
+            data = data.filter((d: any) => d.statusLpg === filters.value.status);
+          }
+        }
+        detailedDocuments.value = data;
+      } else {
+        error.value = response.message;
+      }
+    } catch (err: any) {
+      error.value = err.data?.message || err.message || "Gagal mengambil detail dokumen";
     } finally {
       loading.value = false;
     }
@@ -120,6 +160,9 @@ export const useSpiReportStore = defineStore("spi-report", () => {
       ormawaId: "",
       startDate: "",
       endDate: "",
+      status: "all",
+      reportCategory: "overview",
+      financialCategory: "ormawa",
     };
   };
 
@@ -128,9 +171,11 @@ export const useSpiReportStore = defineStore("spi-report", () => {
     error,
     rabLpgData,
     financialData,
+    detailedDocuments,
     filters,
     fetchRabLpgReport,
     fetchFinancialReport,
+    fetchDetailedDocuments,
     resetFilters,
   };
 });

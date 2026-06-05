@@ -230,9 +230,7 @@ export const usePpkDashboardStore = defineStore("ppkDashboard", () => {
       kode: ormawa.kode,
       anggaran: ormawa.anggaran?.total || 0,
       terpakai: ormawa.anggaran?.terpakai || 0,
-      totalPct: Math.round(
-        ((ormawa.anggaran?.total || 0) / maxAnggaran) * 100,
-      ),
+      totalPct: Math.round(((ormawa.anggaran?.total || 0) / maxAnggaran) * 100),
       usedPct: Math.round(
         ((ormawa.anggaran?.terpakai || 0) / maxAnggaran) * 100,
       ),

@@ -1,0 +1,1 @@
+ALTER TABLE `tagihan_pencairan` ADD `bukti_pembayaran_url` text;

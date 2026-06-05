@@ -1,7 +1,11 @@
 // FILE: server/api/ppk/dashboard/index.get.ts
 
 import { eq, sql, ne, and, inArray } from "drizzle-orm";
-import { pengajuanRabTable, usersTable, ormawaTable } from "~~/server/db/schema";
+import {
+  pengajuanRabTable,
+  usersTable,
+  ormawaTable,
+} from "~~/server/db/schema";
 import { useDrizzle } from "~~/server/db";
 
 export default defineEventHandler(async (event) => {
@@ -27,7 +31,7 @@ export default defineEventHandler(async (event) => {
           eq(usersTable.fakultasId, fakultasId),
         ),
       );
-
+    console.log(kaprodiList);
     const prodiIds = kaprodiList
       .map((k) => k.prodiId)
       .filter((id): id is number => id !== null);

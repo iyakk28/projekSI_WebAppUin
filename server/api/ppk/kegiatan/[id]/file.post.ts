@@ -39,7 +39,6 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // Validasi akses PPK — sama seperti di index.get.ts
   const kaprodiList = await db
     .select({ prodiId: usersTable.prodiId })
     .from(usersTable)
@@ -86,7 +85,6 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  // Ambil data pengajuan
   const rab = await db.query.pengajuanRabTable.findFirst({
     where: eq(pengajuanRabTable.id, rabId),
   });
@@ -109,7 +107,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const filePath = path.resolve(process.cwd(), fileUrl.trim());
-
+  console.log("ini adalah file:", filePath);
   if (!fs.existsSync(filePath)) {
     throw createError({
       statusCode: 404,

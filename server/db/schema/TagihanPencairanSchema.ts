@@ -57,6 +57,7 @@ export const tagihanPencairanTable = mysqlTable("tagihan_pencairan", {
   tokoAlamat: text("toko_alamat"),
   strukFileUrl: text("struk_file_url"),
   fotoBarangUrl: text("foto_barang_url"),
+  buktiPembayaranUrl: text("bukti_pembayaran_url"),
 
   statusTagihan: mysqlEnum("status_tagihan", tagihanStatusEnum).default(
     "WAITING_PEMBAYARAN",

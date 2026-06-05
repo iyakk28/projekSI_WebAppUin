@@ -88,7 +88,7 @@
         <button
           v-for="tab in tabs"
           :key="tab.id"
-          @click="activeTab = tab.id"
+          @click="onTabChange(tab.id)"
           class="px-6 py-3 text-sm font-bold transition-all relative"
           :class="activeTab === tab.id ? 'text-emerald-600' : 'text-slate-500 hover:text-slate-700'"
         >
@@ -97,86 +97,178 @@
         </button>
       </div>
 
-      <!-- Tab Content -->
-      <div v-if="activeTab === 'rabLpg'" class="space-y-8 animate-in fade-in duration-500">
-        <div class="flex items-center justify-between">
-           <h2 class="text-xl font-bold text-slate-800 tracking-tight">Monitoring RAB & LPG</h2>
-           <button @click="exportAllData" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-all shadow-md shadow-emerald-200">
-             <Icon name="heroicons:arrow-down-tray" class="w-4 h-4" />
-             Export Semua Data
-           </button>
-        </div>
-
-        <!-- Summary Cards RAB & LPG -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div v-for="card in rabSummaryCards" :key="card.label" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-            <div class="flex items-center gap-3 mb-2">
-              <div :class="`w-10 h-10 rounded-xl flex items-center justify-center ${card.bg}`">
-                <Icon :name="card.icon" :class="`w-6 h-6 ${card.color}`" />
-              </div>
-              <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">{{ card.label }}</span>
-            </div>
-            <div class="text-3xl font-bold text-slate-900">{{ reportStore.loading ? '...' : card.value }}</div>
-            <div class="text-[10px] text-slate-400 mt-1 font-medium">{{ card.sub }}</div>
+      <!-- Tab Content: Monitoring -->
+      <div v-if="activeTab === 'rabLpg'" class="space-y-6 animate-in fade-in duration-500">
+        <!-- Category & Status Selectors -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+          <div class="flex items-center gap-2">
+            <button
+              v-for="cat in reportCategories"
+              :key="cat.id"
+              @click="onReportCategoryChange(cat.id)"
+              class="px-4 py-2 text-xs font-bold rounded-xl transition-all border"
+              :class="filters.reportCategory === cat.id ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'"
+            >
+              {{ cat.name }}
+            </button>
           </div>
+
+          <div v-if="filters.reportCategory !== 'overview'" class="flex items-center gap-3">
+             <label class="text-xs font-bold text-slate-500 uppercase">Status:</label>
+             <select
+               v-model="filters.status"
+               class="px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500/20"
+               @change="reportStore.fetchDetailedDocuments()"
+             >
+               <option value="all">Semua Status</option>
+               <template v-if="filters.reportCategory === 'rab_list'">
+                 <option v-for="s in rabStatuses" :key="s" :value="s">{{ s.replaceAll('_', ' ').toUpperCase() }}</option>
+               </template>
+               <template v-else>
+                 <option v-for="s in lpgStatuses" :key="s" :value="s">{{ s.toUpperCase() }}</option>
+               </template>
+             </select>
+          </div>
+
+          <button @click="exportAllData" class="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-all shadow-md shadow-emerald-200">
+             <Icon name="heroicons:arrow-down-tray" class="w-4 h-4" />
+             Export Raw Data
+          </button>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-           <!-- Chart Status RAB -->
-           <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-              <h3 class="text-lg font-bold text-slate-900 mb-6">Status Pengajuan RAB</h3>
-              <div v-if="reportStore.rabLpgData" class="space-y-6">
-                  <div v-for="item in rabStatusChart" :key="item.label" class="space-y-2">
-                      <div class="flex justify-between text-xs font-bold">
-                        <span class="text-slate-600 uppercase">{{ item.label }}</span>
-                        <span class="text-slate-900">{{ item.count }} ({{ item.pct }}%)</span>
-                      </div>
-                      <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
-                        <div class="h-full rounded-full transition-all duration-1000" :style="{ width: item.pct + '%', backgroundColor: item.color }"></div>
+        <div v-if="filters.reportCategory === 'overview'" class="space-y-8">
+            <!-- Summary Cards RAB & LPG -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div v-for="card in rabSummaryCards" :key="card.label" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <div class="flex items-center gap-3 mb-2">
+                  <div :class="`w-10 h-10 rounded-xl flex items-center justify-center ${card.bg}`">
+                    <Icon :name="card.icon" :class="`w-6 h-6 ${card.color}`" />
+                  </div>
+                  <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">{{ card.label }}</span>
+                </div>
+                <div class="text-3xl font-bold text-slate-900">{{ reportStore.loading ? '...' : card.value }}</div>
+                <div class="text-[10px] text-slate-400 mt-1 font-medium">{{ card.sub }}</div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+               <!-- Chart Status RAB -->
+               <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                  <h3 class="text-lg font-bold text-slate-900 mb-6">Status Pengajuan RAB</h3>
+                  <div v-if="reportStore.rabLpgData" class="space-y-6">
+                      <div v-for="item in rabStatusChart" :key="item.label" class="space-y-2">
+                          <div class="flex justify-between text-xs font-bold">
+                            <span class="text-slate-600 uppercase">{{ item.label }}</span>
+                            <span class="text-slate-900">{{ item.count }} ({{ item.pct }}%)</span>
+                          </div>
+                          <div class="h-2 bg-slate-100 rounded-full overflow-hidden">
+                            <div class="h-full rounded-full transition-all duration-1000" :style="{ width: item.pct + '%', backgroundColor: item.color }"></div>
+                          </div>
                       </div>
                   </div>
-              </div>
-              <div v-else class="h-40 flex items-center justify-center text-slate-400 italic">Memuat data...</div>
-           </div>
+                  <div v-else class="h-40 flex items-center justify-center text-slate-400 italic">Memuat data...</div>
+               </div>
 
-           <!-- Performance Table -->
-           <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-              <div class="flex items-center justify-between mb-6">
-                <h3 class="text-lg font-bold text-slate-900">Performa Unit (Revision Rate)</h3>
-                <button @click="exportUnitPerformance" class="text-xs font-bold text-emerald-600 flex items-center gap-1">
-                   <Icon name="heroicons:document-arrow-down" class="w-4 h-4" />
-                   Export CSV
-                </button>
-              </div>
-              <div class="overflow-x-auto">
-                <table class="w-full text-xs">
-                  <thead>
-                    <tr class="text-slate-500 border-b border-slate-100 text-left">
-                      <th class="pb-3 font-bold uppercase tracking-wider">Ormawa</th>
-                      <th class="pb-3 font-bold uppercase tracking-wider text-center">Total RAB</th>
-                      <th class="pb-3 font-bold uppercase tracking-wider text-center">Revisi</th>
-                      <th class="pb-3 font-bold uppercase tracking-wider text-center">Rate</th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-slate-50">
-                    <tr v-for="unit in reportStore.rabLpgData?.unitPerformance" :key="unit.ormawaId" class="hover:bg-slate-50 transition-colors">
-                      <td class="py-3 font-bold text-slate-700">{{ unit.ormawaName }}</td>
-                      <td class="py-3 text-center font-mono">{{ unit.totalRab }}</td>
-                      <td class="py-3 text-center text-rose-600 font-mono font-bold">{{ unit.revisions }}</td>
-                      <td class="py-3 text-center">
-                        <span :class="getRevisionRateClass(unit.revisions / (unit.totalRab || 1))" class="px-2 py-0.5 rounded-full font-bold">
-                          {{ (unit.revisions / (unit.totalRab || 1)).toFixed(1) }}x
+               <!-- Performance Table -->
+               <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                  <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-lg font-bold text-slate-900">Performa Unit (Revision Rate)</h3>
+                    <button @click="exportUnitPerformance" class="text-xs font-bold text-emerald-600 flex items-center gap-1">
+                       <Icon name="heroicons:document-arrow-down" class="w-4 h-4" />
+                       Export CSV
+                    </button>
+                  </div>
+                  <div class="overflow-x-auto">
+                    <table class="w-full text-xs">
+                      <thead>
+                        <tr class="text-slate-500 border-b border-slate-100 text-left">
+                          <th class="pb-3 font-bold uppercase tracking-wider">Ormawa</th>
+                          <th class="pb-3 font-bold uppercase tracking-wider text-center">Total RAB</th>
+                          <th class="pb-3 font-bold uppercase tracking-wider text-center">Revisi</th>
+                          <th class="pb-3 font-bold uppercase tracking-wider text-center">Rate</th>
+                        </tr>
+                      </thead>
+                      <tbody class="divide-y divide-slate-50">
+                        <tr v-for="unit in reportStore.rabLpgData?.unitPerformance" :key="unit.ormawaId" class="hover:bg-slate-50 transition-colors">
+                          <td class="py-3 font-bold text-slate-700">{{ unit.ormawaName }}</td>
+                          <td class="py-3 text-center font-mono">{{ unit.totalRab }}</td>
+                          <td class="py-3 text-center text-rose-600 font-mono font-bold">{{ unit.revisions }}</td>
+                          <td class="py-3 text-center">
+                            <span :class="getRevisionRateClass(unit.revisions / (unit.totalRab || 1))" class="px-2 py-0.5 rounded-full font-bold">
+                              {{ (unit.revisions / (unit.totalRab || 1)).toFixed(1) }}x
+                            </span>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+               </div>
+            </div>
+        </div>
+
+        <div v-else class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden animate-in slide-in-from-bottom-2 duration-300">
+           <div class="p-6 border-b border-slate-100">
+              <h3 class="text-lg font-bold text-slate-900">Detail Daftar {{ filters.reportCategory === 'rab_list' ? 'RAB' : 'LPG' }}</h3>
+           </div>
+           <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead>
+                  <tr class="bg-slate-50 text-slate-500 font-bold uppercase tracking-widest">
+                    <th class="px-6 py-4">Nomor</th>
+                    <th class="px-6 py-4">Kegiatan</th>
+                    <th class="px-6 py-4">Ormawa / Fakultas</th>
+                    <th class="px-6 py-4">Anggaran</th>
+                    <th class="px-6 py-4 text-center">Status</th>
+                    <th class="px-6 py-4">Tanggal</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                   <tr v-for="doc in reportStore.detailedDocuments" :key="doc.nomorPengajuan" class="hover:bg-slate-50">
+                      <td class="px-6 py-4 font-mono font-bold text-slate-900">{{ doc.nomorPengajuan }}</td>
+                      <td class="px-6 py-4 font-medium text-slate-700">{{ doc.judulKegiatan }}</td>
+                      <td class="px-6 py-4">
+                        <div class="font-bold text-slate-700">{{ doc.ormawa }}</div>
+                        <div class="text-[10px] text-slate-400 uppercase">{{ doc.fakultas }}</div>
+                      </td>
+                      <td class="px-6 py-4 font-mono">{{ formatRupiah(doc.totalAnggaran) }}</td>
+                      <td class="px-6 py-4 text-center">
+                        <span class="px-2 py-1 rounded-lg font-bold uppercase text-[10px]" :class="getStatusBadgeClass(filters.reportCategory === 'rab_list' ? doc.statusRab : doc.statusLpg)">
+                          {{ (filters.reportCategory === 'rab_list' ? doc.statusRab : (doc.statusLpg || 'BELUM UPLOAD')).replaceAll('_', ' ') }}
                         </span>
                       </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+                      <td class="px-6 py-4 text-slate-500">{{ formatDate(doc.tanggalPengajuan) }}</td>
+                   </tr>
+                   <tr v-if="reportStore.detailedDocuments.length === 0">
+                      <td colspan="6" class="px-6 py-12 text-center text-slate-400 italic">Tidak ada data dokumen ditemukan.</td>
+                   </tr>
+                </tbody>
+              </table>
            </div>
         </div>
       </div>
 
-      <div v-if="activeTab === 'financial'" class="space-y-8 animate-in fade-in duration-500">
+      <!-- Tab Content: Financial -->
+      <div v-if="activeTab === 'financial'" class="space-y-6 animate-in fade-in duration-500">
+        <!-- Financial Category Selector -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+          <div class="flex items-center gap-2">
+            <button
+              v-for="cat in financialCategories"
+              :key="cat.id"
+              @click="onFinancialCategoryChange(cat.id)"
+              class="px-4 py-2 text-xs font-bold rounded-xl transition-all border"
+              :class="filters.financialCategory === cat.id ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'"
+            >
+              Rekap {{ cat.name }}
+            </button>
+          </div>
+
+          <button @click="exportFinancial" class="text-xs font-bold text-emerald-600 flex items-center gap-1 bg-emerald-50 px-4 py-2 rounded-xl border border-emerald-100 hover:bg-emerald-100 transition-all">
+             <Icon name="heroicons:document-arrow-down" class="w-4 h-4" />
+             Download Laporan (Excel/CSV)
+          </button>
+        </div>
+
         <!-- Summary Financial -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div v-for="card in financialSummaryCards" :key="card.label" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
@@ -190,13 +282,9 @@
         </div>
 
         <!-- Ormawa Breakdown Financial -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div v-if="filters.financialCategory === 'ormawa'" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
           <div class="p-6 border-b border-slate-100 flex items-center justify-between">
-            <h3 class="text-lg font-bold text-slate-900">Realisasi Anggaran Per Unit</h3>
-            <button @click="exportFinancial" class="text-xs font-bold text-emerald-600 flex items-center gap-1">
-               <Icon name="heroicons:document-arrow-down" class="w-4 h-4" />
-               Download Laporan
-            </button>
+            <h3 class="text-lg font-bold text-slate-900">Realisasi Anggaran Per Unit (Ormawa)</h3>
           </div>
           <div class="overflow-x-auto">
              <table class="w-full text-left">
@@ -232,7 +320,7 @@
         </div>
 
         <!-- Fakultas Breakdown Financial -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div v-else class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
           <div class="p-6 border-b border-slate-100 flex items-center justify-between">
             <h3 class="text-lg font-bold text-slate-900">Rekap Per Fakultas</h3>
           </div>
@@ -284,6 +372,20 @@ const tabs = [
   { id: 'rabLpg', name: 'Monitoring RAB & LPG' },
   { id: 'financial', name: 'Laporan Keuangan' }
 ];
+
+const reportCategories = [
+  { id: 'overview', name: 'Ringkasan & Performa' },
+  { id: 'rab_list', name: 'Daftar RAB' },
+  { id: 'lpg_list', name: 'Daftar LPG' }
+];
+
+const financialCategories = [
+  { id: 'ormawa', name: 'Ormawa' },
+  { id: 'fakultas', name: 'Fakultas' }
+];
+
+const rabStatuses = ["waiting_spi", "disetujui", "revisi_spi", "ditolak_spi", "waiting_ppk", "waiting_kaprodi"];
+const lpgStatuses = ["WAITING_SPI", "DISETUJUI", "REVISI_SPI"];
 
 const filteredProdi = computed(() => {
   if (!filters.value.fakultasId) return prodiStore.prodi;
@@ -362,8 +464,28 @@ const onFakultasChange = () => {
 };
 
 const onFilterChange = () => {
-  if (activeTab.value === 'rabLpg') reportStore.fetchRabLpgReport();
-  else reportStore.fetchFinancialReport();
+  if (activeTab.value === 'rabLpg') {
+    if (filters.value.reportCategory === 'overview') reportStore.fetchRabLpgReport();
+    else reportStore.fetchDetailedDocuments();
+  } else {
+    reportStore.fetchFinancialReport();
+  }
+};
+
+const onTabChange = (tabId: string) => {
+  activeTab.value = tabId;
+  onFilterChange();
+};
+
+const onReportCategoryChange = (catId: string) => {
+  filters.value.reportCategory = catId;
+  filters.value.status = "all";
+  onFilterChange();
+};
+
+const onFinancialCategoryChange = (catId: string) => {
+  filters.value.financialCategory = catId;
+  onFilterChange();
 };
 
 const resetAndFetch = () => {
@@ -377,6 +499,22 @@ const formatRupiah = (amount: number | string) => {
     currency: 'IDR',
     minimumFractionDigits: 0
   }).format(Number(amount));
+};
+
+const formatDate = (dateString: string | null) => {
+  if (!dateString) return '-';
+  return new Date(dateString).toLocaleDateString('id-ID', {
+    day: 'numeric', month: 'short', year: 'numeric'
+  });
+};
+
+const getStatusBadgeClass = (status: string | null) => {
+  if (!status) return 'bg-slate-100 text-slate-500';
+  if (status.includes('disetujui') || status === 'DISETUJUI' || status === 'selesai_spi') return 'bg-emerald-50 text-emerald-700';
+  if (status.includes('waiting') || status === 'WAITING_SPI') return 'bg-amber-50 text-amber-700';
+  if (status.includes('revisi') || status === 'REVISI_SPI') return 'bg-blue-50 text-blue-700';
+  if (status.includes('ditolak')) return 'bg-rose-50 text-rose-700';
+  return 'bg-slate-50 text-slate-700';
 };
 
 const getRevisionRateClass = (rate: number) => {
@@ -412,14 +550,16 @@ const exportUnitPerformance = () => {
 
 const exportFinancial = () => {
   if (!reportStore.financialData) return;
-  const data = reportStore.financialData.ormawaBreakdown.map(r => ({
-    'Nama Ormawa': r.ormawaName,
+  const data = (filters.value.financialCategory === 'ormawa' 
+    ? reportStore.financialData.ormawaBreakdown 
+    : reportStore.financialData.fakultasBreakdown).map((r: any) => ({
+    'Nama': r.ormawaName || r.fakultasName,
     'Pagu': r.quota,
     'Usulan (RAB)': r.proposed || 0,
     'Realisasi (Cair)': r.realized || 0,
     'Sisa Pagu': r.quota - (r.realized || 0)
   }));
-  downloadCsv(data, 'laporan_keuangan_ormawa_spi.csv');
+  downloadCsv(data, `laporan_keuangan_${filters.value.financialCategory}_spi.csv`);
 };
 
 const downloadCsv = (data: any[], filename: string) => {
@@ -444,11 +584,6 @@ onMounted(async () => {
     reportStore.fetchRabLpgReport(),
     reportStore.fetchFinancialReport()
   ]);
-});
-
-watch(activeTab, (newTab) => {
-  if (newTab === 'rabLpg' && !reportStore.rabLpgData) reportStore.fetchRabLpgReport();
-  if (newTab === 'financial' && !reportStore.financialData) reportStore.fetchFinancialReport();
 });
 </script>
 

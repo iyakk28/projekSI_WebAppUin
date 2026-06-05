@@ -1,7 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { cwd } from "node:process";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import type { useDrizzle } from "~~/server/db";
 import {
   dokumentasiKegiatanTable,
@@ -10,6 +10,7 @@ import {
   tagihanPencairanTable,
   usersTable,
 } from "~~/server/db/schema";
+import { showDekripsi } from "./enkripsiData";
 
 export const GROUP_ID_OFFSET = 1_000_000;
 
@@ -64,10 +65,6 @@ export const groupIdToKegiatanId = (id: number) => Math.abs(id) - GROUP_ID_OFFSE
 export const routeIdToDokumentasiId = (id: number) =>
   id < 0 && !isGroupId(id) ? Math.abs(id) : null;
 
-// ✅ FIX: Decode URL-safe ID kembali ke format asli
-// "v123" → -123 (virtual ID)
-// "g123" → -1000123 (group ID)
-// "5" → 5 (positif ID)
 export const decodeUrlId = (urlId: any): number => {
   const str = String(urlId || "");
 
@@ -85,7 +82,6 @@ export const decodeUrlId = (urlId: any): number => {
   return Number.isNaN(num) ? 0 : num;
 };
 
-/** Format datetime yang diterima kolom MySQL timestamp (bukan ISO dengan Z). */
 export const mysqlTimestamp = () =>
   new Date().toISOString().slice(0, 19).replace("T", " ");
 
@@ -99,7 +95,6 @@ export const toPublicUploadUrl = (value?: string | null) => {
   if (uploadsIdx >= 0) {
     normalized = normalized.slice(uploadsIdx);
   } else if (!normalized.includes("/")) {
-    // Hanya nama file — path default upload jasa/barang
     normalized = `uploads/dokumentasi/jasa/${normalized}`;
   } else if (!lower.startsWith("uploads/")) {
     normalized = `uploads/${normalized.replace(/^\/+/, "")}`;
@@ -125,29 +120,10 @@ export const buildDocKey = (row: {
     normalizeText(row.rekeningPenerima),
   ].join("|");
 
-type DokumentasiRow = {
-  dokumentasiId: number;
-  kegiatanId: number;
-  tipeDokumen: string;
-  deskripsi: string | null;
-  createdAt: string;
-  namaToko: string | null;
-  nomorRekeningToko: string | null;
-  namaPemilikRekeningToko: string | null;
-  fotoBarangUrl: string | null;
-  strukBelanjaUrl: string | null;
-  namaPenyediaJasa: string | null;
-  nomorRekeningJasa: string | null;
-  namaPemilikRekeningJasa: string | null;
-  skUrl: string | null;
-  spmtUrl: string | null;
-  amprahUrl: string | null;
-  npwpUrl: string | null;
-  ktpUrl: string | null;
-};
+export const buildDokumenUploadFromTagihan = (row: any) => {
+  const isBarang = row.tipeTagihan === "BARANG";
+  const rekeningPenerima = showDekripsi(row.rekeningPenerima);
 
-export const buildDokumenUpload = (row: DokumentasiRow) => {
-  const isBarang = row.tipeDokumen === "BARANG";
   if (isBarang) {
     return [
       {
@@ -159,263 +135,73 @@ export const buildDokumenUpload = (row: DokumentasiRow) => {
       {
         id: "struk_belanja",
         nama: "Foto Bon / Struk",
-        url: toPublicUploadUrl(row.strukBelanjaUrl),
-        uploaded: Boolean(row.strukBelanjaUrl),
+        url: toPublicUploadUrl(row.strukFileUrl),
+        uploaded: Boolean(row.strukFileUrl),
       },
       {
         id: "nama_toko",
         nama: "Nama Toko",
         url: null,
-        uploaded: Boolean(row.namaToko),
+        uploaded: Boolean(row.tokoNama),
       },
       {
         id: "rekening_toko",
         nama: "No. Rekening Toko",
         url: null,
-        uploaded: Boolean(row.nomorRekeningToko),
-      },
-      {
-        id: "pemilik_rekening",
-        nama: "Nama Pemilik Rekening",
-        url: null,
-        uploaded: Boolean(row.namaPemilikRekeningToko),
+        uploaded: Boolean(rekeningPenerima),
       },
     ];
   }
 
   return [
-    {
-      id: "sk",
-      nama: "SK (Surat Keputusan)",
-      url: toPublicUploadUrl(row.skUrl),
-      uploaded: Boolean(row.skUrl),
-    },
-    {
-      id: "spmt",
-      nama: "SPMT",
-      url: toPublicUploadUrl(row.spmtUrl),
-      uploaded: Boolean(row.spmtUrl),
-    },
-    {
-      id: "amprah",
-      nama: "Amprah",
-      url: toPublicUploadUrl(row.amprahUrl),
-      uploaded: Boolean(row.amprahUrl),
-    },
-    {
-      id: "npwp",
-      nama: "NPWP",
-      url: toPublicUploadUrl(row.npwpUrl),
-      uploaded: Boolean(row.npwpUrl),
-    },
-    {
-      id: "ktp",
-      nama: "Foto KTP",
-      url: toPublicUploadUrl(row.ktpUrl),
-      uploaded: Boolean(row.ktpUrl),
-    },
-    {
-      id: "rekening_penerima",
-      nama: "No. Rekening Penerima",
-      url: null,
-      uploaded: Boolean(row.nomorRekeningJasa),
-    },
-    {
-      id: "pemilik_rekening",
-      nama: "Nama Pemilik Rekening",
-      url: null,
-      uploaded: Boolean(row.namaPemilikRekeningJasa),
-    },
+    { id: "sk", nama: "SK", url: toPublicUploadUrl(row.skFileUrl), uploaded: Boolean(row.skFileUrl) },
+    { id: "spmt", nama: "SPMT", url: toPublicUploadUrl(row.spmtFileUrl), uploaded: Boolean(row.spmtFileUrl) },
+    { id: "amprah", nama: "Amprah", url: toPublicUploadUrl(row.amprahFileUrl), uploaded: Boolean(row.amprahFileUrl) },
+    { id: "npwp", nama: "NPWP", url: toPublicUploadUrl(row.npwpFileUrl), uploaded: Boolean(row.npwpFileUrl) },
+    { id: "ktp", nama: "Foto KTP", url: toPublicUploadUrl(row.ktpFileUrl), uploaded: Boolean(row.ktpFileUrl) },
+    { id: "rekening_penerima", nama: "No. Rekening Penerima", url: null, uploaded: Boolean(rekeningPenerima) },
   ];
 };
 
 export const isAllDocsUploaded = (docs: { uploaded: boolean }[]) =>
   docs.length > 0 && docs.every((doc) => doc.uploaded);
 
-export const getPenerimaFromDokumentasi = (row: DokumentasiRow) => {
-  const isBarang = row.tipeDokumen === "BARANG";
-  const namaPenerima = isBarang
-    ? normalizeText(row.namaPemilikRekeningToko || row.namaToko)
-    : normalizeText(row.namaPemilikRekeningJasa || row.namaPenyediaJasa);
-  const rekeningPenerima = isBarang
-    ? normalizeText(row.nomorRekeningToko)
-    : normalizeText(row.nomorRekeningJasa);
-
-  return {
-    isBarang,
-    namaPenerima,
-    rekeningPenerima,
-    detailPenerima: isBarang
-      ? {
-          namaItem: row.namaToko,
-          namaToko: row.namaToko,
-          nomorRekening: row.nomorRekeningToko,
-          namaPemilikRekening: row.namaPemilikRekeningToko,
-        }
-      : {
-          namaItem: row.namaPenyediaJasa,
-          namaPenyediaJasa: row.namaPenyediaJasa,
-          nomorRekening: row.nomorRekeningJasa,
-          namaPemilikRekening: row.namaPemilikRekeningJasa,
-        },
-  };
-};
-
-export type TagihanLookup = {
-  tagihanId: number;
-  statusTagihan: string | null;
-  nominal: string | null;
-  spbFileUrl: string | null;
-  kwitansiFileUrl: string | null;
-};
-
-export async function findTagihanForDokumentasi(
-  db: ReturnType<typeof useDrizzle>,
-  params: {
-    kegiatanId: number;
-    tipeTagihan: string;
-    namaPenerima: string;
-    rekeningPenerima: string;
-  },
-): Promise<TagihanLookup | null> {
-  const rows = await db
-    .select({
-      tagihanId: tagihanPencairanTable.id,
-      statusTagihan: tagihanPencairanTable.statusTagihan,
-      nominal: tagihanPencairanTable.nominal,
-      namaPenerima: tagihanPencairanTable.namaPenerima,
-      rekeningPenerima: tagihanPencairanTable.rekeningPenerima,
-      kegiatanId: tagihanPencairanTable.kegiatanId,
-      tipeTagihan: tagihanPencairanTable.tipeTagihan,
-    })
-    .from(tagihanPencairanTable)
-    .where(eq(tagihanPencairanTable.kegiatanId, params.kegiatanId));
-
-  const docKey = buildDocKey({
-    kegiatanId: params.kegiatanId,
-    tipeTagihan: params.tipeTagihan,
-    namaPenerima: params.namaPenerima,
-    rekeningPenerima: params.rekeningPenerima,
-  });
-
-  const matched = rows.find(
-    (item) =>
-      buildDocKey({
-        kegiatanId: item.kegiatanId,
-        tipeTagihan: item.tipeTagihan,
-        namaPenerima: item.namaPenerima,
-        rekeningPenerima: item.rekeningPenerima,
-      }) === docKey,
-  );
-
-  if (!matched) return null;
-
-  const meta = await readPencairanMeta(matched.tagihanId);
-  const spbFileUrl = meta.spbFileUrl ?? null;
-  const kwitansiFileUrl = meta.kwitansiFileUrl ?? null;
-
-  return {
-    tagihanId: matched.tagihanId,
-    statusTagihan: matched.statusTagihan,
-    nominal: matched.nominal,
-    spbFileUrl,
-    kwitansiFileUrl,
-  };
-}
-
-export async function ensureTagihanForDokumentasi(
-  db: ReturnType<typeof useDrizzle>,
-  dokumentasiId: number,
-  ppkUserId: number,
-  fakultasId: number,
-) {
-  const [row] = await db
-    .select({
-      dokumentasiId: dokumentasiKegiatanTable.id,
-      kegiatanId: dokumentasiKegiatanTable.kegiatanId,
-      tipeDokumen: dokumentasiKegiatanTable.tipeDokumen,
-      deskripsi: dokumentasiKegiatanTable.deskripsi,
-      createdAt: dokumentasiKegiatanTable.createdAt,
-      namaToko: dokumentasiKegiatanTable.namaToko,
-      nomorRekeningToko: dokumentasiKegiatanTable.nomorRekeningToko,
-      namaPemilikRekeningToko: dokumentasiKegiatanTable.namaPemilikRekeningToko,
-      fotoBarangUrl: dokumentasiKegiatanTable.fotoBarangUrl,
-      strukBelanjaUrl: dokumentasiKegiatanTable.strukBelanjaUrl,
-      namaPenyediaJasa: dokumentasiKegiatanTable.namaPenyediaJasa,
-      nomorRekeningJasa: dokumentasiKegiatanTable.nomorRekeningJasa,
-      namaPemilikRekeningJasa: dokumentasiKegiatanTable.namaPemilikRekeningJasa,
-      skUrl: dokumentasiKegiatanTable.skUrl,
-      spmtUrl: dokumentasiKegiatanTable.spmtUrl,
-      amprahUrl: dokumentasiKegiatanTable.amprahUrl,
-      npwpUrl: dokumentasiKegiatanTable.npwpUrl,
-      ktpUrl: dokumentasiKegiatanTable.ktpUrl,
-      pengajuFakultasId: usersTable.fakultasId,
-    })
-    .from(dokumentasiKegiatanTable)
-    .innerJoin(usersTable, eq(dokumentasiKegiatanTable.uploadedBy, usersTable.id))
-    .where(eq(dokumentasiKegiatanTable.id, dokumentasiId));
-
-  if (!row || row.pengajuFakultasId !== fakultasId) {
-    return null;
-  }
-
-  const penerima = getPenerimaFromDokumentasi(row);
-
-  const existing = await findTagihanForDokumentasi(db, {
-    kegiatanId: row.kegiatanId,
-    tipeTagihan: row.tipeDokumen,
-    namaPenerima: penerima.namaPenerima,
-    rekeningPenerima: penerima.rekeningPenerima,
-  });
-
-  if (existing) {
-    await writePencairanMeta(existing.tagihanId, { dokumentasiId });
-    return existing.tagihanId;
-  }
-
-  const [kegiatan] = await db
-    .select({ pengajuanRabId: kegiatanTable.pengajuanRabId })
-    .from(kegiatanTable)
-    .where(eq(kegiatanTable.id, row.kegiatanId));
-
-  const [pengajuan] = kegiatan
-    ? await db
-        .select({ totalAnggaran: pengajuanRabTable.totalAnggaran })
-        .from(pengajuanRabTable)
-        .where(eq(pengajuanRabTable.id, kegiatan.pengajuanRabId))
-        .limit(1)
-    : [];
-
-  const insertResult = await db.execute(sql`
-    INSERT INTO tagihan_pencairan (
-      kegiatan_id, tipe_tagihan, nama_penerima, rekening_penerima,
-      nominal, toko_nama, struk_file_url, sk_file_url, status_tagihan, created_by
-    ) VALUES (
-      ${row.kegiatanId}, ${row.tipeDokumen},
-      ${penerima.namaPenerima || "Penerima"}, ${penerima.rekeningPenerima || "-"},
-      ${pengajuan?.totalAnggaran ?? "0"}, ${row.namaToko ?? null},
-      ${row.strukBelanjaUrl ?? null}, ${row.skUrl ?? null},
-      ${"WAITING_PEMBAYARAN"}, ${ppkUserId}
-    )
-  `);
-  const header = insertResult as unknown as { insertId?: number };
-  const tagihanId = Number(header.insertId ?? 0);
-  if (tagihanId) {
-    await writePencairanMeta(tagihanId, { dokumentasiId });
-  }
-  return tagihanId;
-}
-
-export async function resolveTagihanId(
+export async function resolveTagihanIds(
   db: ReturnType<typeof useDrizzle>,
   routeId: number,
-  ppkUserId: number,
-  fakultasId: number,
-) {
-  if (routeId > 0) return routeId;
+  fakultasId: string,
+): Promise<number[]> {
+  if (routeId > 0) return [routeId];
 
+  if (isGroupId(routeId)) {
+    const kegiatanId = groupIdToKegiatanId(routeId);
+    const rows = await db
+      .select({ id: tagihanPencairanTable.id })
+      .from(tagihanPencairanTable)
+      .where(
+        and(
+          eq(tagihanPencairanTable.kegiatanId, kegiatanId),
+          eq(tagihanPencairanTable.fakultasId, fakultasId)
+        )
+      );
+    return rows.map(r => r.id);
+  }
+
+  // Virtual ID case (legacy or dokumentasi fallback)
   const dokumentasiId = routeIdToDokumentasiId(routeId);
-  if (!dokumentasiId) return null;
+  if (!dokumentasiId) return [];
 
-  return ensureTagihanForDokumentasi(db, dokumentasiId, ppkUserId, fakultasId);
+  // Cari tagihan yang berkaitan dengan dokumentasi ini (lewat meta)
+  // Ini mungkin lambat tapi ini fallback
+  const allTagihans = await db
+    .select({ id: tagihanPencairanTable.id })
+    .from(tagihanPencairanTable)
+    .where(eq(tagihanPencairanTable.fakultasId, fakultasId));
+  
+  for (const t of allTagihans) {
+    const meta = await readPencairanMeta(t.id);
+    if (meta.dokumentasiId === dokumentasiId) return [t.id];
+  }
+
+  return [];
 }

@@ -395,7 +395,6 @@
       (item) => item.kegiatan.statusKegiatan === "SELESAI",
     ),
   );
-
   const showDetailRab = (item: number) => {
     return navigateTo(`detailRab/${item}`);
   };
@@ -416,13 +415,11 @@
     const el = document.getElementById("all-activities");
     if (el) el.scrollIntoView({ behavior: "smooth" });
   };
-
   const navToUpload = (kegiatanId: number) => {
     return navigateTo(
       `/dashboard/ormawa/detailRab/upload-dokumentasi/${kegiatanId}`,
     );
   };
-
   const formatCurrency = (val: string | number) => {
     if (!val) return "Rp 0";
     return new Intl.NumberFormat("id-ID", {
@@ -431,7 +428,6 @@
       minimumFractionDigits: 0,
     }).format(Number(val));
   };
-
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return "-";
     return new Date(dateStr).toLocaleDateString("id-ID", {
@@ -440,12 +436,10 @@
       year: "numeric",
     });
   };
-
   const formatStatus = (status: string) => {
     if (!status) return "-";
     return status.replace(/_/g, " ");
   };
-
   const getStatusClass = (status: string) => {
     switch (status) {
       case "SEDANG_DILAKSANAKAN":
@@ -459,7 +453,6 @@
     }
   };
 </script>
-
 <style scoped>
   /* Custom scrollbar for better UX */
   ::-webkit-scrollbar {

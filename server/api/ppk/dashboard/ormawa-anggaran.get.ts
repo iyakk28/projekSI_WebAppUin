@@ -18,7 +18,11 @@ export default defineEventHandler(async (event) => {
     if (!fakultasId) {
       return {
         success: true,
-        summary: { totalAnggaranKeseluruhan: 0, totalTerpakaiKeseluruhan: 0, totalSisaKeseluruhan: 0 },
+        summary: {
+          totalAnggaranKeseluruhan: 0,
+          totalTerpakaiKeseluruhan: 0,
+          totalSisaKeseluruhan: 0,
+        },
         data: [],
       };
     }
@@ -41,7 +45,11 @@ export default defineEventHandler(async (event) => {
     if (prodiIds.length === 0) {
       return {
         success: true,
-        summary: { totalAnggaranKeseluruhan: 0, totalTerpakaiKeseluruhan: 0, totalSisaKeseluruhan: 0 },
+        summary: {
+          totalAnggaranKeseluruhan: 0,
+          totalTerpakaiKeseluruhan: 0,
+          totalSisaKeseluruhan: 0,
+        },
         data: [],
       };
     }
@@ -97,10 +105,12 @@ export default defineEventHandler(async (event) => {
       .orderBy(ormawaTable.nama);
 
     const totalAnggaranKeseluruhan = ormawaList.reduce(
-      (sum, o) => sum + Number(o.totalAnggaranOrmawa), 0,
+      (sum, o) => sum + Number(o.totalAnggaranOrmawa),
+      0,
     );
     const totalTerpakaiKeseluruhan = ormawaList.reduce(
-      (sum, o) => sum + Number(o.totalTerpakai), 0,
+      (sum, o) => sum + Number(o.totalTerpakai),
+      0,
     );
 
     return {
@@ -108,7 +118,8 @@ export default defineEventHandler(async (event) => {
       summary: {
         totalAnggaranKeseluruhan,
         totalTerpakaiKeseluruhan,
-        totalSisaKeseluruhan: totalAnggaranKeseluruhan - totalTerpakaiKeseluruhan,
+        totalSisaKeseluruhan:
+          totalAnggaranKeseluruhan - totalTerpakaiKeseluruhan,
       },
       data: [
         {
