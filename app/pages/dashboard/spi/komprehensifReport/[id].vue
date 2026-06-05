@@ -1,506 +1,594 @@
 <template>
-  <div class="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8">
-    <div
-      v-if="reportStore.loading && !reportStore.detail"
-      class="flex flex-col items-center justify-center py-32"
+  <div class="min-h-screen bg-slate-50 font-sans">
+    <!-- Header -->
+    <header
+      class="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 sm:px-6 py-4"
     >
-      <div
-        class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-4"
-      ></div>
-      <p class="text-slate-500 text-sm font-medium">Memuat detail laporan...</p>
-    </div>
-
-    <div v-else-if="reportStore.detail" class="max-w-[95rem] mx-auto space-y-8">
-      <!-- Formal Header -->
-      <div
-        class="flex items-center justify-between bg-white p-6 border border-slate-200 rounded-2xl shadow-sm"
-      >
-        <div class="flex items-center gap-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
           <NuxtLink
             to="/dashboard/spi/komprehensifReport"
-            class="p-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-500 hover:text-slate-900 transition-all"
+            class="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 transition font-medium"
           >
-            <Icon name="heroicons:arrow-left" class="w-5 h-5" />
+            <Icon name="heroicons:arrow-left" class="w-4 h-4" /> Kembali
           </NuxtLink>
-          <div>
-            <h1 class="text-2xl font-bold text-slate-900 leading-tight">
-              Detail Komprehensif Kegiatan
-            </h1>
-            <p
-              class="text-sm text-slate-500 font-medium mt-0.5 tracking-wide uppercase"
-            >
-              {{ reportStore.detail.rab.nomorPengajuan }} •
-              {{ reportStore.detail.rab.judulKegiatan }}
-            </p>
-          </div>
         </div>
         <div class="flex items-center gap-3">
-          <span
-            class="px-4 py-1.5 rounded-full text-xs font-bold border uppercase tracking-widest shadow-sm"
-            :class="getStatusBadgeClass(reportStore.detail.rab.status)"
+          <span class="text-xs text-slate-400 font-mono">{{
+            reportStore.detail?.rab?.nomorPengajuan
+          }}</span>
+          <div
+            class="bg-[#d1a82a] text-white text-xs font-bold px-4 py-2 rounded-full"
           >
-            {{ formatStatus(reportStore.detail.rab.status) }}
-          </span>
+            {{ todayStr }}
+          </div>
         </div>
       </div>
+    </header>
 
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        <!-- LEFT COLUMN: Main Info & PDF Viewer -->
-        <div class="lg:col-span-8 space-y-8">
-          <!-- Document Viewer Section -->
+    <!-- Loading -->
+    <div
+      v-if="reportStore.loading && !reportStore.detail"
+      class="flex items-center justify-center py-32"
+    >
+      <div class="flex flex-col items-center gap-3 text-slate-400">
+        <div
+          class="w-8 h-8 border-2 border-slate-200 border-t-[#3b5988] rounded-full animate-spin"
+        ></div>
+        <p class="text-sm">Memuat detail laporan...</p>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <main
+      v-else-if="reportStore.detail"
+      class="max-w-6xl mx-auto px-4 sm:px-6 py-8 grid grid-cols-1 lg:grid-cols-3 gap-6"
+    >
+      <!-- LEFT COLUMN: Main Info & PDF Viewer -->
+      <div class="lg:col-span-2 space-y-6">
+        <!-- Info Kegiatan -->
+        <div
+          class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden"
+        >
           <div
-            class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm h-[850px] flex flex-col transition-all"
+            class="flex items-center gap-3 px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-[#3b5988]/5 to-transparent"
           >
             <div
-              class="p-4 border-b border-slate-100 flex flex-col sm:flex-row items-center justify-between bg-slate-50/50 gap-4"
+              class="w-9 h-9 rounded-xl bg-[#3b5988] text-white flex items-center justify-center"
             >
-              <div class="flex items-center gap-3">
-                <Icon
-                  name="heroicons:document-duplicate"
-                  class="w-6 h-6 text-blue-600"
-                />
-                <h3
-                  class="text-sm font-bold text-slate-900 uppercase tracking-wider"
-                >
-                  Arsip Dokumen Utama
-                </h3>
-              </div>
-              <div
-                class="flex items-center bg-white p-1 rounded-xl border border-slate-200 shadow-inner"
-              >
-                <button
-                  v-for="tab in ['rab', 'tor', 'lpg']"
-                  :key="tab"
-                  @click="activeDocTab = tab as any"
-                  :class="[
-                    'px-6 py-1.5 rounded-lg text-xs font-bold transition-all uppercase tracking-widest',
-                    activeDocTab === tab
-                      ? 'bg-blue-600 text-white shadow-md'
-                      : 'text-slate-500 hover:bg-slate-50',
-                  ]"
-                >
-                  {{ tab }}
-                </button>
-              </div>
+              <Icon name="heroicons:document-text" class="w-5 h-5" />
             </div>
-
-            <div class="flex-1 bg-slate-100 relative">
-              <div
-                v-if="docLoading"
-                class="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm z-10"
-              >
-                <div
-                  class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"
-                ></div>
-              </div>
-
-              <div
-                v-if="!currentDocUrl && !docLoading"
-                class="absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-white"
-              >
-                <div
-                  class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6"
-                >
-                  <Icon
-                    name="heroicons:document-minus"
-                    class="w-10 h-10 text-slate-300"
-                  />
-                </div>
-                <p class="text-slate-900 font-bold text-lg">
-                  Dokumen Tidak Tersedia
-                </p>
-                <p class="text-slate-500 text-sm max-w-xs mt-2">
-                  Belum ada file yang diunggah untuk kategori ini pada kegiatan
-                  ini.
-                </p>
-              </div>
-
-              <iframe
-                v-else-if="currentDocUrl"
-                :src="currentDocUrl"
-                class="w-full h-full border-none shadow-inner"
-              ></iframe>
+            <div>
+              <h2 class="font-bold text-slate-800 text-lg">
+                {{ reportStore.detail.rab?.judulKegiatan }}
+              </h2>
+              <p class="text-xs text-slate-500">
+                {{ reportStore.detail.rab?.ormawa?.nama }} ·
+                {{ reportStore.detail.rab?.ormawa?.kode }}
+              </p>
             </div>
+            <div class="ml-auto">
+              <span
+                class="inline-flex text-xs font-semibold px-3 py-1 rounded-full"
+                :class="statusClass(reportStore.detail.rab?.status)"
+              >
+                {{ formatStatus(reportStore.detail.rab?.status) }}
+              </span>
+            </div>
+          </div>
+          <div class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div>
+              <p class="text-xs font-semibold uppercase text-slate-400 mb-1">
+                Diajukan Oleh
+              </p>
+              <p class="font-medium text-slate-800">
+                {{ reportStore.detail.rab?.pengaju?.nama || "-" }}
+              </p>
+              <p class="text-xs text-slate-500">
+                {{ reportStore.detail.rab?.pengaju?.email || "-" }}
+              </p>
+            </div>
+            <div>
+              <p class="text-xs font-semibold uppercase text-slate-400 mb-1">
+                Organisasi
+              </p>
+              <p class="font-medium text-slate-800">
+                {{ reportStore.detail.rab?.ormawa?.nama || "-" }}
+              </p>
+            </div>
+            <div>
+              <p class="text-xs font-semibold uppercase text-slate-400 mb-1">
+                Tanggal Kegiatan
+              </p>
+              <p class="font-medium text-slate-800">
+                {{ formatDate(reportStore.detail.rab?.tanggalMulai) }}
+                <span
+                  v-if="
+                    reportStore.detail.rab?.tanggalSelesai &&
+                    reportStore.detail.rab?.tanggalSelesai !==
+                      reportStore.detail.rab?.tanggalMulai
+                  "
+                >
+                  — {{ formatDate(reportStore.detail.rab?.tanggalSelesai) }}
+                </span>
+              </p>
+            </div>
+            <div>
+              <p class="text-xs font-semibold uppercase text-slate-400 mb-1">
+                Total Anggaran
+              </p>
+              <p class="font-bold text-[#3b5988] text-lg">
+                {{ formatRupiah(reportStore.detail.rab?.totalAnggaran) }}
+              </p>
+            </div>
+            <div class="sm:col-span-2">
+              <p class="text-xs font-semibold uppercase text-slate-400 mb-1">
+                Status Realisasi
+              </p>
+              <p class="text-slate-700 text-sm leading-relaxed">
+                {{
+                  reportStore.detail.kegiatan?.statusKegiatan ||
+                  "TAHAP PERENCANAAN"
+                }}
+              </p>
+            </div>
+          </div>
+        </div>
 
-            <div
-              v-if="currentDocUrl"
-              class="p-3 border-t border-slate-100 bg-white flex justify-center"
+        <!-- Document Viewer Section -->
+        <div
+          class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden"
+        >
+          <div class="p-4 sm:p-6 border-b border-slate-100">
+            <h3
+              class="text-lg font-bold text-slate-900 flex items-center gap-2 mb-4"
             >
+              <Icon
+                name="heroicons:document-duplicate"
+                class="w-5 h-5 text-[#d1a82a]"
+              />
+              Arsip Dokumen Utama
+            </h3>
+
+            <div class="flex gap-2 p-1 bg-slate-100 rounded-xl inline-flex">
               <button
-                @click="openFullPreview"
-                class="flex items-center gap-2 px-6 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition-all shadow-lg"
+                v-for="tab in ['rab', 'tor', 'lpg']"
+                :key="tab"
+                @click="activeDocTab = tab as any"
+                :class="[
+                  'px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 capitalize',
+                  activeDocTab === tab
+                    ? 'bg-white text-[#3b5988] shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900',
+                ]"
               >
-                <Icon name="heroicons:arrows-pointing-out" class="w-4 h-4" />
-                Buka di Tab Baru
+                <Icon
+                  :name="
+                    tab === 'rab'
+                      ? 'heroicons:calculator'
+                      : tab === 'tor'
+                        ? 'heroicons:document-duplicate'
+                        : 'heroicons:clipboard-document-list'
+                  "
+                  class="w-4 h-4"
+                />
+                {{ tab.toUpperCase() }}
               </button>
             </div>
           </div>
 
-          <!-- Documentation Section -->
-          <div class="space-y-6">
-            <div class="flex items-center justify-between px-1">
-              <div class="flex items-center gap-3">
+          <div class="p-6">
+            <div
+              v-if="docLoading"
+              class="flex items-center justify-center py-32"
+            >
+              <div class="flex flex-col items-center gap-3 text-slate-400">
                 <div
-                  class="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center"
-                >
-                  <Icon
-                    name="heroicons:camera"
-                    class="w-6 h-6 text-emerald-600"
-                  />
-                </div>
-                <div>
-                  <h3 class="text-lg font-bold text-slate-900">
-                    Dokumentasi & Bukti Transaksi
-                  </h3>
-                  <p class="text-sm text-slate-500">
-                    Seluruh berkas yang diunggah selama pelaksanaan kegiatan.
-                  </p>
-                </div>
+                  class="w-8 h-8 border-2 border-slate-200 border-t-[#3b5988] rounded-full animate-spin"
+                ></div>
+                <p class="text-sm">Memuat dokumen...</p>
               </div>
             </div>
 
             <div
-              class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm"
+              v-else-if="!currentDocUrl"
+              class="aspect-[3/4] bg-slate-100 rounded-xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center p-8 text-center"
             >
-              <table class="w-full text-left">
-                <thead class="bg-slate-50 border-b border-slate-200">
-                  <tr>
-                    <th
-                      class="px-6 py-4 text-xs font-bold text-slate-500 uppercase"
-                    >
-                      Dokumen / Detail
-                    </th>
-                    <th
-                      class="px-6 py-4 text-xs font-bold text-slate-500 uppercase"
-                    >
-                      Tipe
-                    </th>
-                    <th
-                      class="px-6 py-4 text-xs font-bold text-slate-500 uppercase text-center"
-                    >
-                      Status
-                    </th>
-                    <th
-                      class="px-6 py-4 text-xs font-bold text-slate-500 uppercase text-right"
-                    >
-                      Aksi
-                    </th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-                  <tr
-                    v-for="doc in reportStore.detail.documentationList"
-                    :key="doc.realId"
-                    class="hover:bg-slate-50 transition-colors"
-                  >
-                    <td class="px-6 py-4">
-                      <p class="text-sm font-bold text-slate-900">
-                        {{ doc.deskripsi || doc.namaPenerima }}
-                      </p>
-                      <p
-                        v-if="doc.tokoNama"
-                        class="text-[11px] text-blue-600 font-bold mt-0.5 uppercase tracking-wide"
-                      >
-                        {{ doc.tokoNama }} • {{ formatRupiah(doc.nominal) }}
-                      </p>
-                      <p
-                        v-else-if="doc.nominal && doc.tipeData === 'TAGIHAN'"
-                        class="text-[11px] text-purple-600 font-bold mt-0.5 uppercase tracking-wide"
-                      >
-                        {{ doc.namaPenerima }} • {{ formatRupiah(doc.nominal) }}
-                      </p>
-                      <p class="text-[10px] text-slate-400 font-medium mt-0.5">
-                        {{ formatDate(doc.createdAt) }}
-                      </p>
-                    </td>
-                    <td class="px-6 py-4">
-                      <span
-                        :class="[
-                          'px-2.5 py-1 rounded-lg text-[10px] font-bold border uppercase',
-                          getTipeDocumenBadgeClass(doc.tipeDokumen),
-                        ]"
-                      >
-                        {{ doc.tipeDokumen }}
-                      </span>
-                    </td>
-                    <td class="px-6 py-4 text-center">
-                      <span
-                        :class="[
-                          'px-2.5 py-1 rounded-lg text-[10px] font-bold border uppercase',
-                          getDocStatusBadgeClass(doc.status, doc.tipeData),
-                        ]"
-                      >
-                        {{ doc.status }}
-                      </span>
-                    </td>
-                    <td class="px-6 py-4 text-right">
-                      <div class="flex items-center justify-end gap-2">
-                        <button
-                          @click="viewDocumentation(doc)"
-                          class="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all shadow-sm"
-                          title="Lihat Berkas & Detail"
-                        >
-                          <Icon name="heroicons:eye" class="w-4.5 h-4.5" />
-                        </button>
-                        <button
-                          v-if="
-                            doc.tipeData === 'TAGIHAN' &&
-                            hasPaymentProof(doc.realId)
-                          "
-                          @click="viewPaymentProof(doc.realId)"
-                          class="p-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-600 hover:text-white transition-all shadow-sm"
-                          title="Lihat Bukti Bayar PPK"
-                        >
-                          <Icon
-                            name="heroicons:credit-card"
-                            class="w-4.5 h-4.5"
-                          />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr v-if="reportStore.detail.documentationList.length === 0">
-                    <td
-                      colspan="4"
-                      class="px-6 py-12 text-center text-slate-400 italic text-sm"
-                    >
-                      Tidak ada dokumentasi tambahan.
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+              <div
+                class="w-20 h-20 rounded-2xl bg-[#3b5988]/10 flex items-center justify-center mb-4"
+              >
+                <Icon
+                  name="heroicons:document-minus"
+                  class="w-10 h-10 text-[#3b5988]"
+                />
+              </div>
+              <h4 class="text-lg font-semibold text-slate-900 mb-2">
+                Dokumen Tidak Tersedia
+              </h4>
+              <p class="text-sm text-slate-500 mb-4 max-w-sm">
+                Belum ada file yang diunggah untuk kategori ini pada kegiatan
+                ini.
+              </p>
+            </div>
+
+            <div v-else class="w-full">
+              <iframe
+                :src="currentDocUrl"
+                class="w-full h-[600px] rounded-xl border border-slate-200"
+                frameborder="0"
+              ></iframe>
+              <div class="flex justify-center gap-3 mt-4">
+                <button
+                  @click="openFullPreview"
+                  class="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#3b5988] text-white font-medium hover:bg-[#2d4570] transition-all"
+                >
+                  <Icon name="heroicons:arrows-pointing-out" class="w-5 h-5" />
+                  Buka di Tab Baru
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- RIGHT COLUMN: Metadata & Logs -->
-        <div class="lg:col-span-4 space-y-8">
-          <!-- Activity Summary Card -->
+        <!-- Catatan Akhir SPI (LPG) -->
+        <div
+          v-if="reportStore.detail.lpg"
+          class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden"
+        >
           <div
-            class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6"
+            class="flex items-center gap-2 px-6 py-4 border-b border-slate-100"
           >
-            <div class="flex items-center gap-3 border-b border-slate-100 pb-4">
-              <div
-                class="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600"
-              >
-                <Icon name="heroicons:information-circle" class="w-6 h-6" />
-              </div>
-              <h3
-                class="font-bold text-slate-900 uppercase tracking-wider text-sm"
-              >
-                Informasi Pelaksanaan
-              </h3>
-            </div>
-
-            <div class="grid grid-cols-1 gap-5">
-              <div>
-                <p
-                  class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1"
-                >
-                  Masa Kegiatan
-                </p>
-                <div
-                  class="flex items-center gap-2 text-sm font-bold text-slate-900"
-                >
-                  <Icon
-                    name="heroicons:calendar-days"
-                    class="w-4 h-4 text-slate-400"
-                  />
-                  {{ formatDate(reportStore.detail.rab.tanggalMulai) }} —
-                  {{ formatDate(reportStore.detail.rab.tanggalSelesai) }}
-                </div>
-              </div>
-
-              <div>
-                <p
-                  class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1"
-                >
-                  Total Anggaran (RAB)
-                </p>
-                <div class="text-xl font-extrabold text-blue-600 font-mono">
-                  {{ formatRupiah(reportStore.detail.rab.totalAnggaran) }}
-                </div>
-              </div>
-
-              <div>
-                <p
-                  class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1"
-                >
-                  Status Realisasi
-                </p>
-                <div class="text-sm font-bold text-slate-900">
-                  {{
-                    reportStore.detail.kegiatan?.statusKegiatan ||
-                    "TAHAP PERENCANAAN"
-                  }}
-                </div>
-              </div>
-            </div>
-
-            <div
-              v-if="reportStore.detail.lpg"
-              class="pt-4 border-t border-slate-100 space-y-3"
-            >
-              <p
-                class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1"
-              >
-                Catatan Akhir SPI (LPG)
+            <Icon
+              name="heroicons:chat-bubble-left-right"
+              class="w-5 h-5 text-[#d1a82a]"
+            />
+            <h3 class="font-bold text-slate-800">Catatan Akhir SPI</h3>
+          </div>
+          <div class="p-6">
+            <div class="bg-amber-50 border border-amber-200 rounded-xl p-4">
+              <p class="text-sm text-amber-800 leading-relaxed">
+                "{{
+                  reportStore.detail.lpg.spiNotes || "Disetujui tanpa catatan."
+                }}"
               </p>
-              <div
-                class="p-4 bg-emerald-50/50 border border-emerald-100 rounded-xl"
-              >
-                <p
-                  class="text-xs text-emerald-800 leading-relaxed italic font-medium"
-                >
-                  "{{
-                    reportStore.detail.lpg.spiNotes ||
-                    "Disetujui tanpa catatan."
-                  }}"
-                </p>
-              </div>
             </div>
           </div>
+        </div>
 
-          <!-- Chronological Logs with TABS -->
-          <div class="space-y-4">
-            <div
-              class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm"
+        <!-- Documentation Section -->
+        <div
+          class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden"
+        >
+          <div
+            class="flex items-center gap-2 px-6 py-4 border-b border-slate-100"
+          >
+            <Icon name="heroicons:camera" class="w-5 h-5 text-[#d1a82a]" />
+            <h3 class="font-bold text-slate-800">
+              Dokumentasi & Bukti Transaksi
+            </h3>
+            <span
+              class="ml-auto text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-semibold"
             >
+              {{ reportStore.detail.documentationList?.length || 0 }} berkas
+            </span>
+          </div>
+
+          <div class="p-6">
+            <div
+              v-if="reportStore.detail.documentationList?.length === 0"
+              class="text-center py-12 text-slate-400"
+            >
+              <Icon
+                name="heroicons:photo"
+                class="w-12 h-12 mx-auto mb-3 text-slate-300"
+              />
+              <p class="text-sm">Tidak ada dokumentasi tambahan.</p>
+            </div>
+
+            <div v-else class="space-y-3">
               <div
-                class="flex items-center justify-between mb-4 pb-3 border-b border-slate-100"
+                v-for="doc in reportStore.detail.documentationList"
+                :key="doc.realId"
+                class="flex items-start justify-between p-4 rounded-xl border border-slate-100 hover:bg-slate-50 transition-all"
               >
-                <h3
-                  class="text-xs font-bold text-slate-900 uppercase tracking-widest flex items-center gap-2"
-                >
-                  <Icon name="heroicons:clock" class="w-4 h-4 text-slate-400" />
-                  Riwayat Persetujuan
-                </h3>
-              </div>
-
-              <div class="flex p-1 bg-slate-100 rounded-xl mb-6">
-                <button
-                  @click="activeLogTab = 'rab'"
-                  :class="[
-                    'flex-1 py-2 text-[10px] font-bold uppercase rounded-lg transition-all',
-                    activeLogTab === 'rab'
-                      ? 'bg-white text-blue-600 shadow-sm'
-                      : 'text-slate-500 hover:text-slate-700',
-                  ]"
-                >
-                  Log RAB
-                </button>
-                <button
-                  @click="activeLogTab = 'lpg'"
-                  :class="[
-                    'flex-1 py-2 text-[10px] font-bold uppercase rounded-lg transition-all',
-                    activeLogTab === 'lpg'
-                      ? 'bg-white text-emerald-600 shadow-sm'
-                      : 'text-slate-500 hover:text-slate-700',
-                  ]"
-                >
-                  Log LPG
-                </button>
-              </div>
-
-              <div
-                class="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar"
-              >
-                <!-- Dynamic Log List -->
-                <template v-if="activeLogTab === 'rab'">
-                  <div
-                    v-for="log in reportStore.detail.rabLogs"
-                    :key="'rab-' + log.id"
-                    class="p-4 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-white hover:shadow-md transition-all"
-                  >
-                    <div class="flex justify-between items-start mb-2">
-                      <span
-                        class="text-[9px] font-bold px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded uppercase"
-                        >Aksi: {{ log.action }}</span
-                      >
-                      <span class="text-[9px] text-slate-400 font-medium">{{
-                        formatDate(log.createdAt, true)
-                      }}</span>
-                    </div>
-                    <p class="text-xs font-bold text-slate-900">
-                      {{ log.actor.fullName }}
-                      <span class="font-medium text-slate-500"
-                        >({{ log.actor.role.toUpperCase() }})</span
-                      >
-                    </p>
-                    <p class="text-xs text-slate-600 mt-2 font-medium italic">
-                      "{{ log.catatanRevisi }}"
-                    </p>
+                <div class="flex-1">
+                  <p class="font-medium text-slate-800 text-sm">
+                    {{ doc.deskripsi || doc.namaPenerima }}
+                  </p>
+                  <div class="flex flex-wrap items-center gap-3 mt-1.5">
+                    <span
+                      class="inline-flex text-xs px-2 py-0.5 rounded-full"
+                      :class="getTipeDocumenBadgeClass(doc.tipeDokumen)"
+                    >
+                      {{ doc.tipeDokumen }}
+                    </span>
+                    <span
+                      class="inline-flex text-xs px-2 py-0.5 rounded-full"
+                      :class="getDocStatusBadgeClass(doc.status, doc.tipeData)"
+                    >
+                      {{ doc.status }}
+                    </span>
+                    <span v-if="doc.tokoNama" class="text-xs text-slate-500">{{
+                      doc.tokoNama
+                    }}</span>
+                    <span
+                      v-if="doc.nominal"
+                      class="text-xs font-semibold text-[#3b5988]"
+                      >{{ formatRupiah(doc.nominal) }}</span
+                    >
                   </div>
-                  <div
-                    v-if="reportStore.detail.rabLogs.length === 0"
-                    class="text-center py-10"
+                  <p class="text-xs text-slate-400 mt-2">
+                    {{ formatDate(doc.createdAt) }}
+                  </p>
+                </div>
+                <div class="flex items-center gap-2 ml-4">
+                  <button
+                    @click="viewDocumentation(doc)"
+                    class="p-2 rounded-lg bg-[#3b5988]/10 text-[#3b5988] hover:bg-[#3b5988] hover:text-white transition-all"
+                    title="Lihat Berkas & Detail"
                   >
-                    <p class="text-slate-400 text-xs italic">
-                      Tidak ada riwayat RAB.
-                    </p>
-                  </div>
-                </template>
-
-                <template v-else>
-                  <div
-                    v-for="log in reportStore.detail.lpgLogs"
-                    :key="'lpg-' + log.id"
-                    class="p-4 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-white hover:shadow-md transition-all"
+                    <Icon name="heroicons:eye" class="w-4 h-4" />
+                  </button>
+                  <button
+                    v-if="
+                      doc.tipeData === 'TAGIHAN' && hasPaymentProof(doc.realId)
+                    "
+                    @click="viewPaymentProof(doc.realId)"
+                    class="p-2 rounded-lg bg-emerald-100 text-emerald-600 hover:bg-emerald-600 hover:text-white transition-all"
+                    title="Lihat Bukti Bayar PPK"
                   >
-                    <div class="flex justify-between items-start mb-2">
-                      <span
-                        class="text-[9px] font-bold px-1.5 py-0.5 bg-emerald-100 text-emerald-700 rounded uppercase"
-                        >Revisi SPI</span
-                      >
-                      <span class="text-[9px] text-slate-400 font-medium">{{
-                        formatDate(log.createdAt, true)
-                      }}</span>
-                    </div>
-                    <p class="text-xs font-bold text-slate-900">
-                      {{ log.actor.fullName }}
-                      <span class="font-medium text-slate-500"
-                        >({{ log.actor.role.toUpperCase() }})</span
-                      >
-                    </p>
-                    <p class="text-xs text-slate-600 mt-2 font-medium italic">
-                      "{{ log.catatanRevisi }}"
-                    </p>
-                  </div>
-                  <div
-                    v-if="reportStore.detail.lpgLogs.length === 0"
-                    class="text-center py-10"
-                  >
-                    <p class="text-slate-400 text-xs italic">
-                      Tidak ada riwayat LPG.
-                    </p>
-                  </div>
-                </template>
+                    <Icon name="heroicons:credit-card" class="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Modal for Documentation Detail (ENHANCED) -->
+      <!-- RIGHT COLUMN: Metadata & Logs -->
+      <div class="space-y-6">
+        <!-- Ringkasan -->
+        <div
+          class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden"
+        >
+          <div class="px-5 py-4 border-b border-slate-100">
+            <h3 class="font-bold text-slate-800">Ringkasan</h3>
+          </div>
+          <div class="p-5 space-y-4">
+            <div class="bg-[#3b5988] rounded-xl p-4 text-white">
+              <p class="text-xs opacity-70 mb-1">Total Anggaran Diajukan</p>
+              <p class="text-xl font-bold">
+                {{ formatRupiah(reportStore.detail.rab?.totalAnggaran) }}
+              </p>
+            </div>
+            <div class="space-y-3 text-sm">
+              <div class="flex justify-between">
+                <span class="text-slate-500">Pengaju</span>
+                <span
+                  class="font-medium text-slate-800 text-right max-w-[60%]"
+                  >{{ reportStore.detail.rab?.pengaju?.nama || "-" }}</span
+                >
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-500">Tanggal Upload</span>
+                <span class="font-medium text-slate-800">{{
+                  formatDate(reportStore.detail.rab?.createdAt)
+                }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-500">Masa Kegiatan</span>
+                <span class="font-medium text-slate-800 text-right">
+                  {{ formatDate(reportStore.detail.rab?.tanggalMulai) }}
+                  <span v-if="reportStore.detail.rab?.tanggalSelesai"
+                    ><br />—
+                    {{
+                      formatDate(reportStore.detail.rab?.tanggalSelesai)
+                    }}</span
+                  >
+                </span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-500">Status Realisasi</span>
+                <span class="font-medium text-slate-800">{{
+                  reportStore.detail.kegiatan?.statusKegiatan ||
+                  "TAHAP PERENCANAAN"
+                }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Riwayat Persetujuan dengan Tab -->
+        <div
+          class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden"
+        >
+          <div
+            class="flex items-center gap-2 px-5 py-4 border-b border-slate-100"
+          >
+            <Icon name="heroicons:clock" class="w-5 h-5 text-[#d1a82a]" />
+            <h3 class="font-bold text-slate-800">Riwayat Persetujuan</h3>
+          </div>
+
+          <div class="p-5">
+            <div class="flex gap-2 p-1 bg-slate-100 rounded-xl mb-6">
+              <button
+                @click="activeLogTab = 'rab'"
+                :class="[
+                  'flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all',
+                  activeLogTab === 'rab'
+                    ? 'bg-white text-[#3b5988] shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900',
+                ]"
+              >
+                Log RAB
+              </button>
+              <button
+                @click="activeLogTab = 'lpg'"
+                :class="[
+                  'flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all',
+                  activeLogTab === 'lpg'
+                    ? 'bg-white text-[#3b5988] shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900',
+                ]"
+              >
+                Log LPG
+              </button>
+            </div>
+
+            <div
+              class="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar"
+            >
+              <template v-if="activeLogTab === 'rab'">
+                <!-- Upload pertama -->
+                <div class="flex gap-4">
+                  <div class="flex flex-col items-center">
+                    <div
+                      class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center flex-shrink-0"
+                    >
+                      <Icon name="heroicons:arrow-up-tray" class="w-4 h-4" />
+                    </div>
+                    <div
+                      v-if="reportStore.detail.rabLogs?.length"
+                      class="w-0.5 flex-1 bg-slate-200 mt-2"
+                    ></div>
+                  </div>
+                  <div class="pb-4">
+                    <p class="text-sm font-semibold text-slate-800">
+                      Pengajuan diunggah
+                    </p>
+                    <p class="text-xs text-slate-500 mt-0.5">
+                      oleh {{ reportStore.detail.rab?.pengaju?.nama }} ·
+                      {{ formatDateTime(reportStore.detail.rab?.createdAt) }}
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Riwayat approval RAB -->
+                <div
+                  v-for="(log, i) in reportStore.detail.rabLogs"
+                  :key="'rab-' + log.id"
+                  class="flex gap-4"
+                >
+                  <div class="flex flex-col items-center">
+                    <div
+                      class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                      :class="logIconClass(log.action)"
+                    >
+                      <Icon :name="logIcon(log.action)" class="w-4 h-4" />
+                    </div>
+                    <div
+                      v-if="i < reportStore.detail.rabLogs.length - 1"
+                      class="w-0.5 flex-1 bg-slate-200 mt-2"
+                    ></div>
+                  </div>
+                  <div class="pb-4 flex-1">
+                    <div class="flex items-start justify-between gap-2">
+                      <p class="text-sm font-semibold text-slate-800">
+                        {{ logLabel(log) }}
+                      </p>
+                      <span class="text-xs text-slate-400 whitespace-nowrap">{{
+                        formatDateTime(log.createdAt)
+                      }}</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-0.5">
+                      oleh {{ log.actor?.fullName || log.actor?.nama }} ({{
+                        log.actor?.role
+                      }})
+                    </p>
+                    <div
+                      v-if="log.catatanRevisi"
+                      class="mt-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-800"
+                    >
+                      <span class="font-semibold">Catatan:</span>
+                      {{ log.catatanRevisi }}
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  v-if="!reportStore.detail.rabLogs?.length"
+                  class="text-center py-8 text-slate-400"
+                >
+                  <p class="text-sm">Tidak ada riwayat persetujuan RAB</p>
+                </div>
+              </template>
+
+              <template v-else>
+                <!-- Riwayat approval LPG -->
+                <div
+                  v-for="(log, i) in reportStore.detail.lpgLogs"
+                  :key="'lpg-' + log.id"
+                  class="flex gap-4"
+                >
+                  <div class="flex flex-col items-center">
+                    <div
+                      class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+                      :class="logIconClass(log.action || 'revisi')"
+                    >
+                      <Icon
+                        :name="logIcon(log.action || 'revisi')"
+                        class="w-4 h-4"
+                      />
+                    </div>
+                    <div
+                      v-if="i < reportStore.detail.lpgLogs.length - 1"
+                      class="w-0.5 flex-1 bg-slate-200 mt-2"
+                    ></div>
+                  </div>
+                  <div class="pb-4 flex-1">
+                    <div class="flex items-start justify-between gap-2">
+                      <p class="text-sm font-semibold text-slate-800">
+                        Revisi oleh SPI
+                      </p>
+                      <span class="text-xs text-slate-400 whitespace-nowrap">{{
+                        formatDateTime(log.createdAt)
+                      }}</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-0.5">
+                      oleh {{ log.actor?.fullName || log.actor?.nama }} ({{
+                        log.actor?.role
+                      }})
+                    </p>
+                    <div
+                      v-if="log.catatanRevisi"
+                      class="mt-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-800"
+                    >
+                      <span class="font-semibold">Catatan:</span>
+                      {{ log.catatanRevisi }}
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  v-if="!reportStore.detail.lpgLogs?.length"
+                  class="text-center py-8 text-slate-400"
+                >
+                  <p class="text-sm">Tidak ada riwayat revisi LPG</p>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Modal Dokumentasi -->
     <div
       v-if="showDocModal"
       class="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50 p-4"
       @click.self="closeDocModal"
     >
       <div
-        class="bg-white rounded-3xl shadow-2xl max-w-6xl w-full max-h-[92vh] overflow-hidden flex flex-col"
+        class="bg-white rounded-2xl shadow-xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col"
       >
         <!-- Modal Header -->
         <div
-          class="p-6 border-b border-slate-100 flex justify-between items-center bg-white sticky top-0 z-10"
+          class="p-5 border-b border-slate-100 flex justify-between items-center bg-white sticky top-0 z-10"
         >
-          <div class="flex items-center gap-4">
+          <div class="flex items-center gap-3">
             <div
-              :class="[
-                'w-12 h-12 rounded-2xl flex items-center justify-center',
-                getTipeDocumenBadgeClass(selectedDoc?.tipeDokumen, true),
-              ]"
+              class="w-10 h-10 rounded-xl bg-[#3b5988]/10 text-[#3b5988] flex items-center justify-center"
             >
               <Icon
                 :name="
@@ -508,179 +596,164 @@
                     ? 'heroicons:banknotes'
                     : 'heroicons:photo'
                 "
-                class="w-7 h-7"
+                class="w-5 h-5"
               />
             </div>
             <div>
-              <h3
-                class="text-xl font-bold text-slate-900 uppercase tracking-tight"
-              >
+              <h3 class="font-bold text-slate-800">
                 {{ selectedDoc?.deskripsi || selectedDoc?.namaPenerima }}
               </h3>
-              <p class="text-sm text-slate-500 font-medium">
-                Berkas Pelaksanaan • {{ formatDate(selectedDoc?.createdAt) }}
+              <p class="text-xs text-slate-500">
+                Berkas Pelaksanaan · {{ formatDate(selectedDoc?.createdAt) }}
               </p>
             </div>
           </div>
           <button
             @click="closeDocModal"
-            class="p-2 rounded-xl hover:bg-slate-100 transition-colors group"
+            class="p-2 rounded-lg hover:bg-slate-100 transition-colors"
           >
-            <Icon
-              name="heroicons:x-mark"
-              class="w-6 h-6 text-slate-400 group-hover:text-slate-900"
-            />
+            <Icon name="heroicons:x-mark" class="w-5 h-5 text-slate-400" />
           </button>
         </div>
 
-        <div class="flex-1 overflow-y-auto p-8 bg-slate-50/20">
-          <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <!-- INFO SIDEBAR -->
-            <div class="lg:col-span-4 space-y-6">
-              <div
-                class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5"
-              >
+        <div class="flex-1 overflow-y-auto p-6">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Info Sidebar -->
+            <div class="lg:col-span-1 space-y-4">
+              <div class="bg-slate-50 rounded-xl p-4 space-y-4">
                 <h4
-                  class="text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-50 pb-2"
+                  class="text-xs font-bold text-slate-400 uppercase tracking-wider"
                 >
                   Informasi Rinci
                 </h4>
 
                 <div
                   v-if="selectedDoc?.tipeData === 'TAGIHAN'"
-                  class="space-y-4"
+                  class="space-y-3"
                 >
                   <div v-if="selectedDoc.tokoNama">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase">
+                    <p
+                      class="text-[10px] font-semibold text-slate-400 uppercase"
+                    >
                       Nama Toko / Vendor
                     </p>
-                    <p class="text-sm font-bold text-slate-900">
+                    <p class="text-sm font-medium text-slate-800">
                       {{ selectedDoc.tokoNama }}
                     </p>
                   </div>
-                  <div v-if="selectedDoc.tokoAlamat">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase">
-                      Alamat
-                    </p>
-                    <p class="text-xs text-slate-600 font-medium">
-                      {{ selectedDoc.tokoAlamat }}
-                    </p>
-                  </div>
-                  <div>
-                    <p class="text-[10px] font-bold text-slate-400 uppercase">
+                  <div v-if="selectedDoc.namaPenerima">
+                    <p
+                      class="text-[10px] font-semibold text-slate-400 uppercase"
+                    >
                       Nama Penerima
                     </p>
-                    <p class="text-sm font-bold text-slate-900">
+                    <p class="text-sm font-medium text-slate-800">
                       {{ selectedDoc.namaPenerima }}
                     </p>
                   </div>
                   <div>
-                    <p class="text-[10px] font-bold text-slate-400 uppercase">
+                    <p
+                      class="text-[10px] font-semibold text-slate-400 uppercase"
+                    >
                       Nominal Transaksi
                     </p>
-                    <p class="text-lg font-extrabold text-blue-600 font-mono">
+                    <p class="text-lg font-bold text-[#3b5988]">
                       {{ formatRupiah(selectedDoc.nominal) }}
                     </p>
                   </div>
-                  <div class="pt-3 border-t border-slate-50">
+                  <div class="pt-2 border-t border-slate-200">
                     <p
-                      class="text-[10px] font-bold text-slate-400 uppercase mb-2"
+                      class="text-[10px] font-semibold text-slate-400 uppercase mb-1"
                     >
                       Rekening Tujuan
                     </p>
                     <div
-                      class="p-3 bg-slate-50 rounded-xl border border-slate-100"
+                      class="bg-white rounded-lg p-2 border border-slate-200"
                     >
-                      <p class="text-xs font-bold text-slate-900">
-                        {{ selectedDoc.bankPenerima }}
+                      <p class="text-xs font-medium text-slate-800">
+                        {{ selectedDoc.bankPenerima || "-" }}
                       </p>
-                      <p class="text-xs font-mono text-slate-600 mt-1">
-                        {{ selectedDoc.rekeningPenerima }}
+                      <p class="text-xs font-mono text-slate-500">
+                        {{ selectedDoc.rekeningPenerima || "-" }}
                       </p>
                     </div>
                   </div>
-                  <div v-if="selectedDoc.skNomor">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase">
-                      Nomor SK / Kontrak
-                    </p>
-                    <p class="text-xs font-bold text-slate-900">
-                      {{ selectedDoc.skNomor }}
-                    </p>
-                  </div>
                 </div>
 
-                <div v-else class="space-y-4">
+                <div v-else>
                   <div>
-                    <p class="text-[10px] font-bold text-slate-400 uppercase">
-                      Deskripsi Kegiatan
-                    </p>
                     <p
-                      class="text-sm font-medium text-slate-800 leading-relaxed"
+                      class="text-[10px] font-semibold text-slate-400 uppercase"
                     >
-                      {{ selectedDoc.deskripsi }}
+                      Deskripsi
+                    </p>
+                    <p class="text-sm text-slate-700">
+                      {{ selectedDoc?.deskripsi || "-" }}
                     </p>
                   </div>
                   <div>
-                    <p class="text-[10px] font-bold text-slate-400 uppercase">
-                      Kategori Dokumentasi
+                    <p
+                      class="text-[10px] font-semibold text-slate-400 uppercase"
+                    >
+                      Kategori
                     </p>
                     <span
-                      class="inline-block mt-1 px-3 py-1 bg-amber-50 text-amber-600 border border-amber-100 rounded-lg text-xs font-bold"
-                      >{{ selectedDoc.tipeDokumen }}</span
+                      class="inline-block mt-1 px-2 py-0.5 rounded-lg text-xs font-medium"
+                      :class="
+                        getTipeDocumenBadgeClass(selectedDoc?.tipeDokumen)
+                      "
                     >
+                      {{ selectedDoc?.tipeDokumen }}
+                    </span>
                   </div>
                 </div>
               </div>
 
-              <!-- DOC LOGS SECTION -->
-              <div
-                class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4"
-              >
+              <!-- Catatan Review -->
+              <div class="bg-slate-50 rounded-xl p-4">
                 <h4
-                  class="text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-50 pb-2 flex items-center gap-2"
+                  class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2"
                 >
                   <Icon
                     name="heroicons:chat-bubble-left-right"
                     class="w-4 h-4"
                   />
-                  Catatan & Review Berkas
+                  Catatan & Review
                 </h4>
 
                 <div v-if="fetchingLogs" class="flex justify-center py-6">
-                  <Icon
-                    name="heroicons:arrow-path"
-                    class="w-5 h-5 animate-spin text-slate-300"
-                  />
+                  <div
+                    class="w-5 h-5 border-2 border-slate-200 border-t-[#3b5988] rounded-full animate-spin"
+                  ></div>
                 </div>
 
-                <div v-else-if="docLogs.length === 0" class="py-6 text-center">
-                  <p class="text-[11px] text-slate-400 italic">
-                    Belum ada catatan review untuk berkas ini.
+                <div v-else-if="docLogs.length === 0" class="text-center py-6">
+                  <p class="text-xs text-slate-400 italic">
+                    Belum ada catatan review
                   </p>
                 </div>
 
-                <div v-else class="space-y-4">
+                <div v-else class="space-y-3">
                   <div
                     v-for="log in docLogs"
                     :key="log.id"
-                    class="p-3 bg-slate-50 rounded-xl border border-slate-100"
+                    class="bg-white rounded-lg p-3 border border-slate-100"
                   >
-                    <div class="flex justify-between items-center mb-1">
+                    <div class="flex items-center justify-between mb-1">
                       <span
-                        class="text-[9px] font-bold uppercase"
+                        class="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded"
                         :class="getActionColor(log.action)"
-                        >{{ log.action }}</span
                       >
-                      <span class="text-[8px] text-slate-400 font-medium">{{
-                        formatDate(log.createdAt, true)
+                        {{ log.action }}
+                      </span>
+                      <span class="text-[9px] text-slate-400">{{
+                        formatDateTime(log.createdAt)
                       }}</span>
                     </div>
-                    <p class="text-[10px] font-bold text-slate-900">
-                      {{ log.user.fullname }}
+                    <p class="text-xs font-medium text-slate-800">
+                      {{ log.user?.fullname }}
                     </p>
-                    <p
-                      class="text-[10px] text-slate-600 mt-1 italic leading-snug"
-                    >
+                    <p class="text-[11px] text-slate-500 mt-1 italic">
                       "{{ log.komentar }}"
                     </p>
                   </div>
@@ -688,89 +761,71 @@
               </div>
             </div>
 
-            <!-- FILES PREVIEW -->
-            <div class="lg:col-span-8 space-y-6">
-              <div
-                class="flex items-center justify-between border-b border-slate-100 pb-3"
+            <!-- File Previews -->
+            <div class="lg:col-span-2">
+              <h4
+                class="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2"
               >
-                <h4
-                  class="text-sm font-bold text-slate-900 uppercase tracking-widest"
-                >
-                  Lampiran Berkas ({{ attachedFiles.length }})
-                </h4>
-              </div>
+                <Icon
+                  name="heroicons:paper-clip"
+                  class="w-4 h-4 text-[#d1a82a]"
+                />
+                Lampiran Berkas ({{ attachedFiles.length }})
+              </h4>
 
               <div
                 v-if="fetchingFiles"
-                class="flex flex-col items-center justify-center py-32 bg-white rounded-3xl border border-slate-200 border-dashed"
+                class="flex flex-col items-center justify-center py-20 bg-slate-50 rounded-xl"
               >
                 <div
-                  class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-4"
+                  class="w-8 h-8 border-2 border-slate-200 border-t-[#3b5988] rounded-full animate-spin"
                 ></div>
-                <p class="text-slate-500 text-sm font-medium">
-                  Menghubungkan ke server file...
-                </p>
+                <p class="text-xs text-slate-400 mt-2">Memuat berkas...</p>
               </div>
 
               <div
                 v-else-if="attachedFiles.length === 0"
-                class="text-center py-32 bg-white rounded-3xl border border-slate-200 border-dashed"
+                class="text-center py-20 bg-slate-50 rounded-xl"
               >
                 <Icon
                   name="heroicons:document-minus"
-                  class="w-16 h-16 text-slate-100 mx-auto mb-4"
+                  class="w-12 h-12 text-slate-300 mx-auto mb-2"
                 />
-                <p class="text-slate-400 font-medium">
-                  Tidak ada lampiran berkas yang ditemukan.
-                </p>
+                <p class="text-sm text-slate-400">Tidak ada lampiran berkas</p>
               </div>
 
-              <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-6 pb-10">
+              <div v-else class="grid grid-cols-2 gap-4">
                 <div
                   v-for="file in attachedFiles"
                   :key="file.url"
-                  class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-all group"
+                  class="bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-md transition-all group cursor-pointer"
+                  @click="openExternal(file.url)"
                 >
                   <div
-                    class="aspect-video bg-slate-100 relative overflow-hidden flex items-center justify-center"
+                    class="aspect-video bg-slate-100 relative flex items-center justify-center"
                   >
                     <img
                       v-if="isImage(file.type)"
                       :src="file.url"
-                      class="w-full h-full object-cover transition-transform group-hover:scale-105"
+                      class="w-full h-full object-cover"
                     />
-                    <div v-else class="flex flex-col items-center gap-3">
+                    <div v-else class="flex flex-col items-center gap-2">
                       <div
-                        class="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center"
+                        class="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center"
                       >
                         <Icon
                           name="heroicons:document-text"
-                          class="w-8 h-8 text-blue-500"
+                          class="w-6 h-6 text-[#3b5988]"
                         />
                       </div>
-                      <span
-                        class="text-[10px] font-bold text-slate-400 uppercase tracking-widest"
-                        >{{ file.type.split("/")[1] }} Document</span
-                      >
-                    </div>
-                    <div
-                      class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3"
-                    >
-                      <button
-                        @click="openExternal(file.url)"
-                        class="px-5 py-2.5 bg-white rounded-xl text-xs font-bold shadow-xl hover:bg-blue-600 hover:text-white transition-all flex items-center gap-2"
-                      >
-                        <Icon name="heroicons:eye" class="w-4 h-4" />
-                        Buka Berkas
-                      </button>
+                      <span class="text-[10px] font-medium text-slate-400">{{
+                        file.type?.split("/")[1]?.toUpperCase() || "FILE"
+                      }}</span>
                     </div>
                   </div>
-                  <div class="p-4 border-t border-slate-50 bg-slate-50/30">
-                    <p class="text-xs font-bold text-slate-700 truncate">
+                  <div class="p-3 border-t border-slate-100">
+                    <p class="text-xs font-medium text-slate-700 truncate">
                       {{ file.label }}
-                    </p>
-                    <p class="text-[9px] text-slate-400 mt-1 uppercase">
-                      {{ file.type }}
                     </p>
                   </div>
                 </div>
@@ -779,12 +834,10 @@
           </div>
         </div>
 
-        <div
-          class="p-6 border-t border-slate-100 bg-white flex justify-end gap-3 sticky bottom-0 z-10"
-        >
+        <div class="p-5 border-t border-slate-100 bg-white flex justify-end">
           <button
             @click="closeDocModal"
-            class="px-10 py-3 bg-slate-900 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg active:scale-95"
+            class="px-6 py-2.5 bg-[#3b5988] text-white rounded-xl font-medium hover:bg-[#2d4570] transition-all"
           >
             Tutup Detail
           </button>
@@ -817,6 +870,13 @@
   const docLogs = ref<any[]>([]);
   const fetchingFiles = ref(false);
   const fetchingLogs = ref(false);
+
+  const todayStr = new Date().toLocaleDateString("id-ID", {
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 
   onMounted(async () => {
     await reportStore.fetchReportDetail(rabId);
@@ -887,7 +947,6 @@
           ? `tagihan_${doc.realId}`
           : `doc_${doc.realId}`;
 
-      // Parallel fetch for files and logs
       const [fileRes, logRes]: any = await Promise.all([
         $fetch("/api/ormawa/dokumentasi/getFiles", {
           method: "POST",
@@ -917,13 +976,13 @@
   };
 
   const hasPaymentProof = (tagihanId: number) => {
-    return reportStore.detail.paymentProofs.some(
+    return reportStore.detail?.paymentProofs?.some(
       (p: any) => p.tagihanId === tagihanId,
     );
   };
 
   const viewPaymentProof = async (tagihanId: number) => {
-    const payment = reportStore.detail.paymentProofs.find(
+    const payment = reportStore.detail?.paymentProofs?.find(
       (p: any) => p.tagihanId === tagihanId,
     );
     if (payment) {
@@ -941,24 +1000,12 @@
     }
   };
 
-  const getActionColor = (action: string) => {
-    switch (action.toLowerCase()) {
-      case "approve":
-        return "text-emerald-600 bg-emerald-50";
-      case "reject":
-        return "text-rose-600 bg-rose-50";
-      case "revisi":
-        return "text-amber-600 bg-amber-50";
-      default:
-        return "text-blue-600 bg-blue-50";
-    }
-  };
-
+  // Helper Functions
   const formatDate = (dateStr: string | null, withTime = false) => {
     if (!dateStr) return "-";
     const opt: Intl.DateTimeFormatOptions = {
       day: "numeric",
-      month: "long",
+      month: "short",
       year: "numeric",
     };
     if (withTime) {
@@ -968,71 +1015,132 @@
     return new Date(dateStr).toLocaleDateString("id-ID", opt);
   };
 
+  const formatDateTime = (dateStr: string | null) => {
+    if (!dateStr) return "-";
+    return new Date(dateStr).toLocaleString("id-ID", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
   const formatRupiah = (amount: string | number) => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-    }).format(Number(amount));
+    if (!amount) return "Rp 0";
+    return "Rp " + new Intl.NumberFormat("id-ID").format(Number(amount));
   };
 
   const formatStatus = (status: string) => {
     const map: Record<string, string> = {
-      disetujui: "RAB Disetujui",
+      disetujui: "Disetujui",
       lunas_ppk: "Dana Cair",
       selesai_spi: "Selesai",
+      waiting_kaprodi: "Menunggu Kaprodi",
+      waiting_ppk: "Menunggu PPK",
+      waiting_spi: "Menunggu SPI",
     };
-    return map[status] || status;
+    return map[status] || status || "-";
   };
 
-  const getStatusBadgeClass = (status: string) => {
-    switch (status) {
-      case "selesai_spi":
-        return "bg-emerald-50 text-emerald-700 border-emerald-200";
-      case "lunas_ppk":
-        return "bg-blue-50 text-blue-700 border-blue-200";
-      case "disetujui":
-        return "bg-amber-50 text-amber-700 border-amber-200";
-      default:
-        return "bg-slate-50 text-slate-700 border-slate-200";
-    }
+  const statusClass = (status?: string) => {
+    const map: Record<string, string> = {
+      waiting_kaprodi: "bg-amber-100 text-amber-700",
+      revisi_kaprodi: "bg-orange-100 text-orange-700",
+      waiting_ppk: "bg-blue-100 text-blue-700",
+      revisi_ppk: "bg-orange-100 text-orange-700",
+      waiting_spi: "bg-blue-100 text-blue-700",
+      disetujui: "bg-emerald-100 text-emerald-700",
+      lunas_ppk: "bg-emerald-100 text-emerald-700",
+      selesai_spi: "bg-emerald-100 text-emerald-700",
+      selesai: "bg-emerald-100 text-emerald-700",
+      ditolak_spi: "bg-red-100 text-red-700",
+    };
+    return map[status || ""] || "bg-slate-100 text-slate-600";
   };
 
-  const getTipeDocumenBadgeClass = (tipe: string, isLight = false) => {
-    if (!tipe) return "bg-slate-50 text-slate-500 border-slate-100";
+  const getTipeDocumenBadgeClass = (tipe?: string) => {
+    if (!tipe) return "bg-slate-100 text-slate-600";
     const t = tipe.toUpperCase();
-    if (t === "BARANG")
-      return isLight
-        ? "bg-blue-100 text-blue-700"
-        : "bg-blue-50 text-blue-600 border-blue-100";
-    if (t === "JASA")
-      return isLight
-        ? "bg-purple-100 text-purple-700"
-        : "bg-purple-50 text-purple-600 border-purple-100";
-    return isLight
-      ? "bg-amber-100 text-amber-700"
-      : "bg-amber-50 text-amber-600 border-amber-100";
+    if (t === "BARANG") return "bg-blue-100 text-blue-700";
+    if (t === "JASA") return "bg-purple-100 text-purple-700";
+    return "bg-amber-100 text-amber-700";
   };
 
-  const getDocStatusBadgeClass = (status: string, type: string) => {
+  const getDocStatusBadgeClass = (status?: string, type?: string) => {
     if (type === "TAGIHAN") {
-      if (status === "SELESAI")
-        return "bg-emerald-50 text-emerald-600 border-emerald-100";
-      return "bg-amber-50 text-amber-600 border-amber-100";
+      if (status === "SELESAI") return "bg-emerald-100 text-emerald-700";
+      return "bg-amber-100 text-amber-700";
     }
-    if (status === "DITERIMA")
-      return "bg-emerald-50 text-emerald-600 border-emerald-100";
-    return "bg-slate-50 text-slate-400 border-slate-100";
+    if (status === "DITERIMA") return "bg-emerald-100 text-emerald-700";
+    return "bg-slate-100 text-slate-500";
   };
 
-  const isImage = (type: string) => type.startsWith("image/");
+  // Log helpers
+  const logIcon = (action?: string) => {
+    const map: Record<string, string> = {
+      setuju: "heroicons:check-circle",
+      disetujui: "heroicons:check-circle",
+      revisi: "heroicons:arrow-path",
+      tolak: "heroicons:x-circle",
+      submit: "heroicons:arrow-up-tray",
+    };
+    return map[action || ""] || "heroicons:ellipsis-horizontal-circle";
+  };
+
+  const logIconClass = (action?: string) => {
+    const map: Record<string, string> = {
+      setuju: "bg-emerald-100 text-emerald-600",
+      disetujui: "bg-emerald-100 text-emerald-600",
+      revisi: "bg-amber-100 text-amber-600",
+      tolak: "bg-red-100 text-red-600",
+    };
+    return map[action || ""] || "bg-slate-100 text-slate-500";
+  };
+
+  const logLabel = (log: any) => {
+    const action = log.action;
+    const role = log.actor?.role?.toUpperCase() || "";
+    if (action === "setuju" || action === "disetujui")
+      return `Disetujui oleh ${role}`;
+    if (action === "revisi") return `Diminta revisi oleh ${role}`;
+    if (action === "tolak") return `Ditolak oleh ${role}`;
+    return action || "-";
+  };
+
+  const getActionColor = (action: string) => {
+    switch (action.toLowerCase()) {
+      case "approve":
+        return "bg-emerald-100 text-emerald-700";
+      case "reject":
+        return "bg-red-100 text-red-700";
+      case "revisi":
+        return "bg-amber-100 text-amber-700";
+      default:
+        return "bg-slate-100 text-slate-600";
+    }
+  };
+
+  const isImage = (type: string) => type?.startsWith("image/");
   const openExternal = (url: string) => window.open(url, "_blank");
 </script>
 
 <style scoped>
-  iframe {
-    background-color: white;
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
   }
+  ::-webkit-scrollbar-track {
+    background: #f1f5f9;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+
   .custom-scrollbar::-webkit-scrollbar {
     width: 4px;
   }
