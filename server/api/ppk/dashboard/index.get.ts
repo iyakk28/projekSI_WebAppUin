@@ -1,4 +1,5 @@
 // FILE: server/api/ppk/dashboard/index.get.ts
+// Endpoint untuk mengambil statistik dashboard PPK
 
 import { eq, sql, ne, and, inArray } from "drizzle-orm";
 import {
@@ -13,15 +14,36 @@ export default defineEventHandler(async (event) => {
     const db = useDrizzle();
     const { user } = event.context;
 
-    // Ambil fakultas_id PPK dari context — sama seperti ormawa ambil user.id langsung
+    // ========== VALIDASI USER ==========
+    if (!user) {
+      throw createError({
+        statusCode: 401,
+        statusMessage: "User tidak terautentikasi",
+      });
+    }
+
+    if (user.role !== "ppk") {
+      throw createError({
+        statusCode: 403,
+        statusMessage: "Akses ditolak. Peran PPK diperlukan.",
+      });
+    }
+
     const fakultasId = user.fakultasId;
 
     if (!fakultasId) {
-      return { total: 0, menunggu: 0, disetujui: 0, revisi: 0, ditolak: 0 };
+      return {
+        success: true,
+        total: 0,
+        menunggu: 0,
+        disetujui: 0,
+        revisi: 0,
+        ditolak: 0,
+        message: "PPK tidak memiliki fakultasId",
+      };
     }
 
-    // Step 1: Cari semua ormawa_id yang prodi_id-nya dimiliki kaprodi se-fakultas PPK
-    // Pola sama seperti ormawa: query bertahap, tidak join untuk filter
+    // ========== STEP 1: Ambil semua Kaprodi dalam fakultas PPK ==========
     const kaprodiList = await db
       .select({ prodiId: usersTable.prodiId })
       .from(usersTable)
@@ -31,16 +53,24 @@ export default defineEventHandler(async (event) => {
           eq(usersTable.fakultasId, fakultasId),
         ),
       );
-    console.log(kaprodiList);
+
     const prodiIds = kaprodiList
       .map((k) => k.prodiId)
       .filter((id): id is number => id !== null);
 
     if (prodiIds.length === 0) {
-      return { total: 0, menunggu: 0, disetujui: 0, revisi: 0, ditolak: 0 };
+      return {
+        success: true,
+        total: 0,
+        menunggu: 0,
+        disetujui: 0,
+        revisi: 0,
+        ditolak: 0,
+        message: "Tidak ada prodi dalam fakultas ini",
+      };
     }
 
-    // Step 2: Cari ormawa yang prodi_id-nya masuk list
+    // ========== STEP 2: Ambil semua Ormawa dari prodi-prodi tersebut ==========
     const ormawaList = await db
       .select({ id: ormawaTable.id })
       .from(ormawaTable)
@@ -49,10 +79,18 @@ export default defineEventHandler(async (event) => {
     const ormawaIds = ormawaList.map((o) => o.id);
 
     if (ormawaIds.length === 0) {
-      return { total: 0, menunggu: 0, disetujui: 0, revisi: 0, ditolak: 0 };
+      return {
+        success: true,
+        total: 0,
+        menunggu: 0,
+        disetujui: 0,
+        revisi: 0,
+        ditolak: 0,
+        message: "Tidak ada Ormawa dalam prodi-prodi tersebut",
+      };
     }
 
-    // Step 3: Cari users_id (varchar) dari user ormawa — sama seperti ormawa pakai user.id
+    // ========== STEP 3: Ambil semua users yang terkait dengan Ormawa ==========
     const ormawaUsers = await db
       .select({ usersId: usersTable.users_id })
       .from(usersTable)
@@ -61,75 +99,62 @@ export default defineEventHandler(async (event) => {
     const ormawaUserIds = ormawaUsers.map((u) => u.usersId);
 
     if (ormawaUserIds.length === 0) {
-      return { total: 0, menunggu: 0, disetujui: 0, revisi: 0, ditolak: 0 };
+      return {
+        success: true,
+        total: 0,
+        menunggu: 0,
+        disetujui: 0,
+        revisi: 0,
+        ditolak: 0,
+        message: "Tidak ada user yang terhubung dengan Ormawa",
+      };
     }
 
-    // Step 4: Hitung pengajuan — pola sama seperti ormawa pakai eq(usersId, user.id)
-    // tapi untuk PPK pakai inArray(usersId, ormawaUserIds)
-    const [total, menunggu, disetujui, revisi, ditolak] = await Promise.all([
-      db
-        .select({ count: sql<number>`count(*)` })
-        .from(pengajuanRabTable)
-        .where(
-          and(
-            ne(pengajuanRabTable.status, "draft"),
-            inArray(pengajuanRabTable.usersId, ormawaUserIds),
-          ),
+    // ========== STEP 4: Hitung statistik dengan 1 query (optimized) ==========
+    const statsQuery = await db
+      .select({
+        total: sql<number>`COUNT(*)`,
+        menunggu: sql<number>`SUM(CASE WHEN ${pengajuanRabTable.status} = 'waiting_ppk' THEN 1 ELSE 0 END)`,
+        revisi: sql<number>`SUM(CASE WHEN ${pengajuanRabTable.status} = 'revisi_ppk' THEN 1 ELSE 0 END)`,
+        disetujui: sql<number>`SUM(CASE WHEN ${pengajuanRabTable.status} IN ('disetujui_ppk', 'waiting_spi', 'disetujui', 'selesai_spi') THEN 1 ELSE 0 END)`,
+        ditolak: sql<number>`SUM(CASE WHEN ${pengajuanRabTable.status} = 'ditolak_spi' THEN 1 ELSE 0 END)`,
+      })
+      .from(pengajuanRabTable)
+      .where(
+        and(
+          ne(pengajuanRabTable.status, "draft"),
+          inArray(pengajuanRabTable.usersId, ormawaUserIds),
         ),
-      db
-        .select({ count: sql<number>`count(*)` })
-        .from(pengajuanRabTable)
-        .where(
-          and(
-            eq(pengajuanRabTable.status, "waiting_ppk"),
-            inArray(pengajuanRabTable.usersId, ormawaUserIds),
-          ),
-        ),
-      db
-        .select({ count: sql<number>`count(*)` })
-        .from(pengajuanRabTable)
-        .where(
-          and(
-            inArray(pengajuanRabTable.status, [
-              "waiting_spi",
-              "disetujui",
-              "selesai_spi",
-            ]),
-            inArray(pengajuanRabTable.usersId, ormawaUserIds),
-          ),
-        ),
-      db
-        .select({ count: sql<number>`count(*)` })
-        .from(pengajuanRabTable)
-        .where(
-          and(
-            eq(pengajuanRabTable.status, "revisi_ppk"),
-            inArray(pengajuanRabTable.usersId, ormawaUserIds),
-          ),
-        ),
-      db
-        .select({ count: sql<number>`count(*)` })
-        .from(pengajuanRabTable)
-        .where(
-          and(
-            eq(pengajuanRabTable.status, "ditolak_spi"),
-            inArray(pengajuanRabTable.usersId, ormawaUserIds),
-          ),
-        ),
-    ]);
+      );
+
+    const result = statsQuery[0] || {
+      total: 0,
+      menunggu: 0,
+      revisi: 0,
+      disetujui: 0,
+      ditolak: 0,
+    };
 
     return {
-      total: Number(total[0]?.count ?? 0),
-      menunggu: Number(menunggu[0]?.count ?? 0),
-      disetujui: Number(disetujui[0]?.count ?? 0),
-      revisi: Number(revisi[0]?.count ?? 0),
-      ditolak: Number(ditolak[0]?.count ?? 0),
+      success: true,
+      total: Number(result.total ?? 0),
+      menunggu: Number(result.menunggu ?? 0),
+      revisi: Number(result.revisi ?? 0),
+      disetujui: Number(result.disetujui ?? 0),
+      ditolak: Number(result.ditolak ?? 0),
     };
-  } catch (error) {
+  } catch (error: any) {
+    console.error("Error GET /api/ppk/dashboard:", error);
+
+    // Jika error sudah memiliki statusCode, lempar ulang
+    if (error.statusCode) {
+      throw error;
+    }
+
     throw createError({
       statusCode: 500,
-      statusMessage: "Gagal mengambil data dashboard",
-      data: error,
+      statusMessage: "Gagal mengambil data dashboard PPK",
+      data: error?.message || "Unknown error",
     });
   }
 });

@@ -2,8 +2,15 @@ import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { cwd } from "node:process";
 
-export type process = "file" | "dokumentasi";
-export type Category = "Lpg" | "Rab" | "Tor" | "barang" | "jasa" | "kegiatan";
+export type process = "file" | "dokumentasi" | "PPK";
+export type Category =
+  | "Lpg"
+  | "Rab"
+  | "Tor"
+  | "barang"
+  | "jasa"
+  | "kegiatan"
+  | "Pembayaran";
 export type Status =
   | "DiTolak"
   | "Selesai"

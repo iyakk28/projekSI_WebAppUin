@@ -96,19 +96,22 @@ export default defineEventHandler(async (event) => {
         id: t.id,
         type: "tagihan",
         tipeDokumen: t.tipeTagihan,
-        deskripsi: showDekripsi(t.namaPenerima), // Use decrypted name as title/desc
+        deskripsi: showDekripsi(t.namaPenerima),
         status: t.statusTagihan,
         createdAt: t.createdAt,
         nominal: Number(t.nominal),
-        fileUrl: null, // Files are in detailed view
+        fileUrl: null,
       })),
     ];
 
-    // Total cost from tags
+    // Total cost calculation
     const totalTagihan = tagihans.reduce(
       (sum, t) => sum + Number(t.nominal),
       0,
     );
+    const totalDibayar = tagihans
+      .filter((t) => t.statusTagihan === "SELESAI")
+      .reduce((sum, t) => sum + Number(t.nominal), 0);
 
     return {
       success: true,
@@ -116,6 +119,8 @@ export default defineEventHandler(async (event) => {
         kegiatan,
         dokumentasi: combinedDocs,
         totalBiaya: totalTagihan,
+        totalDibayar: totalDibayar,
+        isReadyForLunas: totalDibayar >= Number(kegiatan.totalAnggaran),
       },
     };
   } catch (error: any) {

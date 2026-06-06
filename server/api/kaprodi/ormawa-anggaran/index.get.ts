@@ -4,7 +4,11 @@
 
 import { eq, sql, inArray, and } from "drizzle-orm";
 import { useDrizzle } from "~~/server/db";
-import { ormawaTable, usersTable, programStudiTable } from "~~/server/db/schema";
+import {
+  ormawaTable,
+  usersTable,
+  programStudiTable,
+} from "~~/server/db/schema";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -24,7 +28,11 @@ export default defineEventHandler(async (event) => {
     if (!prodiId) {
       return {
         success: true,
-        summary: { totalAnggaranKeseluruhan: 0, totalTerpakaiKeseluruhan: 0, totalSisaKeseluruhan: 0 },
+        summary: {
+          totalAnggaranKeseluruhan: 0,
+          totalTerpakaiKeseluruhan: 0,
+          totalSisaKeseluruhan: 0,
+        },
         data: [],
         prodi: null,
       };
@@ -77,11 +85,11 @@ export default defineEventHandler(async (event) => {
 
     const totalAnggaranKeseluruhan = ormawaList.reduce(
       (sum, o) => sum + Number(o.totalAnggaranOrmawa),
-      0
+      0,
     );
     const totalTerpakaiKeseluruhan = ormawaList.reduce(
       (sum, o) => sum + Number(o.totalTerpakai),
-      0
+      0,
     );
 
     const formattedData = ormawaList.map((o) => ({
@@ -102,7 +110,8 @@ export default defineEventHandler(async (event) => {
       summary: {
         totalAnggaranKeseluruhan,
         totalTerpakaiKeseluruhan,
-        totalSisaKeseluruhan: totalAnggaranKeseluruhan - totalTerpakaiKeseluruhan,
+        totalSisaKeseluruhan:
+          totalAnggaranKeseluruhan - totalTerpakaiKeseluruhan,
       },
       data: formattedData,
       prodi: prodiRow

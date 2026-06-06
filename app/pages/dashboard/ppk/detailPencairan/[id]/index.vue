@@ -36,9 +36,51 @@
           </span>
         </div>
         <div>
-          <p class="text-xs font-semibold text-slate-400 uppercase mb-1">Total Biaya Diajukan</p>
-          <p class="font-bold text-[#d1a82a] text-xl">{{ formatRp(data.totalBiaya) }}</p>
+          <p class="text-xs font-semibold text-slate-400 uppercase mb-1">Total Anggaran</p>
+          <p class="font-bold text-[#d1a82a] text-xl">{{ formatRp(data.kegiatan.totalAnggaran) }}</p>
         </div>
+      </div>
+
+      <!-- Payment Progress Banner -->
+      <div 
+        class="rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm border"
+        :class="data.kegiatan.statusKegiatan === 'LUNAS' ? 'bg-emerald-50 border-emerald-100' : 'bg-white border-slate-200'"
+      >
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 rounded-full flex items-center justify-center" :class="data.kegiatan.statusKegiatan === 'LUNAS' ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-50 text-blue-500'">
+            <Icon :name="data.kegiatan.statusKegiatan === 'LUNAS' ? 'heroicons:check-circle' : 'heroicons:banknotes'" class="w-7 h-7" />
+          </div>
+          <div>
+            <h3 class="font-bold text-slate-800">Progres Pelunasan Anggaran</h3>
+            <p class="text-sm text-slate-500">Total Dibayar: <span class="font-bold text-[#d1a82a]">{{ formatRp(data.totalDibayar) }}</span> dari <span class="font-bold">{{ formatRp(data.kegiatan.totalAnggaran) }}</span></p>
+          </div>
+        </div>
+
+        <div v-if="data.kegiatan.statusKegiatan !== 'LUNAS'">
+          <button
+            @click="handleConfirmLunas"
+            :disabled="!data.isReadyForLunas || loading"
+            class="px-8 py-3 rounded-xl font-bold text-white transition shadow-lg disabled:opacity-50 disabled:shadow-none"
+            :class="data.isReadyForLunas ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-100' : 'bg-slate-300 cursor-not-allowed'"
+          >
+            {{ loading ? 'Memproses...' : 'Konfirmasi Kegiatan Lunas' }}
+          </button>
+          <p v-if="!data.isReadyForLunas" class="text-[10px] text-red-400 mt-2 text-center font-medium italic">
+            * Anggaran belum terpenuhi untuk pelunasan
+          </p>
+        </div>
+        
+        <div v-else class="flex items-center gap-2 px-4 py-2 bg-emerald-100 rounded-lg text-emerald-700">
+           <Icon name="heroicons:sparkles" class="w-5 h-5" />
+           <span class="text-sm font-bold uppercase">Kegiatan Ini Sudah Lunas</span>
+        </div>
+      </div>
+
+      <div v-if="successMsg" class="bg-emerald-100 border border-emerald-200 text-emerald-800 px-6 py-4 rounded-xl font-medium text-sm text-center">
+        {{ successMsg }}
+      </div>
+      <div v-if="error" class="bg-red-100 border border-red-200 text-red-800 px-6 py-4 rounded-xl font-medium text-sm text-center">
+        {{ error }}
       </div>
 
       <!-- Documentation List -->
@@ -130,8 +172,8 @@ const route = useRoute();
 const kegiatanId = Number(route.params.id);
 
 const store = usePpkActivityDetailStore();
-const { data, loading, error, filterDocStatus, filteredDocs } = storeToRefs(store);
-const { fetchDetail } = store;
+const { data, loading, error, successMsg, filterDocStatus, filteredDocs } = storeToRefs(store);
+const { fetchDetail, confirmLunas } = store;
 
 onMounted(() => {
   fetchDetail(kegiatanId);
@@ -168,6 +210,12 @@ const statusClass = (status: string) => {
       return "bg-red-100 text-red-700";
     default:
       return "bg-slate-100 text-slate-600";
+  }
+};
+
+const handleConfirmLunas = async () => {
+  if (confirm("Apakah Anda yakin ingin menandai kegiatan ini sebagai LUNAS? Tindakan ini hanya dapat dilakukan jika total pembayaran sudah memenuhi anggaran.")) {
+    await confirmLunas(kegiatanId);
   }
 };
 </script>

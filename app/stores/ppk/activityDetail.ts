@@ -4,11 +4,13 @@ export const usePpkActivityDetailStore = defineStore("ppkActivityDetail", () => 
   const data = ref<any>(null);
   const loading = ref(false);
   const error = ref("");
+  const successMsg = ref("");
   const filterDocStatus = ref("ALL");
 
   const fetchDetail = async (id: number) => {
     loading.value = true;
     error.value = "";
+    successMsg.value = "";
     try {
       const response = await $fetch<any>("/api/ppk/pencairan/activity-detail", {
         method: "POST",
@@ -17,6 +19,24 @@ export const usePpkActivityDetailStore = defineStore("ppkActivityDetail", () => 
       data.value = response.data;
     } catch (err: any) {
       error.value = err.message || "Gagal memuat detail kegiatan";
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const confirmLunas = async (id: number) => {
+    loading.value = true;
+    error.value = "";
+    successMsg.value = "";
+    try {
+      const response = await $fetch<any>("/api/ppk/pencairan/lunas", {
+        method: "POST",
+        body: { id }
+      });
+      successMsg.value = response.message;
+      await fetchDetail(id);
+    } catch (err: any) {
+      error.value = err.data?.statusMessage || err.message || "Gagal mengonfirmasi lunas";
     } finally {
       loading.value = false;
     }
@@ -38,8 +58,10 @@ export const usePpkActivityDetailStore = defineStore("ppkActivityDetail", () => 
     data,
     loading,
     error,
+    successMsg,
     filterDocStatus,
     fetchDetail,
+    confirmLunas,
     filteredDocs,
   };
 });
