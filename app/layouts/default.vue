@@ -41,7 +41,7 @@
           </template>
           <template v-if="authStore.user?.role === 'ppk'">
             <NuxtLink to="/dashboard/ppk/pengajuan" class="nav-link">
-              Pengajuan
+              Audit
             </NuxtLink>
             <NuxtLink to="/dashboard/ppk/pencairan" class="nav-link">
               Pencairan
@@ -165,7 +165,7 @@
               class="mobile-nav-link"
               @click="mobileMenuOpen = false"
             >
-              Pengajuan
+              Audit
             </NuxtLink>
             <NuxtLink
               to="/ppk/pencairan"
