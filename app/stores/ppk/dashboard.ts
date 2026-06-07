@@ -10,7 +10,12 @@ interface OrmawaAnggaran {
     sisa: number;
   };
   totalKegiatan?: number;
-  disetujuiCount?: number;
+  stats?: {
+    menunggu: number;
+    revisi: number;
+    disetujui: number;
+    ditolak: number;
+  };
 }
 
 interface FakultasApiResponse {
@@ -104,7 +109,7 @@ export const usePpkDashboardStore = defineStore("ppkDashboard", () => {
     const { data, error } = await useFetch<{
       data: FakultasApiResponse[];
       summary: SummaryData;
-    }>("/api/ppk/ormawa-anggaran");
+    }>("/api/ppk/dashboard/ormawa-anggaran"); // Update URL to match optimized API
 
     if (error.value) {
       console.error("Gagal mengambil anggaran Ormawa:", error.value);
@@ -238,6 +243,40 @@ export const usePpkDashboardStore = defineStore("ppkDashboard", () => {
   });
 
   const statusData = computed(() => {
+    // If an ormawa is selected, use its specific stats
+    if (selectedOrmawa.value?.stats) {
+      const stats = selectedOrmawa.value.stats;
+      const total = (selectedOrmawa.value.totalKegiatan || 0) || 1;
+      
+      return [
+        {
+          label: "Disetujui",
+          count: stats.disetujui,
+          color: "#4ade80",
+          pct: Math.round((stats.disetujui / total) * 100),
+        },
+        {
+          label: "Menunggu",
+          count: stats.menunggu,
+          color: "#93c5fd",
+          pct: Math.round((stats.menunggu / total) * 100),
+        },
+        {
+          label: "Revisi",
+          count: stats.revisi,
+          color: "#f5c518",
+          pct: Math.round((stats.revisi / total) * 100),
+        },
+        {
+          label: "Ditolak",
+          count: stats.ditolak,
+          color: "#f87171",
+          pct: Math.round((stats.ditolak / total) * 100),
+        },
+      ];
+    }
+
+    // Default to overall dashboard stats
     const data = dashData.value || {
       total: 0,
       disetujui: 0,
@@ -281,33 +320,38 @@ export const usePpkDashboardStore = defineStore("ppkDashboard", () => {
       id: ormawa.id,
       nama: ormawa.nama,
       kegiatan: ormawa.totalKegiatan || 0,
-      disetujui: ormawa.disetujuiCount || 0,
+      disetujui: ormawa.stats?.disetujui || 0, // Using stats.disetujui from new API
       progPct: ormawa.totalKegiatan
         ? Math.round(
-            ((ormawa.disetujuiCount || 0) / ormawa.totalKegiatan) * 100,
+            ((ormawa.stats?.disetujui || 0) / ormawa.totalKegiatan) * 100,
           )
         : 0,
     }));
   });
 
   const activityRows = computed(() => {
-    return kegiatanData.value?.data
-      ? kegiatanData.value.data.map((item) => ({
-          ...item,
-          lpjStatus:
-            item.status === "selesai_spi"
-              ? "LPJ Selesai"
-              : item.status === "waiting_spi"
-                ? "Menunggu SPI"
-                : item.status === "ditolak_spi"
-                  ? "Ditolak SPI"
-                  : "Belum sampai SPI",
-          pencairanLabel: item.pencairan.selesaiTagihan
-            ? `${item.pencairan.selesaiTagihan} / ${item.pencairan.totalTagihan}`
-            : "Belum cair",
-          pencairanNominal: item.pencairan.nominalSelesai || 0,
-        }))
-      : [];
+    let list = kegiatanData.value?.data || [];
+    
+    // Filter by selected Ormawa if applicable
+    if (selectedOrmawaId.value) {
+      list = list.filter(item => item.ormawa.id === Number(selectedOrmawaId.value));
+    }
+
+    return list.map((item) => ({
+      ...item,
+      lpjStatus:
+        item.status === "selesai_spi"
+          ? "LPJ Selesai"
+          : item.status === "waiting_spi"
+            ? "Menunggu SPI"
+            : item.status === "ditolak_spi"
+              ? "Ditolak SPI"
+              : "Belum sampai SPI",
+      pencairanLabel: item.pencairan.selesaiTagihan
+        ? `${item.pencairan.selesaiTagihan} / ${item.pencairan.totalTagihan}`
+        : "Belum cair",
+      pencairanNominal: item.pencairan.nominalSelesai || 0,
+    }));
   });
 
   const formatRp = (n: number) => {

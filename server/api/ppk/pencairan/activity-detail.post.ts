@@ -1,4 +1,9 @@
-import { and, eq, sql } from "drizzle-orm";
+// FILE: server/api/ppk/pencairan/activity-detail.post.ts
+// Mengambil detail kegiatan dan dokumentasi untuk pencairan PPK
+// Input: body.id (ini adalah id dari kegiatanTable)
+// Alur: kegiatan -> pengajuan_rab -> users -> ormawa
+
+import { and, eq } from "drizzle-orm";
 import { useDrizzle } from "~~/server/db";
 import {
   dokumentasiKegiatanTable,
@@ -13,6 +18,16 @@ import { toPublicUploadUrl } from "~~/server/utils/pencairanHelpers";
 
 export default defineEventHandler(async (event) => {
   try {
+    const { user } = event.context;
+
+    // 1. Validasi Role PPK
+    if (!user || user.role !== "ppk") {
+      throw createError({
+        statusCode: 403,
+        statusMessage: "Akses ditolak. Peran PPK diperlukan.",
+      });
+    }
+
     const body = await readBody(event);
     const kegiatanId = Number(body.id);
 
@@ -25,11 +40,12 @@ export default defineEventHandler(async (event) => {
 
     const db = useDrizzle();
 
-    // 1. Ambil info kegiatan
-    const [kegiatan] = await db
+    // 2. Ambil info kegiatan & RAB dengan validasi akses fakultas
+    const [dataKegiatan] = await db
       .select({
         id: kegiatanTable.id,
         statusKegiatan: kegiatanTable.statusKegiatan,
+        pengajuanRabId: pengajuanRabTable.id,
         judulKegiatan: pengajuanRabTable.judulKegiatan,
         totalAnggaran: pengajuanRabTable.totalAnggaran,
         fileRabUrl: pengajuanRabTable.fileRabUrl,
@@ -43,18 +59,24 @@ export default defineEventHandler(async (event) => {
         pengajuanRabTable,
         eq(kegiatanTable.pengajuanRabId, pengajuanRabTable.id),
       )
-      .innerJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.users_id))
+      .innerJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.id))
       .innerJoin(ormawaTable, eq(usersTable.ormawaId, ormawaTable.id))
-      .where(eq(kegiatanTable.id, kegiatanId));
+      .where(
+        and(
+          eq(kegiatanTable.id, kegiatanId),
+          eq(pengajuanRabTable.fakultasId, String(user.fakultasId)),
+        ),
+      );
 
-    if (!kegiatan) {
+    if (!dataKegiatan) {
       throw createError({
         statusCode: 404,
-        statusMessage: "Kegiatan tidak ditemukan",
+        statusMessage:
+          "Kegiatan tidak ditemukan atau Anda tidak memiliki akses",
       });
     }
 
-    // 2. Ambil semua dokumentasi foto kegiatan
+    // 3. Ambil data dokumentasi & tagihan menggunakan kegiatanId
     const docsFoto = await db
       .select({
         id: dokumentasiKegiatanTable.id,
@@ -67,14 +89,11 @@ export default defineEventHandler(async (event) => {
       .from(dokumentasiKegiatanTable)
       .where(eq(dokumentasiKegiatanTable.kegiatanId, kegiatanId));
 
-    // 3. Ambil semua tagihan (barang/jasa)
     const tagihans = await db
       .select({
         id: tagihanPencairanTable.id,
         tipeTagihan: tagihanPencairanTable.tipeTagihan,
         namaPenerima: tagihanPencairanTable.namaPenerima,
-        rekeningPenerima: tagihanPencairanTable.rekeningPenerima,
-        bankPenerima: tagihanPencairanTable.bankPenerima,
         nominal: tagihanPencairanTable.nominal,
         statusTagihan: tagihanPencairanTable.statusTagihan,
         createdAt: tagihanPencairanTable.createdAt,
@@ -82,7 +101,7 @@ export default defineEventHandler(async (event) => {
       .from(tagihanPencairanTable)
       .where(eq(tagihanPencairanTable.kegiatanId, kegiatanId));
 
-    // Combine and normalize
+    // 4. Transform & Normalisasi Data
     const combinedDocs = [
       ...docsFoto.map((f) => ({
         id: f.id,
@@ -106,11 +125,6 @@ export default defineEventHandler(async (event) => {
       })),
     ];
 
-    // Total cost calculation
-    const totalTagihan = tagihans.reduce(
-      (sum, t) => sum + Number(t.nominal),
-      0,
-    );
     const totalDibayar = tagihans
       .filter((t) => t.statusTagihan === "SELESAI")
       .reduce((sum, t) => sum + Number(t.nominal), 0);
@@ -118,18 +132,18 @@ export default defineEventHandler(async (event) => {
     return {
       success: true,
       data: {
-        kegiatan,
+        kegiatan: dataKegiatan,
         dokumentasi: combinedDocs,
-        totalBiaya: totalTagihan,
-        totalDibayar: totalDibayar,
-        isReadyForLunas: totalDibayar >= Number(kegiatan.totalAnggaran),
+        totalDibayar,
+        isReadyForLunas: totalDibayar >= Number(dataKegiatan.totalAnggaran),
       },
     };
   } catch (error: any) {
-    console.error("Error POST /api/ppk/pencairan/activity-detail:", error);
+    console.error("Error in activity-detail PPK:", error);
+    if (error.statusCode) throw error;
     throw createError({
-      statusCode: error.statusCode || 500,
-      statusMessage: error.statusMessage || "Gagal mengambil detail pencairan",
+      statusCode: 500,
+      statusMessage: "Gagal mengambil detail pencairan",
     });
   }
 });

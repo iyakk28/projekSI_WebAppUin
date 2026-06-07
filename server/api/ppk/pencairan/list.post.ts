@@ -107,7 +107,7 @@ export default defineEventHandler(async (event) => {
         };
       }),
     );
-
+    console.log(result);
     return {
       success: true,
       data: result,

@@ -221,7 +221,7 @@
                   Anggaran per Ormawa
                 </h3>
                 <p class="text-sm text-slate-500">
-                  Komparasi anggaran & penggunaan
+                  Komparasi anggaran & penggunaan se-fakultas
                 </p>
               </div>
 
@@ -289,7 +289,13 @@
                   <h3 class="text-lg font-bold text-slate-900">
                     Status Kegiatan
                   </h3>
-                  <p class="text-sm text-slate-500">Rekap seluruh proposal</p>
+                  <p class="text-sm text-slate-500">
+                    {{
+                      selectedOrmawa
+                        ? `Rekap proposal ${selectedOrmawa.nama}`
+                        : "Rekap seluruh proposal fakultas"
+                    }}
+                  </p>
                 </div>
 
                 <span
@@ -373,8 +379,9 @@
                       v-for="row in ormawaRows"
                       :key="row.id"
                       class="border-b border-slate-100 hover:bg-slate-50"
+                      :class="{ 'bg-amber-50': selectedOrmawaId == row.id }"
                     >
-                      <td class="py-2 font-medium text-slate-800">
+                      <td class="py-2 font-medium" :class="selectedOrmawaId == row.id ? 'text-[#d1a82a]' : 'text-slate-800'">
                         {{ row.nama }}
                       </td>
 
@@ -425,11 +432,13 @@
           >
             <div>
               <h3 class="text-lg font-bold text-slate-900">
-                Daftar Kegiatan Ormawa
+                Daftar Kegiatan {{ selectedOrmawa ? selectedOrmawa.nama : 'Ormawa' }}
               </h3>
               <p class="text-sm text-slate-500">
-                Seluruh pengajuan RAB/TOR dari ormawa fakultas Anda, beserta
-                status, pencairan, dan status SPI/LPJ.
+                {{ selectedOrmawa 
+                  ? `Menampilkan seluruh pengajuan dari ${selectedOrmawa.nama}.` 
+                  : 'Seluruh pengajuan RAB/TOR dari ormawa fakultas Anda, beserta status, pencairan, dan status SPI/LPJ.'
+                }}
               </p>
             </div>
 

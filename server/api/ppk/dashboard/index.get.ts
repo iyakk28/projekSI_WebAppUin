@@ -1,7 +1,7 @@
 // FILE: server/api/ppk/dashboard/index.get.ts
 // Endpoint untuk mengambil statistik dashboard PPK
 
-import { eq, sql, ne, and, inArray } from "drizzle-orm";
+import { eq, sql, ne, and } from "drizzle-orm";
 import {
   pengajuanRabTable,
   usersTable,
@@ -14,7 +14,6 @@ export default defineEventHandler(async (event) => {
     const db = useDrizzle();
     const { user } = event.context;
 
-    // ========== VALIDASI USER ==========
     if (!user) {
       throw createError({
         statusCode: 401,
@@ -43,87 +42,24 @@ export default defineEventHandler(async (event) => {
       };
     }
 
-    // ========== STEP 1: Ambil semua Kaprodi dalam fakultas PPK ==========
-    const kaprodiList = await db
-      .select({ prodiId: usersTable.prodiId })
-      .from(usersTable)
-      .where(
-        and(
-          eq(usersTable.role, "kaprodi"),
-          eq(usersTable.fakultasId, fakultasId),
-        ),
-      );
+    // ========== QUERY STATISTIK (SINGLE OPTIMIZED QUERY) ==========
 
-    const prodiIds = kaprodiList
-      .map((k) => k.prodiId)
-      .filter((id): id is number => id !== null);
-
-    if (prodiIds.length === 0) {
-      return {
-        success: true,
-        total: 0,
-        menunggu: 0,
-        disetujui: 0,
-        revisi: 0,
-        ditolak: 0,
-        message: "Tidak ada prodi dalam fakultas ini",
-      };
-    }
-
-    // ========== STEP 2: Ambil semua Ormawa dari prodi-prodi tersebut ==========
-    const ormawaList = await db
-      .select({ id: ormawaTable.id })
-      .from(ormawaTable)
-      .where(inArray(ormawaTable.prodiId, prodiIds));
-
-    const ormawaIds = ormawaList.map((o) => o.id);
-
-    if (ormawaIds.length === 0) {
-      return {
-        success: true,
-        total: 0,
-        menunggu: 0,
-        disetujui: 0,
-        revisi: 0,
-        ditolak: 0,
-        message: "Tidak ada Ormawa dalam prodi-prodi tersebut",
-      };
-    }
-
-    // ========== STEP 3: Ambil semua users yang terkait dengan Ormawa ==========
-    const ormawaUsers = await db
-      .select({ usersId: usersTable.users_id })
-      .from(usersTable)
-      .where(inArray(usersTable.ormawaId, ormawaIds));
-
-    const ormawaUserIds = ormawaUsers.map((u) => u.usersId);
-
-    if (ormawaUserIds.length === 0) {
-      return {
-        success: true,
-        total: 0,
-        menunggu: 0,
-        disetujui: 0,
-        revisi: 0,
-        ditolak: 0,
-        message: "Tidak ada user yang terhubung dengan Ormawa",
-      };
-    }
-
-    // ========== STEP 4: Hitung statistik dengan 1 query (optimized) ==========
     const statsQuery = await db
       .select({
         total: sql<number>`COUNT(*)`,
         menunggu: sql<number>`SUM(CASE WHEN ${pengajuanRabTable.status} = 'waiting_ppk' THEN 1 ELSE 0 END)`,
         revisi: sql<number>`SUM(CASE WHEN ${pengajuanRabTable.status} = 'revisi_ppk' THEN 1 ELSE 0 END)`,
-        disetujui: sql<number>`SUM(CASE WHEN ${pengajuanRabTable.status} IN ('disetujui_ppk', 'waiting_spi', 'disetujui', 'selesai_spi') THEN 1 ELSE 0 END)`,
+        // Note: 'disetujui_ppk' diubah ke 'lunas_ppk' agar sesuai dengan statusEnum di schema dan penggunaan di API lain.
+        disetujui: sql<number>`SUM(CASE WHEN ${pengajuanRabTable.status} IN ('lunas_ppk', 'waiting_spi', 'disetujui', 'selesai_spi') THEN 1 ELSE 0 END)`,
         ditolak: sql<number>`SUM(CASE WHEN ${pengajuanRabTable.status} = 'ditolak_spi' THEN 1 ELSE 0 END)`,
       })
       .from(pengajuanRabTable)
+      .innerJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.id))
+      .innerJoin(ormawaTable, eq(usersTable.ormawaId, ormawaTable.id))
       .where(
         and(
           ne(pengajuanRabTable.status, "draft"),
-          inArray(pengajuanRabTable.usersId, ormawaUserIds),
+          eq(ormawaTable.fakultasId, fakultasId),
         ),
       );
 
@@ -135,7 +71,7 @@ export default defineEventHandler(async (event) => {
       ditolak: 0,
     };
 
-    return {
+    const finalResult = {
       success: true,
       total: Number(result.total ?? 0),
       menunggu: Number(result.menunggu ?? 0),
@@ -143,8 +79,25 @@ export default defineEventHandler(async (event) => {
       disetujui: Number(result.disetujui ?? 0),
       ditolak: Number(result.ditolak ?? 0),
     };
+
+    return finalResult;
   } catch (error: any) {
-    console.error("Error GET /api/ppk/dashboard:", error);
+    console.error("Error timestamp:", new Date().toISOString());
+    console.error("Error object:", error);
+    console.error("Error message:", error?.message);
+    console.error("Error statusCode:", error?.statusCode);
+    console.error("Error stack:", error?.stack);
+
+    // Log specific error types
+    if (error?.code) {
+      console.error("Database error code:", error.code);
+    }
+
+    if (error?.meta) {
+      console.error("Database error meta:", error.meta);
+    }
+
+    console.error("=== END ERROR ===");
 
     // Jika error sudah memiliki statusCode, lempar ulang
     if (error.statusCode) {
