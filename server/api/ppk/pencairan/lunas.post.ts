@@ -1,6 +1,10 @@
 import { eq, sum, and, inArray } from "drizzle-orm";
 import { useDrizzle } from "~~/server/db";
-import { kegiatanTable, tagihanPencairanTable, pengajuanRabTable } from "~~/server/db/schema";
+import {
+  kegiatanTable,
+  tagihanPencairanTable,
+  pengajuanRabTable,
+} from "~~/server/db/schema";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -8,7 +12,10 @@ export default defineEventHandler(async (event) => {
     const kegiatanId = Number(body.id);
 
     if (isNaN(kegiatanId)) {
-      throw createError({ statusCode: 400, statusMessage: "ID Kegiatan tidak valid" });
+      throw createError({
+        statusCode: 400,
+        statusMessage: "ID Kegiatan tidak valid",
+      });
     }
 
     const db = useDrizzle();
@@ -21,24 +28,30 @@ export default defineEventHandler(async (event) => {
         totalAnggaran: pengajuanRabTable.totalAnggaran,
       })
       .from(kegiatanTable)
-      .innerJoin(pengajuanRabTable, eq(kegiatanTable.pengajuanRabId, pengajuanRabTable.id))
+      .innerJoin(
+        pengajuanRabTable,
+        eq(kegiatanTable.pengajuanRabId, pengajuanRabTable.id),
+      )
       .where(eq(kegiatanTable.id, kegiatanId));
 
     if (!kegiatan) {
-      throw createError({ statusCode: 404, statusMessage: "Kegiatan tidak ditemukan" });
+      throw createError({
+        statusCode: 404,
+        statusMessage: "Kegiatan tidak ditemukan",
+      });
     }
 
     // 2. Hitung total nominal tagihan yang statusnya SELESAI (sudah dibayar)
     const [tagihanTotal] = await db
       .select({
-        totalDibayar: sum(tagihanPencairanTable.nominal)
+        totalDibayar: sum(tagihanPencairanTable.nominal),
       })
       .from(tagihanPencairanTable)
       .where(
         and(
           eq(tagihanPencairanTable.kegiatanId, kegiatanId),
-          eq(tagihanPencairanTable.statusTagihan, "SELESAI")
-        )
+          eq(tagihanPencairanTable.statusTagihan, "SELESAI"),
+        ),
       );
 
     const totalDibayar = Number(tagihanTotal?.totalDibayar || 0);
@@ -53,12 +66,12 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // 4. Update status kegiatan menjadi LUNAS
+    // 4. Update status kegiatan menjadi LUNAS dengan format MySQL datetime
     await db
       .update(kegiatanTable)
-      .set({ 
-        statusKegiatan: "LUNAS", 
-        updatedAt: new Date().toISOString() 
+      .set({
+        statusKegiatan: "LUNAS",
+        updatedAt: new Date(), // Langsung kirim Date object, Drizzle akan mengkonversinya
       })
       .where(eq(kegiatanTable.id, kegiatanId));
 
@@ -67,14 +80,15 @@ export default defineEventHandler(async (event) => {
       message: "Kegiatan berhasil ditandai LUNAS.",
       data: {
         totalDibayar,
-        totalAnggaran
-      }
+        totalAnggaran,
+      },
     };
   } catch (error: any) {
     console.error("Error POST /api/ppk/pencairan/lunas:", error);
     throw createError({
       statusCode: error.statusCode || 500,
-      statusMessage: error.statusMessage || "Gagal mengonfirmasi lunas kegiatan",
+      statusMessage:
+        error.statusMessage || "Gagal mengonfirmasi lunas kegiatan",
     });
   }
 });

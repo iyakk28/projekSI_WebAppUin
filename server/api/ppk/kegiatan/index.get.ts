@@ -42,7 +42,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // ========== QUERY LANGSUNG KE PENGAJUAN_RAB ==========
-    // Step 1: Ambil semua pengajuan berdasarkan fakultasId
+    // Step 1: Ambil semua pengajuan berdasarkan fakultasId yang berstatus 'waiting_ppk'
     const pengajuan = await db
       .select({
         id: pengajuanRabTable.id,
@@ -65,7 +65,7 @@ export default defineEventHandler(async (event) => {
       .where(
         and(
           eq(pengajuanRabTable.fakultasId, String(fakultasId)),
-          ne(pengajuanRabTable.status, "draft"),
+          eq(pengajuanRabTable.status, "waiting_ppk"),
         ),
       )
       .orderBy(desc(pengajuanRabTable.createdAt));

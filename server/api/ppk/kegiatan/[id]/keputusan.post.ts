@@ -1,19 +1,10 @@
 // FILE: server/api/ppk/kegiatan/[id]/keputusan.post.ts
-//
-// Pola mengikuti PengajuanDraftRab.post.ts milik ormawa:
-// - Cari RAB by id
-// - Validasi akses: ormawa pakai eq(usersId, user.id)
-//   PPK pakai cek inArray(usersId, ormawaUserIds)
-// - Update status dalam satu operasi
+// Endpoint sederhana untuk memproses keputusan PPK (Setuju/Revisi/Tolak)
+// Validasi akses langsung menggunakan fakultasId dari pengajuan_rab
 
-import { eq, inArray, and } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { useDrizzle } from "~~/server/db";
-import {
-  pengajuanRabTable,
-  approvalLogTable,
-  usersTable,
-  ormawaTable,
-} from "~~/server/db/schema";
+import { pengajuanRabTable, approvalLogTable } from "~~/server/db/schema";
 
 const KEPUTUSAN_MAP = {
   disetujui: { statusBaru: "waiting_spi" as const, action: "disetujui" },
@@ -25,88 +16,56 @@ type Keputusan = keyof typeof KEPUTUSAN_MAP;
 
 export default defineEventHandler(async (event) => {
   try {
+    const { user } = event.context;
+
+    // 1. Validasi Role PPK
+    if (!user || user.role !== "ppk") {
+      throw createError({
+        statusCode: 403,
+        statusMessage: "Akses ditolak. Peran PPK diperlukan.",
+      });
+    }
+
     const id = Number(getRouterParam(event, "id"));
-    if (isNaN(id) || id <= 0) {
+    const body = await readBody(event);
+    const { keputusan, catatan } = body ?? {};
+
+    if (isNaN(id)) {
       throw createError({
         statusCode: 400,
         statusMessage: "ID pengajuan tidak valid",
       });
     }
-    const body = await readBody(event);
-    // field: "keputusan" — value: "disetujui" | "revisi" | "tolak"
-    const { keputusan, catatan } = body ?? {};
+
     if (!keputusan || !Object.keys(KEPUTUSAN_MAP).includes(keputusan)) {
       throw createError({
         statusCode: 400,
         statusMessage: `Keputusan tidak valid. Pilihan: ${Object.keys(KEPUTUSAN_MAP).join(", ")}`,
       });
     }
+
     if ((keputusan === "revisi" || keputusan === "tolak") && !catatan?.trim()) {
       throw createError({
         statusCode: 400,
         statusMessage: "Catatan wajib diisi untuk keputusan revisi atau tolak",
       });
     }
+
     const db = useDrizzle();
-    const { user } = event.context;
-    const fakultasId = user.fakultasId;
-    if (!fakultasId) {
-      throw createError({
-        statusCode: 403,
-        statusMessage: "PPK tidak memiliki data fakultas",
-      });
-    }
-    // Query bertahap untuk dapat ormawaUserIds — pola sama seperti ormawa
-    const kaprodiList = await db
-      .select({ prodiId: usersTable.prodiId })
-      .from(usersTable)
-      .where(
-        and(
-          eq(usersTable.role, "kaprodi"),
-          eq(usersTable.fakultasId, fakultasId),
-        ),
-      );
 
-    const prodiIds = kaprodiList
-      .map((k) => k.prodiId)
-      .filter((id): id is number => id !== null);
-
-    if (prodiIds.length === 0) {
-      throw createError({
-        statusCode: 403,
-        statusMessage: "Tidak ada ormawa se-fakultas ditemukan",
-      });
-    }
-
-    const ormawaRows = await db
-      .select({ id: ormawaTable.id })
-      .from(ormawaTable)
-      .where(inArray(ormawaTable.prodiId, prodiIds));
-
-    const ormawaIds = ormawaRows.map((o) => o.id);
-
-    const ormawaUsers = await db
-      .select({ usersId: usersTable.users_id })
-      .from(usersTable)
-      .where(inArray(usersTable.ormawaId, ormawaIds));
-
-    const ormawaUserIds = ormawaUsers.map((u) => u.usersId);
-
-    // Cari RAB dan validasi akses sekaligus — pola sama seperti PengajuanDraftRab.post.ts ormawa
-    // ormawa: findFirst where id=rabId AND usersId=user.id
-    // PPK:    findFirst where id=rabId AND usersId IN ormawaUserIds
+    // 2. Cari RAB dan Validasi Akses Fakultas sekaligus
     const rab = await db.query.pengajuanRabTable.findFirst({
       where: and(
         eq(pengajuanRabTable.id, id),
-        inArray(pengajuanRabTable.usersId, ormawaUserIds),
+        eq(pengajuanRabTable.fakultasId, String(user.fakultasId)),
       ),
     });
 
     if (!rab) {
       throw createError({
-        statusCode: 404,
+        statusCode: 403,
         statusMessage:
-          "Pengajuan tidak ditemukan atau Anda tidak memiliki akses",
+          "Pengajuan tidak ditemukan atau Anda tidak memiliki akses ke fakultas ini",
       });
     }
 
@@ -119,7 +78,7 @@ export default defineEventHandler(async (event) => {
 
     const { statusBaru, action } = KEPUTUSAN_MAP[keputusan as Keputusan];
 
-    // Update status + insert approval log — pola sama seperti PengajuanDraftRab
+    // 3. Proses Transaksi: Update Status & Simpan Log
     await db.transaction(async (tx) => {
       await tx
         .update(pengajuanRabTable)
@@ -139,17 +98,15 @@ export default defineEventHandler(async (event) => {
       message:
         action === "disetujui"
           ? "Pengajuan berhasil disetujui dan diteruskan ke SPI"
-          : action === "revisi"
-            ? "Pengajuan dikembalikan untuk revisi"
-            : "Pengajuan ditolak",
+          : "Keputusan berhasil disimpan",
       data: { pengajuanId: id, keputusan: action, statusBaru },
     };
   } catch (error: any) {
-    console.error("Error POST /api/ppk/kegiatan/[id]/keputusan:", error);
+    console.error("Error processing PPK decision:", error);
     if (error.statusCode) throw error;
     throw createError({
       statusCode: 500,
-      statusMessage: "Gagal memproses keputusan",
+      statusMessage: "Gagal memproses keputusan PPK",
       data: error,
     });
   }

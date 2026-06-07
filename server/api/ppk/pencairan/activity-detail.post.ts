@@ -32,6 +32,8 @@ export default defineEventHandler(async (event) => {
         statusKegiatan: kegiatanTable.statusKegiatan,
         judulKegiatan: pengajuanRabTable.judulKegiatan,
         totalAnggaran: pengajuanRabTable.totalAnggaran,
+        fileRabUrl: pengajuanRabTable.fileRabUrl,
+        fileTorUrl: pengajuanRabTable.fileTorUrl,
         ormawaName: ormawaTable.nama,
         ormawaKode: ormawaTable.kode,
         pengajuNama: usersTable.fullName,
@@ -41,7 +43,7 @@ export default defineEventHandler(async (event) => {
         pengajuanRabTable,
         eq(kegiatanTable.pengajuanRabId, pengajuanRabTable.id),
       )
-      .innerJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.id))
+      .innerJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.users_id))
       .innerJoin(ormawaTable, eq(usersTable.ormawaId, ormawaTable.id))
       .where(eq(kegiatanTable.id, kegiatanId));
 
