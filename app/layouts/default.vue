@@ -269,7 +269,7 @@
               Ikuti Kami
             </h3>
             <div class="flex space-x-4">
-              <a href="#" class="social-icon">
+              <a href="https://www.facebook.com/IAINBsk?locale=id_ID" class="social-icon">
                 <Icon name="mdi:facebook" class="h-5 w-5" />
               </a>
               <a href="#" class="social-icon">
