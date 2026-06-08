@@ -281,6 +281,7 @@
               <a href="https://twitter.com/uinmybatusangkar" class="social-icon">
                 <Icon name="mdi:twitter" class="h-5 w-5" />
               </a>
+              
             </div>
           </div>
         </div>
@@ -361,7 +362,9 @@
   }
 
   /* Social icons */
-  .social-icon {
-    @apply rounded-full bg-white/10 p-2 inline-flex transition-all hover:bg-[rgba(201,162,39,0.5)];
-  }
+.social-icon {
+  @apply rounded-full bg-white/10 p-2 inline-flex transition-all hover:bg-[rgba(201,162,39,0.5)] hover:-translate-y-1;
+}
+
+  
 </style>
