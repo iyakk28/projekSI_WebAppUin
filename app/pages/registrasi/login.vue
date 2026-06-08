@@ -42,13 +42,16 @@
               />
             </div>
             <input
-              v-model="form.id_users"
+              v-model="form.userName"
               @input="errorMsg = ''"
               type="text"
               required
               placeholder="Masukkan username"
               class="w-full h-10 pl-10 pr-4 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all text-sm shadow-sm"
-              :class="{ 'border-red-300 ring-1 ring-red-100 bg-red-50/20': errorMsg && errorMsg.includes('User ID') }"
+              :class="{
+                'border-red-300 ring-1 ring-red-100 bg-red-50/20':
+                  errorMsg && errorMsg.includes('User ID'),
+              }"
             />
           </div>
         </div>
@@ -72,7 +75,10 @@
               required
               placeholder="Masukkan password"
               class="w-full h-10 pl-10 pr-10 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all text-sm shadow-sm"
-              :class="{ 'border-red-300 ring-1 ring-red-100 bg-red-50/20': errorMsg && errorMsg.includes('Password') }"
+              :class="{
+                'border-red-300 ring-1 ring-red-100 bg-red-50/20':
+                  errorMsg && errorMsg.includes('Password'),
+              }"
             />
           </div>
         </div>
@@ -134,7 +140,7 @@
   });
 
   const form = reactive({
-    id_users: "",
+    userName: "",
     password: "",
     remember: false,
   });
@@ -149,7 +155,7 @@
       const response: any = await $fetch("/api/registrasi/login", {
         method: "POST",
         body: {
-          id_users: form.id_users,
+          userName: form.userName,
           password: form.password,
           remember: form.remember,
         },
@@ -161,7 +167,8 @@
       }
     } catch (err: any) {
       console.error("Login Gagal:", err);
-      errorMsg.value = err.data?.message || err.message || "Username atau Password salah!";
+      errorMsg.value =
+        err.data?.message || err.message || "Username atau Password salah!";
     } finally {
       pending.value = false;
     }

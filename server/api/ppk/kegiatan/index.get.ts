@@ -213,7 +213,7 @@ export default defineEventHandler(async (event) => {
         },
       };
     });
-    console.log(activityData);
+
     // ========== SUMMARY ==========
     const summary = {
       totalMasuk: activityData.length,

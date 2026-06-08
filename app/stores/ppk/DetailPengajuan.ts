@@ -18,7 +18,6 @@ interface DetailFull {
   kegiatan: any;
   dokumentasi: any[];
   tagihan: any[];
-  pembayaran: any[];
   ormawa: any;
   pengaju: {
     nama: string;
@@ -50,9 +49,12 @@ export const usePpkDetailStore = defineStore("ppkDetailStore", {
       }
     },
 
+    // Method baru untuk mendapatkan URL file yang aman dan spesifik per ID Pengajuan
     getFileUrl(path: string) {
-        if (!path) return "";
-        return `/api/ppk/file/serve?path=${encodeURIComponent(path)}`;
+        if (!path || !this.detail?.rab.id) return "";
+        
+        // Gunakan API baru yang memvalidasi path berdasarkan ID Pengajuan
+        return `/api/ppk/pengajuan/${this.detail.rab.id}/file?path=${encodeURIComponent(path)}`;
     }
   },
 });

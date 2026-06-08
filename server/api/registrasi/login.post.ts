@@ -8,9 +8,9 @@ import { programStudiTable } from "~~/server/db/schema";
 export default defineEventHandler(async (event) => {
   try {
     const body = await readBody(event);
-    const { id_users, password, remember } = body;
+    const { userName, password, remember } = body;
 
-    if (!id_users || !password) {
+    if (!userName || !password) {
       throw createError({
         statusCode: 400,
         statusMessage: "Bad Request",
@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
     }
 
     const user = await useDrizzle().query.usersTable.findFirst({
-      where: eq(usersTable.users_id, String(id_users)),
+      where: eq(usersTable.userName, String(userName)),
     });
 
     if (!user) {

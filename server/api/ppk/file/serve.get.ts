@@ -1,5 +1,6 @@
 // FILE: server/api/ppk/file/serve.get.ts
 // Secure file server for PPK - Validates access to files in the uploads folder
+// Termasuk validasi untuk bukti pembayaran dari tabel pembayaran
 
 import fs from "node:fs";
 import path from "node:path";
@@ -9,6 +10,7 @@ import {
   pengajuanRabTable,
   dokumentasiKegiatanTable,
   tagihanPencairanTable,
+  pembayaranTable,
 } from "~~/server/db/schema";
 
 export default defineEventHandler(async (event) => {
@@ -31,15 +33,9 @@ export default defineEventHandler(async (event) => {
      throw createError({ statusCode: 403, message: "PPK tidak memiliki fakultas" });
   }
 
-  // Validasi: Apakah file ini milik pengajuan di fakultas ini?
-  // Kita cek di pengajuan_rab (RAB/TOR), dokumentasi_kegiatan, atau tagihan_pencairan.
-  // Ini mungkin agak berat jika datanya sangat besar, tapi paling aman.
-  
-  // Untuk efisiensi, kita bisa asumsikan file yang diminta valid jika fakultasId cocok 
-  // di record yang memegang URL tersebut.
-
+  // Validasi: Apakah file ini milik pengajuan/pencairan di fakultas ini?
   const isAuthorized = await db.transaction(async (tx) => {
-    // Cek di pengajuan_rab
+    // 1. Cek di pengajuan_rab (RAB/TOR)
     const rab = await tx.query.pengajuanRabTable.findFirst({
         where: and(
             eq(pengajuanRabTable.fakultasId, String(fakultasId)),
@@ -51,7 +47,7 @@ export default defineEventHandler(async (event) => {
     });
     if (rab) return true;
 
-    // Cek di dokumentasi_kegiatan
+    // 2. Cek di dokumentasi_kegiatan (Foto Lapangan)
     const doc = await tx.query.dokumentasiKegiatanTable.findFirst({
         where: and(
             eq(dokumentasiKegiatanTable.fakultasId, String(fakultasId)),
@@ -60,7 +56,7 @@ export default defineEventHandler(async (event) => {
     });
     if (doc) return true;
 
-    // Cek di tagihan_pencairan (banyak kolom file)
+    // 3. Cek di tagihan_pencairan (Lampiran Ormawa)
     const tagihan = await tx.query.tagihanPencairanTable.findFirst({
         where: and(
             eq(tagihanPencairanTable.fakultasId, String(fakultasId)),
@@ -72,12 +68,27 @@ export default defineEventHandler(async (event) => {
                 eq(tagihanPencairanTable.ktpFileUrl, fileUrl),
                 eq(tagihanPencairanTable.bukuRekeningFileUrl, fileUrl),
                 eq(tagihanPencairanTable.strukFileUrl, fileUrl),
-                eq(tagihanPencairanTable.fotoBarangUrl, fileUrl),
-                eq(tagihanPencairanTable.buktiPembayaranUrl, fileUrl)
+                eq(tagihanPencairanTable.fotoBarangUrl, fileUrl)
             )
         )
     });
     if (tagihan) return true;
+
+    // 4. Cek di tabel PEMBAYARAN (Bukti Transfer PPK)
+    // Kita join ke tagihan_pencairan untuk memastikan fakultasId cocok
+    const buktiBayar = await tx
+        .select({ id: pembayaranTable.id })
+        .from(pembayaranTable)
+        .innerJoin(tagihanPencairanTable, eq(pembayaranTable.tagihanId, tagihanPencairanTable.id))
+        .where(
+            and(
+                eq(tagihanPencairanTable.fakultasId, String(fakultasId)),
+                eq(pembayaranTable.buktiTransferUrl, fileUrl)
+            )
+        )
+        .limit(1);
+    
+    if (buktiBayar.length > 0) return true;
 
     return false;
   });
@@ -101,5 +112,7 @@ export default defineEventHandler(async (event) => {
   const contentType = mimeTypes[ext] || "application/octet-stream";
 
   setHeader(event, "Content-Type", contentType);
+  setHeader(event, "Content-Disposition", `inline; filename="${path.basename(filePath)}"`);
+  
   return sendStream(event, fs.createReadStream(filePath));
 });

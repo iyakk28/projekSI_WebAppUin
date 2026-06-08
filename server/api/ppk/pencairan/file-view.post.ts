@@ -1,12 +1,27 @@
+// FILE: server/api/ppk/pencairan/file-view.post.ts
+// Mengambil file stream secara aman untuk detail pencairan PPK
+// Prioritas: Mengambil bukti transfer dari tabel pembayaran untuk tipe tagihan
+
 import fs from "node:fs";
 import path from "node:path";
 import { useDrizzle } from "~~/server/db";
-import { eq } from "drizzle-orm";
-import { dokumentasiKegiatanTable, tagihanPencairanTable } from "~~/server/db/schema";
+import { eq, and } from "drizzle-orm";
+import { 
+  dokumentasiKegiatanTable, 
+  tagihanPencairanTable, 
+  pembayaranTable,
+  pengajuanRabTable,
+  kegiatanTable
+} from "~~/server/db/schema";
 
 export default defineEventHandler(async (event) => {
+  const { user } = event.context;
+  if (!user || user.role !== "ppk") {
+    throw createError({ statusCode: 403, message: "Akses ditolak." });
+  }
+
   const body = await readBody(event);
-  const { id, type, field = "fileUrl" } = body;
+  const { id, type, field } = body; // id: ID Tagihan atau ID Dokumentasi
 
   if (!id || !type) {
     throw createError({ statusCode: 400, message: "ID dan Tipe wajib diisi" });
@@ -16,28 +31,52 @@ export default defineEventHandler(async (event) => {
   let fileUrl = "";
 
   if (type === "tagihan") {
-    const data = await db.query.tagihanPencairanTable.findFirst({
+    // 1. Ambil info tagihan dan validasi fakultas
+    const tagihan = await db.query.tagihanPencairanTable.findFirst({
       where: eq(tagihanPencairanTable.id, Number(id)),
     });
-    if (!data) throw createError({ statusCode: 404, message: "Tagihan tidak ditemukan" });
-    fileUrl = (data as any)[field];
+
+    if (!tagihan || String(tagihan.fakultasId) !== String(user.fakultasId)) {
+        throw createError({ statusCode: 404, message: "Tagihan tidak ditemukan atau akses ditolak" });
+    }
+
+    // 2. Cek apakah ada record pembayaran (struk yang sah sekarang ada di sini)
+    const pembayaran = await db.query.pembayaranTable.findFirst({
+        where: eq(pembayaranTable.tagihanId, BigInt(id))
+    });
+
+    if (pembayaran) {
+        fileUrl = pembayaran.buktiTransferUrl;
+    } else {
+        // Jika belum ada pembayaran, mungkin yang diminta adalah lampiran asli ormawa (misal skFileUrl, npwpFileUrl, dll)
+        // Jika parameter 'field' dikirim, gunakan itu.
+        if (field && (tagihan as any)[field]) {
+            fileUrl = (tagihan as any)[field];
+        } else {
+            throw createError({ statusCode: 404, message: "Bukti pembayaran belum tersedia" });
+        }
+    }
+
   } else if (type === "foto") {
-    const data = await db.query.dokumentasiKegiatanTable.findFirst({
+    // Validasi dokumentasi foto (lampiran kegiatan)
+    const doc = await db.query.dokumentasiKegiatanTable.findFirst({
       where: eq(dokumentasiKegiatanTable.id, Number(id)),
     });
-    if (!data) throw createError({ statusCode: 404, message: "Dokumentasi tidak ditemukan" });
-    fileUrl = (data as any)[field];
+    
+    if (!doc || String(doc.fakultasId) !== String(user.fakultasId)) {
+        throw createError({ statusCode: 404, message: "Dokumentasi tidak ditemukan atau akses ditolak" });
+    }
+    
+    fileUrl = doc.fileUrl;
   }
 
   if (!fileUrl) {
     throw createError({ statusCode: 404, message: "File tidak ditemukan di database" });
   }
 
-  // Handle multiple paths if separated by semicolon
+  // Handle pathing
   const firstPath = fileUrl.split(";")[0].trim();
-  const filePath = path.isAbsolute(firstPath) 
-    ? firstPath 
-    : path.resolve(process.cwd(), firstPath);
+  const filePath = path.resolve(process.cwd(), firstPath);
 
   if (!fs.existsSync(filePath)) {
     throw createError({ statusCode: 404, message: "File fisik tidak ditemukan di server" });

@@ -1,7 +1,7 @@
 // FILE: server/api/ppk/pengajuan/[id]/full-detail.get.ts
-// Mengambil detail lengkap pengajuan untuk PPK (RAB, TOR, Dokumentasi, Tagihan)
+// Mengambil detail lengkap pengajuan untuk PPK (RAB, TOR, Dokumentasi, Tagihan, Pembayaran)
 
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, inArray, sql } from "drizzle-orm";
 import { useDrizzle } from "~~/server/db";
 import {
   pengajuanRabTable,
@@ -48,7 +48,7 @@ export default defineEventHandler(async (event) => {
 
     // Validasi Fakultas
     if (String(rab.fakultasId) !== String(user.fakultasId)) {
-       throw createError({
+      throw createError({
         statusCode: 403,
         statusMessage: "Akses ditolak. Pengajuan bukan dari fakultas Anda.",
       });
@@ -61,50 +61,77 @@ export default defineEventHandler(async (event) => {
 
     let dokumentasi: any[] = [];
     let processedTagihan: any[] = [];
-    let pembayaran: any[] = [];
 
     if (kegiatan) {
-      // 3. Ambil Dokumentasi
-      dokumentasi = await db.select().from(dokumentasiKegiatanTable).where(eq(dokumentasiKegiatanTable.kegiatanId, kegiatan.id));
+      // 3. Ambil Dokumentasi Foto Lapangan
+      dokumentasi = await db
+        .select()
+        .from(dokumentasiKegiatanTable)
+        .where(eq(dokumentasiKegiatanTable.kegiatanId, kegiatan.id));
 
-      // 4. Ambil Tagihan
-      const tagihan = await db.select().from(tagihanPencairanTable).where(eq(tagihanPencairanTable.kegiatanId, kegiatan.id));
+      // 4. Ambil Tagihan beserta data Pembayaran dan Nama PPK yang membayar
+      const tagihanWithPayment = await db
+        .select({
+          tagihan: tagihanPencairanTable,
+          pembayaran: {
+            id: pembayaranTable.id,
+            tanggal: pembayaranTable.tanggalPembayaran,
+            buktiUrl: pembayaranTable.buktiTransferUrl,
+            catatan: pembayaranTable.catatanPembayaran,
+            ppkNama: usersTable.fullName, // Nama PPK yang memproses
+          },
+        })
+        .from(tagihanPencairanTable)
+        .leftJoin(
+          pembayaranTable,
+          eq(tagihanPencairanTable.id, pembayaranTable.tagihanId),
+        )
+        .leftJoin(usersTable, eq(pembayaranTable.ppkId, usersTable.id)) // Join ke users untuk dapat nama PPK
+        .where(eq(tagihanPencairanTable.kegiatanId, kegiatan.id));
 
-      if (tagihan.length > 0) {
-        const tagihanIds = tagihan.map(t => t.id);
-        
-        // 5. Ambil Pembayaran
-        pembayaran = await db.select().from(pembayaranTable).where(inArray(pembayaranTable.tagihanId, tagihanIds));
+      // Dekripsi dan Transformasi
+      processedTagihan = tagihanWithPayment.map((item) => {
+        const t = item.tagihan;
+        const p = item.pembayaran;
 
-        // Dekripsi data sensitif di tagihan (Berdasarkan dokumentasiBarang & dokumentasiJasa)
-        processedTagihan = tagihan.map(t => ({
+        return {
           ...t,
-          // Fields yang dienkripsi di kedua tipe
+          // Dekripsi Data Sensitif
           namaPenerima: showDekripsi(t.namaPenerima),
           rekeningPenerima: showDekripsi(t.rekeningPenerima),
           bankPenerima: showDekripsi(t.bankPenerima),
-          
-          // Fields tambahan yang hanya ada/dienkripsi di tipe JASA
+
           skNomor: t.skNomor ? showDekripsi(t.skNomor) : null,
           spmtNomor: t.spmtNomor ? showDekripsi(t.spmtNomor) : null,
           amprahNomor: t.amprahNomor ? showDekripsi(t.amprahNomor) : null,
           npwpNomor: t.npwpNomor ? showDekripsi(t.npwpNomor) : null,
           ktpNomor: t.ktpNomor ? showDekripsi(t.ktpNomor) : null,
-          
-          nominal: Number(t.nominal)
-        }));
-      }
+
+          nominal: Number(t.nominal),
+
+          // Info Pembayaran Terintegrasi
+          infoPembayaran: p?.id
+            ? {
+                ...p,
+                // Pastikan link bukti bayar aman
+                buktiUrl: p.buktiUrl
+                  ? `/api/ppk/file/serve?path=${encodeURIComponent(p.buktiUrl)}`
+                  : null,
+              }
+            : null,
+        };
+      });
     }
 
-    // 6. Ambil info ormawa & pengaju
-    const userInfo = await db.query.usersTable.findFirst({
+    // 5. Ambil info ormawa & pengaju asli
+    const requesterInfo = await db.query.usersTable.findFirst({
       where: eq(usersTable.users_id, rab.usersId),
     });
 
     let ormawaInfo = null;
-    if (userInfo?.ormawaId) {
+    if (requesterInfo?.ormawaId) {
       ormawaInfo = await db.query.ormawaTable.findFirst({
-        where: eq(ormawaTable.id, userInfo.ormawaId),
+        where: eq(ormawaTable.id, requesterInfo.ormawaId),
       });
     }
 
@@ -113,25 +140,28 @@ export default defineEventHandler(async (event) => {
       data: {
         rab: {
           ...rab,
-          totalAnggaran: Number(rab.totalAnggaran)
+          totalAnggaran: Number(rab.totalAnggaran),
         },
         kegiatan,
         dokumentasi,
         tagihan: processedTagihan,
-        pembayaran,
         ormawa: ormawaInfo,
         pengaju: {
-          nama: userInfo?.fullName,
-          email: userInfo?.email
-        }
-      }
+          nama: requesterInfo?.fullName,
+          email: requesterInfo?.email,
+        },
+      },
     };
   } catch (error: any) {
-    console.error(`Error GET /api/ppk/pengajuan/${getRouterParam(event, "id")}/full-detail:`, error);
+    console.error(
+      `Error GET /api/ppk/pengajuan/${getRouterParam(event, "id")}/full-detail:`,
+      error,
+    );
     if (error.statusCode) throw error;
     throw createError({
       statusCode: 500,
       statusMessage: "Gagal mengambil detail lengkap pengajuan",
+      data: error?.message || error,
     });
   }
 });

@@ -1,9 +1,7 @@
 // FILE: server/api/ppk/pencairan/activity-detail.post.ts
-// Mengambil detail kegiatan dan dokumentasi untuk pencairan PPK
-// Input: body.id (ini adalah id dari kegiatanTable)
-// Alur: kegiatan -> pengajuan_rab -> users -> ormawa
+// Mengambil detail kegiatan dan dokumentasi untuk pencairan PPK dengan Integrasi Pembayaran
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { useDrizzle } from "~~/server/db";
 import {
   dokumentasiKegiatanTable,
@@ -12,9 +10,9 @@ import {
   pengajuanRabTable,
   tagihanPencairanTable,
   usersTable,
+  pembayaranTable,
 } from "~~/server/db/schema";
 import { showDekripsi } from "~~/server/utils/enkripsiData";
-import { toPublicUploadUrl } from "~~/server/utils/pencairanHelpers";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -40,7 +38,7 @@ export default defineEventHandler(async (event) => {
 
     const db = useDrizzle();
 
-    // 2. Ambil info kegiatan & RAB dengan validasi akses fakultas
+    // 2. Ambil info kegiatan & RAB (Pastikan PPK hanya akses fakultasnya sendiri)
     const [dataKegiatan] = await db
       .select({
         id: kegiatanTable.id,
@@ -59,7 +57,10 @@ export default defineEventHandler(async (event) => {
         pengajuanRabTable,
         eq(kegiatanTable.pengajuanRabId, pengajuanRabTable.id),
       )
-      .innerJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.id))
+      .innerJoin(
+        usersTable,
+        sql`BINARY ${pengajuanRabTable.usersId} = BINARY ${usersTable.id}`,
+      )
       .innerJoin(ormawaTable, eq(usersTable.ormawaId, ormawaTable.id))
       .where(
         and(
@@ -71,38 +72,42 @@ export default defineEventHandler(async (event) => {
     if (!dataKegiatan) {
       throw createError({
         statusCode: 404,
-        statusMessage:
-          "Kegiatan tidak ditemukan atau Anda tidak memiliki akses",
+        statusMessage: "Kegiatan tidak ditemukan atau akses ditolak",
       });
     }
 
-    // 3. Ambil data dokumentasi & tagihan menggunakan kegiatanId
+    // 3. Ambil data dokumentasi foto
     const docsFoto = await db
-      .select({
-        id: dokumentasiKegiatanTable.id,
-        tipeDokumen: dokumentasiKegiatanTable.tipeDokumen,
-        deskripsi: dokumentasiKegiatanTable.deskripsi,
-        status: dokumentasiKegiatanTable.status,
-        fileUrl: dokumentasiKegiatanTable.fileUrl,
-        createdAt: dokumentasiKegiatanTable.createdAt,
-      })
+      .select()
       .from(dokumentasiKegiatanTable)
       .where(eq(dokumentasiKegiatanTable.kegiatanId, kegiatanId));
 
+    // 4. Ambil data tagihan beserta informasi pembayaran (Jika sudah dibayar)
     const tagihans = await db
       .select({
-        id: tagihanPencairanTable.id,
-        tipeTagihan: tagihanPencairanTable.tipeTagihan,
-        namaPenerima: tagihanPencairanTable.namaPenerima,
-        nominal: tagihanPencairanTable.nominal,
-        statusTagihan: tagihanPencairanTable.statusTagihan,
-        createdAt: tagihanPencairanTable.createdAt,
+        tagihan: tagihanPencairanTable,
+        pembayaran: {
+          id: pembayaranTable.id,
+          tanggal: pembayaranTable.tanggalPembayaran,
+          buktiUrl: pembayaranTable.buktiTransferUrl,
+          catatan: pembayaranTable.catatanPembayaran,
+        },
       })
       .from(tagihanPencairanTable)
+      .leftJoin(
+        pembayaranTable,
+        eq(tagihanPencairanTable.id, pembayaranTable.tagihanId),
+      )
       .where(eq(tagihanPencairanTable.kegiatanId, kegiatanId));
 
-    // 4. Transform & Normalisasi Data
+    // 5. Transform & Secure URLs
+    const getSecureUrl = (path: string | null) => {
+      if (!path) return null;
+      return `/api/ppk/file/serve?path=${encodeURIComponent(path)}`;
+    };
+
     const combinedDocs = [
+      // Map Foto Lapangan
       ...docsFoto.map((f) => ({
         id: f.id,
         type: "foto",
@@ -111,28 +116,42 @@ export default defineEventHandler(async (event) => {
         status: f.status,
         createdAt: f.createdAt,
         nominal: 0,
-        fileUrl: toPublicUploadUrl(f.fileUrl),
+        fileUrl: getSecureUrl(f.fileUrl),
+        pembayaran: null,
       })),
+      // Map Tagihan & Pembayaran
       ...tagihans.map((t) => ({
-        id: t.id,
+        id: t.tagihan.id,
         type: "tagihan",
-        tipeDokumen: t.tipeTagihan,
-        deskripsi: showDekripsi(t.namaPenerima),
-        status: t.statusTagihan,
-        createdAt: t.createdAt,
-        nominal: Number(t.nominal),
+        tipeDokumen: t.tagihan.tipeTagihan,
+        deskripsi: showDekripsi(t.tagihan.namaPenerima),
+        status: t.tagihan.statusTagihan,
+        createdAt: t.tagihan.createdAt,
+        nominal: Number(t.tagihan.nominal),
         fileUrl: null,
+        // FIX: Cek apakah t.pembayaran ada sebelum mengakses .id
+        pembayaran:
+          t.pembayaran && t.pembayaran.id
+            ? {
+                ...t.pembayaran,
+                buktiUrl: getSecureUrl(t.pembayaran.buktiUrl),
+              }
+            : null,
       })),
     ];
 
     const totalDibayar = tagihans
-      .filter((t) => t.statusTagihan === "SELESAI")
-      .reduce((sum, t) => sum + Number(t.nominal), 0);
+      .filter((t) => t.tagihan.statusTagihan === "SELESAI")
+      .reduce((sum, t) => sum + Number(t.tagihan.nominal), 0);
 
     return {
       success: true,
       data: {
-        kegiatan: dataKegiatan,
+        kegiatan: {
+          ...dataKegiatan,
+          fileRabUrl: getSecureUrl(dataKegiatan.fileRabUrl),
+          fileTorUrl: getSecureUrl(dataKegiatan.fileTorUrl),
+        },
         dokumentasi: combinedDocs,
         totalDibayar,
         isReadyForLunas: totalDibayar >= Number(dataKegiatan.totalAnggaran),
@@ -144,6 +163,7 @@ export default defineEventHandler(async (event) => {
     throw createError({
       statusCode: 500,
       statusMessage: "Gagal mengambil detail pencairan",
+      data: error?.message || error,
     });
   }
 });

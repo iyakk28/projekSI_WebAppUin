@@ -1,9 +1,10 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { useDrizzle } from "~~/server/db";
 import {
   dokumentasiKegiatanTable,
   tagihanPencairanTable,
   logDokumentasiTagihanTable,
+  pembayaranTable,
 } from "~~/server/db/schema";
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -13,12 +14,12 @@ export default defineEventHandler(async (event) => {
   try {
     const db = useDrizzle();
     const user = event.context.user;
-    if (!user)
-      throw createError({ statusCode: 401, statusMessage: "Unauthorized" });
+    if (!user || user.role !== "ppk")
+      throw createError({ statusCode: 401, statusMessage: "Akses ditolak. Peran PPK diperlukan." });
 
     const formData = await readMultipartFormData(event);
     if (!formData)
-      throw createError({ statusCode: 400, statusMessage: "No data provided" });
+      throw createError({ statusCode: 400, statusMessage: "Data tidak ditemukan." });
 
     const getField = (name: string) => {
       const field = formData.find((f) => f.name === name);
@@ -33,14 +34,12 @@ export default defineEventHandler(async (event) => {
     if (isNaN(docId) || !type || !action) {
       throw createError({
         statusCode: 400,
-        statusMessage: "Invalid parameters",
+        statusMessage: "Parameter tidak valid.",
       });
     }
 
     let statusToUpdate: any = "";
-    let actionLog: "review" | "approve" | "reject" | "pay" | "revisi" =
-      "review";
-    let buktiUrl = null;
+    let actionLog: "review" | "approve" | "reject" | "pay" | "revisi" = "review";
 
     if (action === "revisi") {
       statusToUpdate = type === "foto" ? "REVISI" : "DIKEMBALIKAN";
@@ -50,47 +49,63 @@ export default defineEventHandler(async (event) => {
       actionLog = "approve";
     } else if (action === "bayar") {
       if (type !== "tagihan")
-        throw createError({
-          statusCode: 400,
-          statusMessage: "Hanya tagihan yang bisa dibayar",
-        });
+        throw createError({ statusCode: 400, statusMessage: "Hanya tagihan yang bisa dibayar." });
+      
       statusToUpdate = "SELESAI";
       actionLog = "pay";
 
-      // Save payment proof
+      // 1. Simpan Bukti Transfer secara Fisik
       const fileField = formData.find((f) => f.name === "fotoBukti");
       if (!fileField)
-        throw createError({
-          statusCode: 400,
-          statusMessage: "Foto bukti pembayaran wajib diunggah",
-        });
+        throw createError({ statusCode: 400, statusMessage: "Foto bukti pembayaran wajib diunggah." });
 
-      const targetPath = await createFilePath("PPK", "Pembayaran", "");
+      const targetPath = await createFilePath("PPK", "Pembayaran", "Selesai");
       const fileName = `${Date.now()}_bukti_${fileField.filename}`;
       const fullPath = join(targetPath, fileName);
       await writeFile(fullPath, fileField.data);
-      buktiUrl = fullPath;
+
+      // Relative path untuk DB agar konsisten dengan schema lain
+      const relativePath = fullPath.replace(process.cwd(), '').replace(/\\/g, '/').replace(/^\//, '');
+
+      // 2. Gunakan Transaction untuk update status dan simpan data pembayaran
+      await db.transaction(async (tx) => {
+          // Update status tagihan
+          await tx.update(tagihanPencairanTable)
+            .set({ statusTagihan: "SELESAI", updatedAt: sql`NOW()` })
+            .where(eq(tagihanPencairanTable.id, docId));
+
+          // Insert ke table pembayaran
+          await tx.insert(pembayaranTable).values({
+              tagihanId: BigInt(docId),
+              ppkId: BigInt(user.id),
+              buktiTransferUrl: relativePath,
+              catatanPembayaran: komentar || "Pembayaran dikonfirmasi oleh PPK",
+          });
+
+          // Insert Log
+          await tx.insert(logDokumentasiTagihanTable).values({
+            tagihanId: docId,
+            action: "pay",
+            komentar: komentar,
+            userId: Number(user.id),
+          });
+      });
+
+      return { success: true, message: "Pembayaran berhasil dicatat." };
     }
 
-    // Hasil: "2026-06-05 12:34:56"
-    // Update table
+    // Aksi selain 'bayar' (revisi atau terima dokumentasi/verifikasi tagihan)
     if (type === "foto") {
-      await db
-        .update(dokumentasiKegiatanTable)
+      await db.update(dokumentasiKegiatanTable)
         .set({ status: statusToUpdate })
         .where(eq(dokumentasiKegiatanTable.id, docId));
     } else {
-      await db
-        .update(tagihanPencairanTable)
-        .set({
-          statusTagihan: statusToUpdate,
-          buktiPembayaranUrl: buktiUrl || undefined,
-          updatedAt: new Date().toISOString().slice(0, 19).replace("T", " "),
-        })
+      await db.update(tagihanPencairanTable)
+        .set({ statusTagihan: statusToUpdate, updatedAt: sql`NOW()` })
         .where(eq(tagihanPencairanTable.id, docId));
     }
 
-    // Insert Log
+    // Insert Log untuk non-bayar
     await db.insert(logDokumentasiTagihanTable).values({
       dokumentasiId: type === "foto" ? docId : null,
       tagihanId: type === "tagihan" ? docId : null,
@@ -107,8 +122,7 @@ export default defineEventHandler(async (event) => {
     console.error("Error POST /api/ppk/pencairan/doc-action:", error);
     throw createError({
       statusCode: error.statusCode || 500,
-      statusMessage:
-        error.statusMessage || "Gagal melakukan aksi pada dokumentasi",
+      statusMessage: error.statusMessage || "Gagal melakukan aksi.",
     });
   }
 });

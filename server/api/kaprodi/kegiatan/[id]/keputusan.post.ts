@@ -79,13 +79,13 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // Step 2: Cari all users dari Ormawa tersebut
+    // Step 2: Cari all user IDs (Primary Key) dari Ormawa tersebut
     const ormawaUsers = await db
-      .select({ usersId: usersTable.users_id })
+      .select({ id: usersTable.id })
       .from(usersTable)
       .where(inArray(usersTable.ormawaId, ormawaIds));
 
-    const ormawaUserIds = ormawaUsers.map((u) => u.usersId);
+    const ormawaUserIds = ormawaUsers.map((u) => String(u.id));
 
     if (ormawaUserIds.length === 0) {
       throw createError({

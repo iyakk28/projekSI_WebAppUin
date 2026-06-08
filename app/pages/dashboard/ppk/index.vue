@@ -507,7 +507,9 @@
                       type="button"
                       class="px-3 py-1 rounded-lg bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition"
                       @click="
-                        navigateTo(`/dashboard/ppk/detailPengajuan/${item.id}`)
+                        item.status === 'waiting_ppk' 
+                          ? navigateTo(`/dashboard/ppk/detailRab/${item.id}`)
+                          : navigateTo(`/dashboard/ppk/detailPengajuan/${item.id}`)
                       "
                     >
                       Detail

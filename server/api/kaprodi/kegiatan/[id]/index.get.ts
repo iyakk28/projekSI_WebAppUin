@@ -53,13 +53,13 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // Step 2: Cari all users dari Ormawa tersebut
+    // Step 2: Cari all user IDs (Primary Key) dari Ormawa tersebut
     const ormawaUsers = await db
-      .select({ usersId: usersTable.users_id })
+      .select({ id: usersTable.id })
       .from(usersTable)
       .where(inArray(usersTable.ormawaId, ormawaIds));
 
-    const ormawaUserIds = ormawaUsers.map((u) => u.usersId);
+    const ormawaUserIds = ormawaUsers.map((u) => String(u.id));
 
     if (ormawaUserIds.length === 0) {
       throw createError({
@@ -92,9 +92,9 @@ export default defineEventHandler(async (event) => {
       throw createError({ statusCode: 404, statusMessage: "Pengajuan tidak ditemukan" });
     }
 
-    // Ambil info pengaju
+    // Ambil info pengaju menggunakan Primary Key ID
     const pengajuInfo = await db.query.usersTable.findFirst({
-      where: eq(usersTable.users_id, rab.usersId),
+      where: eq(usersTable.id, Number(rab.usersId)),
     });
 
     // Ambil info Ormawa

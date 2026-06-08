@@ -56,7 +56,7 @@ export default defineEventHandler(async (event) => {
             SELECT SUM(pr.total_anggaran)
             FROM pengajuan_rab pr
             INNER JOIN users u ON pr.users_id = u.users_id
-            WHERE u.ormawa_id = ${ormawaTable.id}
+            WHERE u.ormawa_id = ormawa.id
             AND pr.status IN ('disetujui', 'selesai_spi')
           ), 0)
         `,
@@ -65,7 +65,7 @@ export default defineEventHandler(async (event) => {
             SELECT COUNT(*)
             FROM pengajuan_rab pr
             INNER JOIN users u ON pr.users_id = u.users_id
-            WHERE u.ormawa_id = ${ormawaTable.id}
+            WHERE u.ormawa_id = ormawa.id
             AND pr.status != 'draft'
           ), 0)
         `,
@@ -74,7 +74,7 @@ export default defineEventHandler(async (event) => {
             SELECT COUNT(*)
             FROM pengajuan_rab pr
             INNER JOIN users u ON pr.users_id = u.users_id
-            WHERE u.ormawa_id = ${ormawaTable.id}
+            WHERE u.ormawa_id = ormawa.id
             AND pr.status IN ('disetujui', 'selesai_spi')
           ), 0)
         `,

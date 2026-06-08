@@ -14,7 +14,7 @@ import { fakultasTable } from "./fakultasSchema";
 export const usersTable = mysqlTable("users", {
   id: int("id").primaryKey().autoincrement(),
   email: varchar("email", { length: 255 }).unique().notNull(),
-  users_id: varchar("users_id", { length: 255 }).unique().notNull(),
+  userName: varchar("user_name", { length: 255 }).unique().notNull(),
   passwordHash: varchar("password_hash", { length: 255 }).notNull(),
   fullName: varchar("full_name", { length: 255 }).notNull(),
   role: mysqlEnum(["ormawa", "kaprodi", "ppk", "spi"]), // ormawa, kaprodi, ppk, spi

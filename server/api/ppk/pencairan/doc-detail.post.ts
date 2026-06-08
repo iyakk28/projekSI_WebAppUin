@@ -3,9 +3,9 @@ import { useDrizzle } from "~~/server/db";
 import {
   dokumentasiKegiatanTable,
   tagihanPencairanTable,
+  pembayaranTable,
 } from "~~/server/db/schema";
 import { showDekripsi } from "~~/server/utils/enkripsiData";
-import { toPublicUploadUrl } from "~~/server/utils/pencairanHelpers";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -19,6 +19,12 @@ export default defineEventHandler(async (event) => {
 
     const db = useDrizzle();
 
+    // Secure URL helper
+    const getSecureUrl = (path: string | null) => {
+        if (!path) return null;
+        return `/api/ppk/file/serve?path=${encodeURIComponent(path)}`;
+    };
+
     if (type === "foto") {
       const [doc] = await db
         .select()
@@ -31,39 +37,59 @@ export default defineEventHandler(async (event) => {
         success: true,
         data: {
           ...doc,
-          fileUrl: toPublicUploadUrl(doc.fileUrl),
+          fileUrl: getSecureUrl(doc.fileUrl),
           type: "foto",
         },
       };
     } else if (type === "tagihan") {
-      const [tagihan] = await db
-        .select()
+      // Ambil tagihan beserta data pembayaran (jika ada)
+      const result = await db
+        .select({
+            tagihan: tagihanPencairanTable,
+            pembayaran: pembayaranTable
+        })
         .from(tagihanPencairanTable)
+        .leftJoin(pembayaranTable, eq(tagihanPencairanTable.id, pembayaranTable.tagihanId))
         .where(eq(tagihanPencairanTable.id, docId));
 
-      if (!tagihan) throw createError({ statusCode: 404, statusMessage: "Tagihan tidak ditemukan" });
+      if (result.length === 0) throw createError({ statusCode: 404, statusMessage: "Tagihan tidak ditemukan" });
+      
+      const { tagihan, pembayaran } = result[0];
 
       return {
         success: true,
         data: {
           ...tagihan,
+          // Dekripsi data sensitif (semua tipe)
           namaPenerima: showDekripsi(tagihan.namaPenerima),
           rekeningPenerima: showDekripsi(tagihan.rekeningPenerima),
           bankPenerima: showDekripsi(tagihan.bankPenerima),
-          skNomor: showDekripsi(tagihan.skNomor),
-          npwpNomor: showDekripsi(tagihan.npwpNomor),
-          ktpNomor: showDekripsi(tagihan.ktpNomor),
-          spmtNomor: showDekripsi(tagihan.spmtNomor),
-          amprahNomor: showDekripsi(tagihan.amprahNomor),
-          skFileUrl: toPublicUploadUrl(tagihan.skFileUrl),
-          spmtFileUrl: toPublicUploadUrl(tagihan.spmtFileUrl),
-          amprahFileUrl: toPublicUploadUrl(tagihan.amprahFileUrl),
-          npwpFileUrl: toPublicUploadUrl(tagihan.npwpFileUrl),
-          ktpFileUrl: toPublicUploadUrl(tagihan.ktpFileUrl),
-          bukuRekeningFileUrl: toPublicUploadUrl(tagihan.bukuRekeningFileUrl),
-          strukFileUrl: toPublicUploadUrl(tagihan.strukFileUrl),
-          fotoBarangUrl: toPublicUploadUrl(tagihan.fotoBarangUrl),
-          buktiPembayaranUrl: toPublicUploadUrl(tagihan.buktiPembayaranUrl),
+          
+          // Dekripsi data khusus JASA
+          skNomor: tagihan.skNomor ? showDekripsi(tagihan.skNomor) : null,
+          spmtNomor: tagihan.spmtNomor ? showDekripsi(tagihan.spmtNomor) : null,
+          amprahNomor: tagihan.amprahNomor ? showDekripsi(tagihan.amprahNomor) : null,
+          npwpNomor: tagihan.npwpNomor ? showDekripsi(tagihan.npwpNomor) : null,
+          ktpNomor: tagihan.ktpNomor ? showDekripsi(tagihan.ktpNomor) : null,
+
+          // Secure URLs untuk lampiran ormawa
+          skFileUrl: getSecureUrl(tagihan.skFileUrl),
+          spmtFileUrl: getSecureUrl(tagihan.spmtFileUrl),
+          amprahFileUrl: getSecureUrl(tagihan.amprahFileUrl),
+          npwpFileUrl: getSecureUrl(tagihan.npwpFileUrl),
+          ktpFileUrl: getSecureUrl(tagihan.ktpFileUrl),
+          bukuRekeningFileUrl: getSecureUrl(tagihan.bukuRekeningFileUrl),
+          strukFileUrl: getSecureUrl(tagihan.strukFileUrl),
+          fotoBarangUrl: getSecureUrl(tagihan.fotoBarangUrl),
+          
+          // Info Pembayaran dari PPK
+          infoPembayaran: pembayaran ? {
+              id: pembayaran.id,
+              tanggal: pembayaran.tanggalPembayaran,
+              buktiUrl: getSecureUrl(pembayaran.buktiTransferUrl),
+              catatan: pembayaran.catatanPembayaran
+          } : null,
+          
           type: "tagihan",
         },
       };
