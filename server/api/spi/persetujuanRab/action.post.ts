@@ -78,6 +78,7 @@ export default defineEventHandler(async (event) => {
       if (action === "setuju") {
         await tx.insert(kegiatanTable).values({
           pengajuanRabId: Number(rabId),
+          ormawaId: Number(rab.ormawaId), // Menambahkan ormawaId yang wajib diisi
           statusKegiatan: "BELUM_DILAKSANAKAN",
         });
       }
@@ -88,9 +89,10 @@ export default defineEventHandler(async (event) => {
       message: `RAB berhasil ${action === "setuju" ? "disetujui" : action === "tolak" ? "ditolak" : "dikembalikan untuk direvisi"}.`,
     };
   } catch (error: any) {
-    return {
-      success: false,
-      message: error.message || "Terjadi kesalahan sistem",
-    };
+    console.error("Error SPI RAB Action:", error);
+    throw createError({
+      statusCode: error.statusCode || 500,
+      statusMessage: error.statusMessage || error.message || "Gagal memproses aksi RAB",
+    });
   }
 });

@@ -1,3 +1,7 @@
+// FILE: server/api/ppk/kegiatan/[id]/index.get.ts
+// Endpoint untuk mengambil detail pengajuan proposal oleh PPK
+// Dioptimalkan dengan join langsung dan validasi fakultasId
+
 import { eq, asc, and } from "drizzle-orm";
 import { useDrizzle } from "~~/server/db";
 import {
@@ -5,7 +9,6 @@ import {
   usersTable,
   ormawaTable,
   approvalLogTable,
-  programStudiTable,
 } from "~~/server/db/schema";
 
 export default defineEventHandler(async (event) => {
@@ -38,50 +41,45 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // Ambil detail RAB
-    const rab = await db.query.pengajuanRabTable.findFirst({
-      where: eq(pengajuanRabTable.id, id),
-    });
+    // Step 1: Ambil detail RAB, Pengaju, dan Ormawa sekaligus validasi akses fakultas
+    const result = await db
+      .select({
+        rab: pengajuanRabTable,
+        pengaju: {
+          id: usersTable.id,
+          fullName: usersTable.fullName,
+          email: usersTable.email,
+        },
+        ormawa: {
+          id: ormawaTable.id,
+          nama: ormawaTable.nama,
+          kode: ormawaTable.kode,
+          totalAnggaran: ormawaTable.totalAnggaran,
+        },
+      })
+      .from(pengajuanRabTable)
+      .innerJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.id))
+      .innerJoin(ormawaTable, eq(pengajuanRabTable.ormawaId, ormawaTable.id))
+      .where(
+        and(
+          eq(pengajuanRabTable.id, id),
+          eq(pengajuanRabTable.fakultasId, String(fakultasId))
+        )
+      )
+      .limit(1);
 
-    if (!rab) {
+    const detail = result[0];
+
+    if (!detail) {
       throw createError({
         statusCode: 404,
-        statusMessage: "Pengajuan tidak ditemukan",
+        statusMessage: "Pengajuan tidak ditemukan atau Anda tidak memiliki akses ke fakultas ini",
       });
     }
 
-    // Validasi Akses: PPK hanya boleh akses RAB dari fakultas yang sama
-    // rab.fakultasId adalah varchar, user.fakultasId adalah number
-    if (String(rab.fakultasId) !== String(fakultasId)) {
-      throw createError({
-        statusCode: 403,
-        statusMessage: "Anda tidak memiliki akses ke pengajuan dari fakultas lain",
-      });
-    }
+    const { rab, pengaju, ormawa } = detail;
 
-    // Ambil daftar Program Studi di fakultas yang sama
-    const prodiList = await db
-      .select({
-        id: programStudiTable.id,
-        nama: programStudiTable.nama,
-        kode: programStudiTable.kode,
-      })
-      .from(programStudiTable)
-      .where(eq(programStudiTable.fakultasId, Number(fakultasId)));
-
-    // Ambil info pengaju (ORMawa User)
-    const pengajuInfo = await db.query.usersTable.findFirst({
-      where: eq(usersTable.users_id, rab.usersId),
-    });
-
-    // Ambil info Ormawa
-    const ormawaInfo = pengajuInfo?.ormawaId
-      ? await db.query.ormawaTable.findFirst({
-          where: eq(ormawaTable.id, pengajuInfo.ormawaId),
-        })
-      : null;
-
-    // Ambil riwayat approval
+    // Step 2: Ambil riwayat approval
     const riwayat = await db
       .select({
         approvalLog: approvalLogTable,
@@ -111,17 +109,16 @@ export default defineEventHandler(async (event) => {
         createdAt: rab.createdAt,
         updatedAt: rab.updatedAt,
         pengaju: {
-          id: pengajuInfo?.id ?? null,
-          nama: pengajuInfo?.fullName ?? "",
-          email: pengajuInfo?.email ?? "",
+          id: pengaju.id,
+          nama: pengaju.fullName,
+          email: pengaju.email,
         },
         ormawa: {
-          id: ormawaInfo?.id ?? null,
-          nama: ormawaInfo?.nama ?? "",
-          kode: ormawaInfo?.kode ?? "",
-          totalAnggaran: ormawaInfo?.totalAnggaran ?? 0,
+          id: ormawa.id,
+          nama: ormawa.nama,
+          kode: ormawa.kode,
+          totalAnggaran: ormawa.totalAnggaran,
         },
-        prodiList,
         riwayat: riwayat.map((r) => ({
           id: r.approvalLog.id,
           action: r.approvalLog.action,

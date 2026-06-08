@@ -43,14 +43,12 @@ export default defineEventHandler(async (event) => {
       statusMessage: "Forbidden: RAB not found or not owned by user",
     });
   }
-
   const [totalCount] = await db
     .select({ count: sql<number>`count(*)` })
     .from(approvalLogTable)
     .where(eq(approvalLogTable.pengajuanRabId, rabId));
 
   const total = Number(totalCount?.count || 0);
-
   const applog = await db
     .select({
       approvalLog: approvalLogTable,

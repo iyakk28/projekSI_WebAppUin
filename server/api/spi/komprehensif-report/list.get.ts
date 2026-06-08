@@ -7,7 +7,7 @@ import {
   fakultasTable,
   programStudiTable,
 } from "../../../db/schema/index";
-import { eq, or, and, sql, gte, lte, like } from "drizzle-orm";
+import { eq, or, and, sql, gte, lte, like, count, desc } from "drizzle-orm";
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user;
@@ -80,10 +80,9 @@ export default defineEventHandler(async (event) => {
 
     // Get total count
     const totalCountResult = await db
-      .select({ count: sql<number>`count(*)` })
+      .select({ count: count() })
       .from(pengajuanRabTable)
-      .leftJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.users_id))
-      .leftJoin(ormawaTable, eq(usersTable.ormawaId, ormawaTable.id))
+      .innerJoin(ormawaTable, eq(sql`CAST(${pengajuanRabTable.ormawaId} AS UNSIGNED)`, ormawaTable.id))
       .where(whereClause);
 
     const total = totalCountResult[0].count;
@@ -103,18 +102,17 @@ export default defineEventHandler(async (event) => {
         prodi: programStudiTable.nama,
       })
       .from(pengajuanRabTable)
-      .leftJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.users_id))
-      .leftJoin(ormawaTable, eq(ormawaTable.id, usersTable.ormawaId))
+      .innerJoin(ormawaTable, eq(sql`CAST(${pengajuanRabTable.ormawaId} AS UNSIGNED)`, ormawaTable.id))
       .leftJoin(
         fakultasTable,
-        eq(pengajuanRabTable.fakultasId, fakultasTable.id),
+        eq(sql`CAST(${pengajuanRabTable.fakultasId} AS UNSIGNED)`, fakultasTable.id),
       )
       .leftJoin(
         programStudiTable,
-        eq(pengajuanRabTable.prodiId, programStudiTable.id),
+        eq(sql`CAST(${pengajuanRabTable.prodiId} AS UNSIGNED)`, programStudiTable.id),
       )
       .where(whereClause)
-      .orderBy(sql`${pengajuanRabTable.createdAt} DESC`)
+      .orderBy(desc(pengajuanRabTable.createdAt))
       .limit(limit)
       .offset(offset);
 

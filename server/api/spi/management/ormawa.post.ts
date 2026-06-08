@@ -44,9 +44,10 @@ export default defineEventHandler(async (event) => {
       message: "Ormawa berhasil ditambahkan",
     };
   } catch (error: any) {
-    return {
-      success: false,
-      message: error.message || "Gagal menambahkan ormawa",
-    };
+    console.error("Error creating ormawa:", error);
+    throw createError({
+      statusCode: error.statusCode || 500,
+      statusMessage: error.statusMessage || error.message || "Gagal menambahkan ormawa",
+    });
   }
 });

@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
     const body = await readBody(event);
     let {
       email,
-      users_id,
+      userName,
       password,
       fullName,
       role,
@@ -23,7 +23,7 @@ export default defineEventHandler(async (event) => {
 
     if (
       !email?.trim() ||
-      !users_id?.trim() ||
+      !userName?.trim() ||
       !password ||
       !fullName?.trim() ||
       !role
@@ -35,16 +35,16 @@ export default defineEventHandler(async (event) => {
     }
 
     email = email.trim().toLowerCase();
-    users_id = users_id.trim();
+    userName = userName.trim();
 
     // 1. Check similarity for security
     const emailPrefix = email.split("@")[0].toLowerCase();
-    const idLower = users_id.toLowerCase();
+    const userNameLower = userName.toLowerCase();
 
     if (
-      emailPrefix === idLower ||
-      email.includes(idLower) ||
-      idLower.includes(emailPrefix)
+      emailPrefix === userNameLower ||
+      email.includes(userNameLower) ||
+      userNameLower.includes(emailPrefix)
     ) {
       throw createError({
         statusCode: 400,
@@ -57,7 +57,7 @@ export default defineEventHandler(async (event) => {
     const existingUser = await db
       .select()
       .from(usersTable)
-      .where(or(eq(usersTable.email, email), eq(usersTable.users_id, users_id)))
+      .where(or(eq(usersTable.email, email), eq(usersTable.userName, userName)))
       .limit(1);
 
     if (existingUser.length > 0) {
@@ -102,8 +102,8 @@ export default defineEventHandler(async (event) => {
 
     await db.insert(usersTable).values({
       email,
-      users_id,
-      passwordHash: password,
+      userName,
+      passwordHash: password, // Note: Assuming password is pre-hashed or will be handled by a hook
       fullName: fullName.trim(),
       role,
       prodiId: prodiId ? Number(prodiId) : null,
@@ -117,9 +117,10 @@ export default defineEventHandler(async (event) => {
       message: "User berhasil ditambahkan",
     };
   } catch (error: any) {
-    return {
-      success: false,
-      message: error.statusMessage || error.message || "Gagal menambahkan user",
-    };
+    console.error("Error creating user:", error);
+    throw createError({
+      statusCode: error.statusCode || 500,
+      statusMessage: error.statusMessage || error.message || "Gagal menambahkan user",
+    });
   }
 });

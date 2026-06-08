@@ -1,7 +1,8 @@
 // FILE: server/api/ppk/pengajuan/lunas.get.ts
 // Mengambil daftar RAB yang sudah LUNAS kegiatannya dengan Pagination
+// Dioptimalkan dengan join langsung dan filter fakultasId
 
-import { eq, and, sql, desc, inArray, like, count } from "drizzle-orm";
+import { eq, and, sql, desc, like, count } from "drizzle-orm";
 import { useDrizzle } from "~~/server/db";
 import {
   pengajuanRabTable,
@@ -29,34 +30,25 @@ export default defineEventHandler(async (event) => {
     }
 
     const query = getQuery(event);
-    const { ormawaId, prodiId, kaprodiId, search, startDate, endDate } = query;
-    
+    const { ormawaId, prodiId, search, startDate, endDate } = query;
+
     // Pagination params
     const page = Number(query.page || 1);
     const limit = Number(query.limit || 10);
     const offset = (page - 1) * limit;
 
-    // Base query: Pengajuan RAB yang sudah punya Kegiatan dan status kegiatannya LUNAS
+    // Base filters
     const filters = [
       eq(pengajuanRabTable.fakultasId, String(fakultasId)),
       eq(kegiatanTable.statusKegiatan, "LUNAS"),
     ];
 
     if (ormawaId) {
-      filters.push(eq(usersTable.ormawaId, Number(ormawaId)));
+      filters.push(eq(pengajuanRabTable.ormawaId, String(ormawaId)));
     }
 
     if (prodiId) {
       filters.push(eq(pengajuanRabTable.prodiId, String(prodiId)));
-    }
-
-    if (kaprodiId) {
-      const kaprodiUser = await db.query.usersTable.findFirst({
-        where: eq(usersTable.id, Number(kaprodiId))
-      });
-      if (kaprodiUser && kaprodiUser.prodiId) {
-        filters.push(eq(pengajuanRabTable.prodiId, String(kaprodiUser.prodiId)));
-      }
     }
 
     if (search) {
@@ -67,22 +59,24 @@ export default defineEventHandler(async (event) => {
       filters.push(
         and(
           sql`${pengajuanRabTable.createdAt} >= ${startDate}`,
-          sql`${pengajuanRabTable.createdAt} <= ${endDate}`
-        )
+          sql`${pengajuanRabTable.createdAt} <= ${endDate}`,
+        ),
       );
     }
 
-    // 1. Hitung Total Data (untuk pagination frontend)
+    // 1. Hitung Total Data
     const totalQuery = await db
       .select({ value: count() })
       .from(pengajuanRabTable)
-      .innerJoin(kegiatanTable, eq(pengajuanRabTable.id, kegiatanTable.pengajuanRabId))
-      .innerJoin(usersTable, sql`${pengajuanRabTable.usersId} = ${usersTable.users_id} COLLATE utf8mb4_unicode_ci`)
+      .innerJoin(
+        kegiatanTable,
+        eq(pengajuanRabTable.id, kegiatanTable.pengajuanRabId),
+      )
       .where(and(...filters));
-    
+
     const total = totalQuery[0]?.value || 0;
 
-    // 2. Ambil Data dengan Limit & Offset
+    // 2. Ambil Data Detail dengan Join
     const data = await db
       .select({
         id: pengajuanRabTable.id,
@@ -96,18 +90,21 @@ export default defineEventHandler(async (event) => {
         prodiNama: programStudiTable.nama,
         statusKegiatan: kegiatanTable.statusKegiatan,
         pengajuNama: usersTable.fullName,
-        kaprodiNama: sql<string>`(
-          SELECT full_name FROM users 
-          WHERE role = 'kaprodi' 
-          AND prodi_id = CAST(${pengajuanRabTable.prodiId} AS UNSIGNED)
-          LIMIT 1
-        )`
       })
       .from(pengajuanRabTable)
-      .innerJoin(kegiatanTable, eq(pengajuanRabTable.id, kegiatanTable.pengajuanRabId))
-      .innerJoin(usersTable, sql`${pengajuanRabTable.usersId} = ${usersTable.users_id} COLLATE utf8mb4_unicode_ci`)
-      .leftJoin(ormawaTable, eq(usersTable.ormawaId, ormawaTable.id))
-      .leftJoin(programStudiTable, sql`CAST(${pengajuanRabTable.prodiId} AS UNSIGNED) = ${programStudiTable.id}`)
+      .innerJoin(
+        kegiatanTable,
+        eq(pengajuanRabTable.id, kegiatanTable.pengajuanRabId),
+      )
+      .innerJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.id))
+      .innerJoin(ormawaTable, eq(pengajuanRabTable.ormawaId, ormawaTable.id))
+      .leftJoin(
+        programStudiTable,
+        eq(
+          sql`CAST(${pengajuanRabTable.prodiId} AS UNSIGNED)`,
+          programStudiTable.id,
+        ),
+      )
       .where(and(...filters))
       .orderBy(desc(pengajuanRabTable.createdAt))
       .limit(limit)
@@ -118,10 +115,11 @@ export default defineEventHandler(async (event) => {
       data,
       total,
       page,
-      limit
+      limit,
     };
   } catch (error: any) {
     console.error("Error GET /api/ppk/pengajuan/lunas:", error);
+    if (error.statusCode) throw error;
     throw createError({
       statusCode: 500,
       statusMessage: "Gagal mengambil data pengajuan lunas",

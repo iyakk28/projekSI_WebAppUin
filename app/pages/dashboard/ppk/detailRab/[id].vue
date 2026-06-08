@@ -276,10 +276,7 @@
                     class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
                     :class="logIconClass(log.action)"
                   >
-                    <Icon
-                      :name="logIcon(log.action)"
-                      class="w-4 h-4"
-                    />
+                    <Icon :name="logIcon(log.action)" class="w-4 h-4" />
                   </div>
                   <div
                     v-if="i < rabData.riwayat.length - 1"
@@ -296,9 +293,7 @@
                     }}</span>
                   </div>
                   <p class="text-xs text-slate-500 mt-0.5">
-                    oleh {{ log.aktor?.nama }} ({{
-                      log.aktor?.role
-                    }})
+                    oleh {{ log.aktor?.nama }} ({{ log.aktor?.role }})
                   </p>
                   <div
                     v-if="log.catatan"
@@ -311,10 +306,7 @@
               </div>
             </div>
 
-            <div
-              v-else
-              class="text-center py-6 text-slate-400"
-            >
+            <div v-else class="text-center py-6 text-slate-400">
               <p class="text-sm">Belum ada riwayat persetujuan</p>
             </div>
           </div>
@@ -384,8 +376,10 @@
           </div>
           <div class="p-5 space-y-4">
             <div>
-              <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-                Catatan (Wajib jika revisi/tolak)
+              <label
+                class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2"
+              >
+                Catatan (Wajib jika revisi)
               </label>
               <textarea
                 v-model="catatanKeputusan"
@@ -413,15 +407,6 @@
                 <Icon name="heroicons:arrow-path" class="w-5 h-5" />
                 Minta Revisi
               </button>
-
-              <button
-                @click="prosesKeputusan('tolak')"
-                :disabled="isSubmitting || !catatanKeputusan.trim()"
-                class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white rounded-xl font-semibold transition text-sm shadow-md"
-              >
-                <Icon name="heroicons:x-circle" class="w-5 h-5" />
-                Tolak Pengajuan
-              </button>
             </div>
           </div>
         </div>
@@ -431,9 +416,14 @@
           class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 text-center"
         >
           <div class="flex flex-col items-center gap-2 text-slate-500">
-            <Icon name="heroicons:information-circle" class="w-8 h-8 text-slate-300" />
+            <Icon
+              name="heroicons:information-circle"
+              class="w-8 h-8 text-slate-300"
+            />
             <p class="text-sm font-medium">Pengajuan ini sudah diproses</p>
-            <p class="text-xs">Status saat ini: {{ formatStatus(rabData.status) }}</p>
+            <p class="text-xs">
+              Status saat ini: {{ formatStatus(rabData.status) }}
+            </p>
           </div>
         </div>
       </div>
@@ -595,24 +585,34 @@
   };
 
   const prosesKeputusan = async (keputusan) => {
-    if ((keputusan === 'revisi' || keputusan === 'tolak') && !catatanKeputusan.value.trim()) {
+    if (
+      (keputusan === "revisi" || keputusan === "tolak") &&
+      !catatanKeputusan.value.trim()
+    ) {
       alert("Catatan wajib diisi untuk revisi atau penolakan");
       return;
     }
 
-    if (!confirm(`Apakah Anda yakin ingin memberikan keputusan: ${keputusan.toUpperCase()}?`)) {
+    if (
+      !confirm(
+        `Apakah Anda yakin ingin memberikan keputusan: ${keputusan.toUpperCase()}?`,
+      )
+    ) {
       return;
     }
 
     isSubmitting.value = true;
     try {
-      const res = await $fetch(`/api/ppk/kegiatan/${route.params.id}/keputusan`, {
-        method: "POST",
-        body: {
-          keputusan,
-          catatan: catatanKeputusan.value
-        }
-      });
+      const res = await $fetch(
+        `/api/ppk/kegiatan/${route.params.id}/keputusan`,
+        {
+          method: "POST",
+          body: {
+            keputusan,
+            catatan: catatanKeputusan.value,
+          },
+        },
+      );
 
       if (res.success) {
         alert(res.message);

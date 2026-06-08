@@ -1,12 +1,9 @@
 // FILE: server/api/ppk/dashboard/index.get.ts
 // Endpoint untuk mengambil statistik dashboard PPK
+// Dioptimalkan dengan filter fakultasId langsung dari pengajuan_rab
 
 import { eq, sql, ne, and } from "drizzle-orm";
-import {
-  pengajuanRabTable,
-  usersTable,
-  ormawaTable,
-} from "~~/server/db/schema";
+import { pengajuanRabTable } from "~~/server/db/schema";
 import { useDrizzle } from "~~/server/db";
 
 export default defineEventHandler(async (event) => {
@@ -14,14 +11,7 @@ export default defineEventHandler(async (event) => {
     const db = useDrizzle();
     const { user } = event.context;
 
-    if (!user) {
-      throw createError({
-        statusCode: 401,
-        statusMessage: "User tidak terautentikasi",
-      });
-    }
-
-    if (user.role !== "ppk") {
+    if (!user || user.role !== "ppk") {
       throw createError({
         statusCode: 403,
         statusMessage: "Akses ditolak. Peran PPK diperlukan.",
@@ -38,30 +28,22 @@ export default defineEventHandler(async (event) => {
         disetujui: 0,
         revisi: 0,
         ditolak: 0,
-        message: "PPK tidak memiliki fakultasId",
+        message: "PPK tidak memiliki fakultasId yang valid",
       };
     }
 
     // ========== QUERY STATISTIK (SINGLE OPTIMIZED QUERY) ==========
-
+    // Menggunakan filter fakultasId langsung dari pengajuan_rab untuk efisiensi maksimal
     const statsQuery = await db
       .select({
-        total: sql<number>`COUNT(*)`,
-        menunggu: sql<number>`SUM(CASE WHEN ${pengajuanRabTable.status} = 'waiting_ppk' THEN 1 ELSE 0 END)`,
-        revisi: sql<number>`SUM(CASE WHEN ${pengajuanRabTable.status} = 'revisi_ppk' THEN 1 ELSE 0 END)`,
-        // Note: 'disetujui_ppk' diubah ke 'lunas_ppk' agar sesuai dengan statusEnum di schema dan penggunaan di API lain.
-        disetujui: sql<number>`SUM(CASE WHEN ${pengajuanRabTable.status} IN ('lunas_ppk', 'waiting_spi', 'disetujui', 'selesai_spi') THEN 1 ELSE 0 END)`,
-        ditolak: sql<number>`SUM(CASE WHEN ${pengajuanRabTable.status} = 'ditolak_spi' THEN 1 ELSE 0 END)`,
+        total: sql<number>`count(case when status != 'draft' then 1 end)`,
+        menunggu: sql<number>`count(case when status = 'waiting_ppk' then 1 end)`,
+        revisi: sql<number>`count(case when status = 'revisi_ppk' then 1 end)`,
+        disetujui: sql<number>`count(case when status IN ('lunas_ppk', 'waiting_spi', 'disetujui', 'selesai_spi') then 1 end)`,
+        ditolak: sql<number>`count(case when status = 'ditolak_spi' then 1 end)`,
       })
       .from(pengajuanRabTable)
-      .innerJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.id))
-      .innerJoin(ormawaTable, eq(usersTable.ormawaId, ormawaTable.id))
-      .where(
-        and(
-          ne(pengajuanRabTable.status, "draft"),
-          eq(ormawaTable.fakultasId, fakultasId),
-        ),
-      );
+      .where(eq(pengajuanRabTable.fakultasId, String(fakultasId)));
 
     const result = statsQuery[0] || {
       total: 0,
@@ -71,43 +53,28 @@ export default defineEventHandler(async (event) => {
       ditolak: 0,
     };
 
-    const finalResult = {
+    return {
       success: true,
       total: Number(result.total ?? 0),
       menunggu: Number(result.menunggu ?? 0),
       revisi: Number(result.revisi ?? 0),
       disetujui: Number(result.disetujui ?? 0),
       ditolak: Number(result.ditolak ?? 0),
+      data: {
+        total: Number(result.total ?? 0),
+        menunggu: Number(result.menunggu ?? 0),
+        revisi: Number(result.revisi ?? 0),
+        disetujui: Number(result.disetujui ?? 0),
+        ditolak: Number(result.ditolak ?? 0),
+      },
     };
-
-    return finalResult;
   } catch (error: any) {
-    console.error("Error timestamp:", new Date().toISOString());
-    console.error("Error object:", error);
-    console.error("Error message:", error?.message);
-    console.error("Error statusCode:", error?.statusCode);
-    console.error("Error stack:", error?.stack);
-
-    // Log specific error types
-    if (error?.code) {
-      console.error("Database error code:", error.code);
-    }
-
-    if (error?.meta) {
-      console.error("Database error meta:", error.meta);
-    }
-
-    console.error("=== END ERROR ===");
-
-    // Jika error sudah memiliki statusCode, lempar ulang
-    if (error.statusCode) {
-      throw error;
-    }
-
+    console.error("Error GET /api/ppk/dashboard:", error);
+    if (error.statusCode) throw error;
     throw createError({
       statusCode: 500,
-      statusMessage: "Gagal mengambil data dashboard PPK",
-      data: error?.message || "Unknown error",
+      statusMessage: "Gagal mengambil data statistik dashboard PPK",
+      data: error.message,
     });
   }
 });

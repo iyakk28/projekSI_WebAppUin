@@ -6,7 +6,7 @@ import {
   fakultasTable,
   programStudiTable,
 } from "~~/server/db/schema/index";
-import { eq, or, and, sql, gte, lte, like } from "drizzle-orm";
+import { eq, or, and, sql, gte, lte, like, count, desc } from "drizzle-orm";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -28,10 +28,6 @@ export default defineEventHandler(async (event) => {
 
     if (status && status !== "all") {
       filters.push(eq(pengajuanRabTable.status, status as any));
-    } else {
-      // Default filter for SPI if no specific status is selected
-      // SPI usually cares about waiting_spi, disetujui, ditolak_spi, revisi_spi
-      // But we can show everything if status is 'all'
     }
 
     if (fakultasId) {
@@ -43,7 +39,7 @@ export default defineEventHandler(async (event) => {
     }
 
     if (ormawaId) {
-      filters.push(eq(ormawaTable.id, parseInt(ormawaId)));
+      filters.push(eq(pengajuanRabTable.ormawaId, ormawaId));
     }
 
     if (startDate) {
@@ -66,14 +62,12 @@ export default defineEventHandler(async (event) => {
     const whereClause = filters.length > 0 ? and(...filters) : undefined;
 
     // Get total count
-    const totalCountResult = await db
-      .select({ count: sql<number>`count(*)` })
+    const [totalCountResult] = await db
+      .select({ count: count() })
       .from(pengajuanRabTable)
-      .leftJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.users_id))
-      .leftJoin(ormawaTable, eq(usersTable.ormawaId, ormawaTable.id))
       .where(whereClause);
 
-    const total = totalCountResult[0].count;
+    const total = totalCountResult.count;
 
     const data = await db
       .select({
@@ -91,18 +85,18 @@ export default defineEventHandler(async (event) => {
         prodi: programStudiTable.nama,
       })
       .from(pengajuanRabTable)
-      .leftJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.id))
-      .leftJoin(ormawaTable, eq(ormawaTable.id, usersTable.ormawaId))
+      .leftJoin(usersTable, eq(sql`CAST(${pengajuanRabTable.usersId} AS UNSIGNED)`, usersTable.id))
+      .leftJoin(ormawaTable, eq(sql`CAST(${pengajuanRabTable.ormawaId} AS UNSIGNED)`, ormawaTable.id))
       .leftJoin(
         fakultasTable,
-        eq(pengajuanRabTable.fakultasId, fakultasTable.id),
+        eq(sql`CAST(${pengajuanRabTable.fakultasId} AS UNSIGNED)`, fakultasTable.id),
       )
       .leftJoin(
         programStudiTable,
-        eq(pengajuanRabTable.prodiId, programStudiTable.id),
+        eq(sql`CAST(${pengajuanRabTable.prodiId} AS UNSIGNED)`, programStudiTable.id),
       )
       .where(whereClause)
-      .orderBy(sql`${pengajuanRabTable.createdAt} DESC`)
+      .orderBy(desc(pengajuanRabTable.createdAt))
       .limit(limit)
       .offset(offset);
 

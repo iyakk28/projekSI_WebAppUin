@@ -3,7 +3,7 @@ import { usersTable } from "~~/server/db/schema/usersSchema";
 import { fakultasTable } from "~~/server/db/schema/fakultasSchema";
 import { programStudiTable } from "~~/server/db/schema/programStudiSchema";
 import { ormawaTable } from "~~/server/db/schema/ormawaSchema";
-import { eq, and, like, or, sql, desc } from "drizzle-orm";
+import { eq, and, like, or, sql, desc, count } from "drizzle-orm";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -27,7 +27,7 @@ export default defineEventHandler(async (event) => {
         or(
           like(usersTable.fullName, `%${search}%`),
           like(usersTable.email, `%${search}%`),
-          like(usersTable.users_id, `%${search}%`)
+          like(usersTable.userName, `%${search}%`)
         )
       );
     }
@@ -51,19 +51,19 @@ export default defineEventHandler(async (event) => {
     const where = whereConditions.length > 0 ? and(...whereConditions) : undefined;
 
     // Get total count
-    const totalResult = await db
-      .select({ count: sql<number>`count(*)` })
+    const [totalResult] = await db
+      .select({ value: count() })
       .from(usersTable)
       .where(where);
     
-    const total = totalResult[0]?.count || 0;
+    const total = totalResult?.value || 0;
 
     // Get users
     const users = await db
       .select({
         id: usersTable.id,
         email: usersTable.email,
-        users_id: usersTable.users_id,
+        userName: usersTable.userName,
         fullName: usersTable.fullName,
         role: usersTable.role,
         isActive: usersTable.isActive,
@@ -92,9 +92,10 @@ export default defineEventHandler(async (event) => {
       },
     };
   } catch (error: any) {
-    return {
-      success: false,
-      message: error.message || "Gagal mengambil data user",
-    };
+    console.error("Error fetching users:", error);
+    throw createError({
+      statusCode: error.statusCode || 500,
+      statusMessage: error.statusMessage || "Gagal mengambil data user",
+    });
   }
 });

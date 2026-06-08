@@ -1,9 +1,10 @@
 // FILE: server/api/ppk/dashboard/ormawa-anggaran.get.ts
 // Optimized PPK Ormawa Budget API with Status Breakdown
+// Memperbaiki relasi subquery menggunakan ormawa_id langsung dari pengajuan_rab
 
-import { eq, sql, and, ne } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { useDrizzle } from "~~/server/db";
-import { ormawaTable, pengajuanRabTable, usersTable, fakultasTable } from "~~/server/db/schema";
+import { ormawaTable, fakultasTable } from "~~/server/db/schema";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -11,14 +12,7 @@ export default defineEventHandler(async (event) => {
     const { user } = event.context;
 
     // ========== VALIDASI USER ==========
-    if (!user) {
-      throw createError({
-        statusCode: 401,
-        statusMessage: "User tidak terautentikasi",
-      });
-    }
-
-    if (user.role !== "ppk") {
+    if (!user || user.role !== "ppk") {
       throw createError({
         statusCode: 403,
         statusMessage: "Akses ditolak. Peran PPK diperlukan.",
@@ -43,89 +37,81 @@ export default defineEventHandler(async (event) => {
     const fakultasInfo = await db
       .select({ nama: fakultasTable.nama })
       .from(fakultasTable)
-      .where(eq(fakultasTable.id, fakultasId))
+      .where(eq(fakultasTable.id, Number(fakultasId)))
       .limit(1);
-    
+
     const namaFakultas = fakultasInfo[0]?.nama || "Fakultas";
 
-    // ========== QUERY UTAMA (OPTIMIZED WITH JOINS & SUBQUERIES) ==========
-    // Mengambil data ormawa di fakultas terkait beserta agregasi pengajuannya.
-    // Gunakan ormawa.id (qualified name) untuk menghindari ambiguitas di dalam subquery.
+    // ========== QUERY UTAMA (OPTIMIZED WITH SUBQUERIES) ==========
+    // Mengambil data ormawa di fakultas terkait beserta agregasi pengajuannya via ormawa_id
     const ormawaList = await db
       .select({
         ormawaId: ormawaTable.id,
         ormawaName: ormawaTable.nama,
         ormawaKode: ormawaTable.kode,
         totalAnggaranOrmawa: ormawaTable.totalAnggaran,
-        prodiId: ormawaTable.prodiId,
         totalTerpakai: sql<number>`
           COALESCE((
-            SELECT SUM(pr.total_anggaran)
-            FROM pengajuan_rab pr
-            INNER JOIN users u ON pr.users_id = u.users_id
-            WHERE u.ormawa_id = ormawa.id
-            AND pr.status IN ('disetujui', 'selesai_spi', 'lunas_ppk')
+            SELECT SUM(total_anggaran)
+            FROM pengajuan_rab
+            WHERE ormawa_id = ${ormawaTable.id}
+            AND status IN ('disetujui', 'selesai_spi', 'lunas_ppk')
           ), 0)
         `,
         totalKegiatan: sql<number>`
           COALESCE((
             SELECT COUNT(*)
-            FROM pengajuan_rab pr
-            INNER JOIN users u ON pr.users_id = u.users_id
-            WHERE u.ormawa_id = ormawa.id
-            AND pr.status != 'draft'
+            FROM pengajuan_rab
+            WHERE ormawa_id = ${ormawaTable.id}
+            AND status != 'draft'
           ), 0)
         `,
         countWaiting: sql<number>`
           COALESCE((
             SELECT COUNT(*)
-            FROM pengajuan_rab pr
-            INNER JOIN users u ON pr.users_id = u.users_id
-            WHERE u.ormawa_id = ormawa.id
-            AND pr.status = 'waiting_ppk'
+            FROM pengajuan_rab
+            WHERE ormawa_id = ${ormawaTable.id}
+            AND status = 'waiting_ppk'
           ), 0)
         `,
         countRevisi: sql<number>`
           COALESCE((
             SELECT COUNT(*)
-            FROM pengajuan_rab pr
-            INNER JOIN users u ON pr.users_id = u.users_id
-            WHERE u.ormawa_id = ormawa.id
-            AND pr.status = 'revisi_ppk'
+            FROM pengajuan_rab
+            WHERE ormawa_id = ${ormawaTable.id}
+            AND status = 'revisi_ppk'
           ), 0)
         `,
         countDisetujui: sql<number>`
           COALESCE((
             SELECT COUNT(*)
-            FROM pengajuan_rab pr
-            INNER JOIN users u ON pr.users_id = u.users_id
-            WHERE u.ormawa_id = ormawa.id
-            AND pr.status IN ('lunas_ppk', 'waiting_spi', 'disetujui', 'selesai_spi')
+            FROM pengajuan_rab
+            WHERE ormawa_id = ${ormawaTable.id}
+            AND status IN ('lunas_ppk', 'waiting_spi', 'disetujui', 'selesai_spi')
           ), 0)
         `,
         countDitolak: sql<number>`
           COALESCE((
             SELECT COUNT(*)
-            FROM pengajuan_rab pr
-            INNER JOIN users u ON pr.users_id = u.users_id
-            WHERE u.ormawa_id = ormawa.id
-            AND pr.status = 'ditolak_spi'
+            FROM pengajuan_rab
+            WHERE ormawa_id = ${ormawaTable.id}
+            AND status = 'ditolak_spi'
           ), 0)
         `,
       })
       .from(ormawaTable)
-      .where(eq(ormawaTable.fakultasId, fakultasId))
+      .where(eq(ormawaTable.fakultasId, Number(fakultasId)))
       .orderBy(ormawaTable.nama);
 
     // Hitung ringkasan (summary)
     const totalAnggaranKeseluruhan = ormawaList.reduce(
       (sum, o) => sum + Number(o.totalAnggaranOrmawa),
-      0
+      0,
     );
 
     const totalTerpakaiKeseluruhan = ormawaList.reduce(
       (sum, o) => sum + Number(o.totalTerpakai),
-      0
+      0,
     );
 
     return {
@@ -133,7 +119,8 @@ export default defineEventHandler(async (event) => {
       summary: {
         totalAnggaranKeseluruhan,
         totalTerpakaiKeseluruhan,
-        totalSisaKeseluruhan: totalAnggaranKeseluruhan - totalTerpakaiKeseluruhan,
+        totalSisaKeseluruhan:
+          totalAnggaranKeseluruhan - totalTerpakaiKeseluruhan,
       },
       data: [
         {
@@ -153,7 +140,7 @@ export default defineEventHandler(async (event) => {
               revisi: Number(o.countRevisi),
               disetujui: Number(o.countDisetujui),
               ditolak: Number(o.countDitolak),
-            }
+            },
           })),
         },
       ],

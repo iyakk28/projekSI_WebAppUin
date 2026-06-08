@@ -2,7 +2,7 @@ import { useDrizzle } from "~~/server/db/index";
 import { ormawaTable } from "~~/server/db/schema/ormawaSchema";
 import { fakultasTable } from "~~/server/db/schema/fakultasSchema";
 import { programStudiTable } from "~~/server/db/schema/programStudiSchema";
-import { eq, and, like, or, sql, desc } from "drizzle-orm";
+import { eq, and, like, or, sql, desc, count } from "drizzle-orm";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -39,12 +39,12 @@ export default defineEventHandler(async (event) => {
     const where = whereConditions.length > 0 ? and(...whereConditions) : undefined;
 
     // Get total count
-    const totalResult = await db
-      .select({ count: sql<number>`count(*)` })
+    const [totalResult] = await db
+      .select({ value: count() })
       .from(ormawaTable)
       .where(where);
     
-    const total = totalResult[0]?.count || 0;
+    const total = totalResult?.value || 0;
 
     // Get ormawa
     const ormawa = await db
@@ -77,9 +77,10 @@ export default defineEventHandler(async (event) => {
       },
     };
   } catch (error: any) {
-    return {
-      success: false,
-      message: error.message || "Gagal mengambil data ormawa",
-    };
+    console.error("Error fetching ormawa:", error);
+    throw createError({
+      statusCode: error.statusCode || 500,
+      statusMessage: error.statusMessage || "Gagal mengambil data ormawa",
+    });
   }
 });

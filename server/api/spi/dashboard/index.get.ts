@@ -4,19 +4,20 @@ import {
   kegiatanTable,
   dokumentasiKegiatanTable,
 } from "~~/server/db/schema/index";
-import { eq, and, gt } from "drizzle-orm";
+import { eq, and, sql, count } from "drizzle-orm";
 
 export default defineEventHandler(async (event) => {
   try {
     const db = useDrizzle();
 
-    // 1. Total RAB yang sudah disetujui
-    const totalApprovedRab = await db
-      .select()
+    // 1. Total RAB yang sudah disetujui (Status 'disetujui' atau 'lunas_ppk' atau 'selesai_spi')
+    // Sesuai dengan statusEnum di pengajuanRabSchema
+    const [totalApprovedRabResult] = await db
+      .select({ value: count() })
       .from(pengajuanRabTable)
       .where(eq(pengajuanRabTable.status, "disetujui"));
 
-    // 2. Kegiatan yang akan dilaksanakan (BELUM_DILAKSANAKAN atau SEDANG_BERJALAN)
+    // 2. Kegiatan yang akan dilaksanakan (BELUM_DILAKSANAKAN)
     const upcomingActivities = await db
       .select({
         id: kegiatanTable.id,
@@ -33,67 +34,79 @@ export default defineEventHandler(async (event) => {
         pengajuanRabTable,
         eq(kegiatanTable.pengajuanRabId, pengajuanRabTable.id),
       )
-
-      .where(
-        and(
-          eq(pengajuanRabTable.status, "disetujui"),
-          eq(kegiatanTable.statusKegiatan, "BELUM_DILAKSANAKAN"),
-        ),
-      )
+      .where(eq(kegiatanTable.statusKegiatan, "BELUM_DILAKSANAKAN"))
       .limit(10);
 
-    // 3. Total kegiatan sedang berjalan
-    const ongoingActivities = await db
-      .select()
+    const [totalUpcomingResult] = await db
+      .select({ value: count() })
       .from(kegiatanTable)
-      .innerJoin(
-        pengajuanRabTable,
-        eq(kegiatanTable.pengajuanRabId, pengajuanRabTable.id),
-      )
-      .where(
-        and(
-          eq(pengajuanRabTable.status, "disetujui"),
-          eq(kegiatanTable.statusKegiatan, "SEDANG_DILAKSANAKAN"),
-        ),
-      );
+      .where(eq(kegiatanTable.statusKegiatan, "BELUM_DILAKSANAKAN"));
+
+    // 3. Total kegiatan sedang berjalan
+    const [totalOngoingResult] = await db
+      .select({ value: count() })
+      .from(kegiatanTable)
+      .where(eq(kegiatanTable.statusKegiatan, "SEDANG_DILAKSANAKAN"));
 
     // 4. Total kegiatan selesai
-    const completedActivities = await db
-      .select()
+    const [totalCompletedResult] = await db
+      .select({ value: count() })
+      .from(kegiatanTable)
+      .where(eq(kegiatanTable.statusKegiatan, "SELESAI"));
+
+    // 5. Total dokumentasi
+    const [totalDocumentationResult] = await db
+      .select({ value: count() })
+      .from(dokumentasiKegiatanTable);
+
+    // Ambil beberapa data untuk detail di dashboard
+    const ongoingActivities = await db
+      .select({
+        id: kegiatanTable.id,
+        judulKegiatan: pengajuanRabTable.judulKegiatan,
+        statusKegiatan: kegiatanTable.statusKegiatan,
+      })
       .from(kegiatanTable)
       .innerJoin(
         pengajuanRabTable,
         eq(kegiatanTable.pengajuanRabId, pengajuanRabTable.id),
       )
-      .where(
-        and(
-          eq(pengajuanRabTable.status, "disetujui"),
-          eq(kegiatanTable.statusKegiatan, "SELESAI"),
-        ),
-      );
+      .where(eq(kegiatanTable.statusKegiatan, "SEDANG_DILAKSANAKAN"))
+      .limit(5);
 
-    // 5. Total dokumentasi
-    const totalDocumentation = await db.select().from(dokumentasiKegiatanTable);
+    const completedActivities = await db
+      .select({
+        id: kegiatanTable.id,
+        judulKegiatan: pengajuanRabTable.judulKegiatan,
+        statusKegiatan: kegiatanTable.statusKegiatan,
+      })
+      .from(kegiatanTable)
+      .innerJoin(
+        pengajuanRabTable,
+        eq(kegiatanTable.pengajuanRabId, pengajuanRabTable.id),
+      )
+      .where(eq(kegiatanTable.statusKegiatan, "SELESAI"))
+      .limit(5);
 
     return {
       success: true,
       summary: {
-        totalApprovedRab: totalApprovedRab.length,
-        upcomingActivities: upcomingActivities.length,
-        ongoingActivities: ongoingActivities.length,
-        completedActivities: completedActivities.length,
-        totalDocumentation: totalDocumentation.length,
+        totalApprovedRab: totalApprovedRabResult.value,
+        upcomingActivities: totalUpcomingResult.value,
+        ongoingActivities: totalOngoingResult.value,
+        completedActivities: totalCompletedResult.value,
+        totalDocumentation: totalDocumentationResult.value,
       },
       upcomingActivities,
-      ongoingActivities: ongoingActivities.slice(0, 5),
-      completedActivities: completedActivities.slice(0, 5),
+      ongoingActivities,
+      completedActivities,
     };
   } catch (error: any) {
     console.error("SPI Dashboard Error:", error);
-    return {
-      success: false,
-      message: "Error fetching SPI dashboard data",
-      error: error.message,
-    };
+    throw createError({
+      statusCode: 500,
+      statusMessage: "Gagal mengambil data dashboard SPI",
+      data: error?.message || error,
+    });
   }
 });

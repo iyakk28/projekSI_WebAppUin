@@ -1,7 +1,8 @@
 // FILE: server/api/ppk/kegiatan/index.get.ts
-// VERSI FINAL - Query langsung ke pengajuan_rab berdasarkan fakultasId
+// Endpoint untuk mengambil daftar pengajuan proposal di fakultas PPK
+// Dioptimalkan dengan join langsung dan filter fakultasId
 
-import { eq, desc, and, ne, inArray } from "drizzle-orm";
+import { eq, desc, and, inArray, sql } from "drizzle-orm";
 import { useDrizzle } from "~~/server/db";
 import {
   pengajuanRabTable,
@@ -9,7 +10,6 @@ import {
   ormawaTable,
   kegiatanTable,
   tagihanPencairanTable,
-  programStudiTable,
 } from "~~/server/db/schema";
 
 export default defineEventHandler(async (event) => {
@@ -41,36 +41,42 @@ export default defineEventHandler(async (event) => {
       };
     }
 
-    // ========== QUERY LANGSUNG KE PENGAJUAN_RAB ==========
-    // Step 1: Ambil semua pengajuan berdasarkan fakultasId yang berstatus 'waiting_ppk'
-    const pengajuan = await db
+    // Step 1: Ambil data pengajuan proposal joined dengan Info Pengaju & Ormawa
+    // Filter berdasarkan fakultasId yang ada di tabel pengajuan_rab
+    const rows = await db
       .select({
-        id: pengajuanRabTable.id,
-        nomorPengajuan: pengajuanRabTable.nomorPengajuan,
-        usersId: pengajuanRabTable.usersId,
-        judulKegiatan: pengajuanRabTable.judulKegiatan,
-        deskripsi: pengajuanRabTable.deskripsi,
-        totalAnggaran: pengajuanRabTable.totalAnggaran,
-        tanggalMulai: pengajuanRabTable.tanggalMulai,
-        tanggalSelesai: pengajuanRabTable.tanggalSelesai,
-        status: pengajuanRabTable.status,
-        fileRabUrl: pengajuanRabTable.fileRabUrl,
-        fileTorUrl: pengajuanRabTable.fileTorUrl,
-        createdAt: pengajuanRabTable.createdAt,
-        updatedAt: pengajuanRabTable.updatedAt,
-        prodiId: pengajuanRabTable.prodiId,
-        fakultasId: pengajuanRabTable.fakultasId,
+        rab: pengajuanRabTable,
+        pengaju: {
+          id: usersTable.id,
+          fullName: usersTable.fullName,
+          email: usersTable.email,
+        },
+        ormawa: {
+          id: ormawaTable.id,
+          nama: ormawaTable.nama,
+          kode: ormawaTable.kode,
+        },
+        kegiatan: {
+          id: kegiatanTable.id,
+          statusKegiatan: kegiatanTable.statusKegiatan,
+        },
       })
       .from(pengajuanRabTable)
+      .innerJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.id))
+      .innerJoin(ormawaTable, eq(pengajuanRabTable.ormawaId, ormawaTable.id))
+      .leftJoin(
+        kegiatanTable,
+        eq(pengajuanRabTable.id, kegiatanTable.pengajuanRabId),
+      )
       .where(
         and(
-          eq(pengajuanRabTable.fakultasId, String(fakultasId)),
           eq(pengajuanRabTable.status, "waiting_ppk"),
+          eq(pengajuanRabTable.fakultasId, String(fakultasId)),
         ),
       )
       .orderBy(desc(pengajuanRabTable.createdAt));
 
-    if (pengajuan.length === 0) {
+    if (rows.length === 0) {
       return {
         success: true,
         summary: {
@@ -84,57 +90,12 @@ export default defineEventHandler(async (event) => {
       };
     }
 
-    // ========== AMBIL DATA PENDUKUNG ==========
-    const userIdsStrings = [
-      ...new Set(pengajuan.map((p) => p.usersId).filter(Boolean)),
-    ];
-    const pengajuanIds = pengajuan.map((p) => p.id);
+    // Step 2: Ambil data tagihan pencairan untuk kegiatan yang ada
+    const kegiatanIds = rows
+      .map((r) => r.kegiatan?.id)
+      .filter((id): id is number => id !== null);
 
-    // Ambil data users (untuk nama pengaju dan ormawaId)
-    const usersData = userIdsStrings.length
-      ? await db
-          .select({
-            id: usersTable.id,
-            usersId: usersTable.users_id,
-            fullName: usersTable.fullName,
-            email: usersTable.email,
-            ormawaId: usersTable.ormawaId,
-          })
-          .from(usersTable)
-          .where(inArray(usersTable.users_id, userIdsStrings))
-      : [];
-
-    const ormawaIds = [
-      ...new Set(usersData.map((u) => u.ormawaId).filter(Boolean)),
-    ] as number[];
-
-    // Ambil data ormawa
-    const ormawaData = ormawaIds.length
-      ? await db
-          .select({
-            id: ormawaTable.id,
-            nama: ormawaTable.nama,
-            kode: ormawaTable.kode,
-          })
-          .from(ormawaTable)
-          .where(inArray(ormawaTable.id, ormawaIds))
-      : [];
-
-    // Ambil data kegiatan
-    const kegiatanData = pengajuanIds.length
-      ? await db
-          .select({
-            id: kegiatanTable.id,
-            pengajuanRabId: kegiatanTable.pengajuanRabId,
-            statusKegiatan: kegiatanTable.statusKegiatan,
-          })
-          .from(kegiatanTable)
-          .where(inArray(kegiatanTable.pengajuanRabId, pengajuanIds))
-      : [];
-
-    // Ambil data tagihan
-    const kegiatanIds = kegiatanData.map((k) => k.id);
-    const tagihanData = kegiatanIds.length
+    const tagihanRows = kegiatanIds.length
       ? await db
           .select({
             kegiatanId: tagihanPencairanTable.kegiatanId,
@@ -145,66 +106,72 @@ export default defineEventHandler(async (event) => {
           .where(inArray(tagihanPencairanTable.kegiatanId, kegiatanIds))
       : [];
 
-    // ========== BUILD MAPS ==========
-    const userMap = new Map(usersData.map((u) => [u.usersId, u]));
-    const ormawaMap = new Map(ormawaData.map((o) => [o.id, o]));
-    const kegiatanMap = new Map(kegiatanData.map((k) => [k.pengajuanRabId, k]));
-
-    // Build tagihan map per kegiatan
-    const tagihanMap = new Map();
-    for (const item of tagihanData) {
-      const current = tagihanMap.get(item.kegiatanId) ?? {
+    const tagihanMap = new Map<
+      number,
+      {
+        total: number;
+        selesai: number;
+        nominalSelesai: number;
+        statuses: Set<string>;
+      }
+    >();
+    tagihanRows.forEach((t) => {
+      const current = tagihanMap.get(t.kegiatanId) ?? {
         total: 0,
         selesai: 0,
         nominalSelesai: 0,
         statuses: new Set<string>(),
       };
-      current.total += 1;
-      if (item.statusTagihan) {
-        current.statuses.add(item.statusTagihan);
-        if (item.statusTagihan === "SELESAI") {
-          current.selesai += 1;
-          current.nominalSelesai += Number(item.nominal ?? 0);
-        }
+      current.total++;
+      if (t.statusTagihan) current.statuses.add(t.statusTagihan);
+      if (t.statusTagihan === "SELESAI") {
+        current.selesai++;
+        current.nominalSelesai += Number(t.nominal ?? 0);
       }
-      tagihanMap.set(item.kegiatanId, current);
-    }
+      tagihanMap.set(t.kegiatanId, current);
+    });
 
-    // ========== BUILD RESPONSE DATA ==========
-    const activityData = pengajuan.map((p) => {
-      const userInfo = userMap.get(p.usersId);
-      const ormawaInfo = userInfo?.ormawaId
-        ? ormawaMap.get(userInfo.ormawaId)
+    // Step 3: Mapping hasil akhir dan hitung summary
+    let totalWaitingPPK = 0;
+    let totalRevisiPPK = 0;
+    let totalWaitingSPI = 0;
+    let totalSelesaiSPI = 0;
+
+    const activityData = rows.map((row) => {
+      const status = row.rab.status;
+      if (status === "waiting_ppk") totalWaitingPPK++;
+      if (status === "revisi_ppk") totalRevisiPPK++;
+      if (status === "waiting_spi") totalWaitingSPI++;
+      if (status === "selesai_spi") totalSelesaiSPI++;
+
+      const tagihanInfo = row.kegiatan?.id
+        ? tagihanMap.get(row.kegiatan.id)
         : null;
-      const kegiatanInfo = kegiatanMap.get(p.id);
-      const tagihanInfo = kegiatanInfo
-        ? tagihanMap.get(kegiatanInfo.id)
-        : undefined;
 
       return {
-        id: p.id,
-        nomorPengajuan: p.nomorPengajuan,
-        judulKegiatan: p.judulKegiatan,
-        deskripsi: p.deskripsi,
-        totalAnggaran: Number(p.totalAnggaran ?? 0),
-        tanggalMulai: p.tanggalMulai,
-        tanggalSelesai: p.tanggalSelesai,
-        status: p.status,
-        fileRabUrl: p.fileRabUrl,
-        fileTorUrl: p.fileTorUrl,
-        createdAt: p.createdAt,
-        updatedAt: p.updatedAt,
+        id: row.rab.id,
+        nomorPengajuan: row.rab.nomorPengajuan,
+        judulKegiatan: row.rab.judulKegiatan,
+        deskripsi: row.rab.deskripsi,
+        totalAnggaran: Number(row.rab.totalAnggaran ?? 0),
+        tanggalMulai: row.rab.tanggalMulai,
+        tanggalSelesai: row.rab.tanggalSelesai,
+        status: row.rab.status,
+        fileRabUrl: row.rab.fileRabUrl,
+        fileTorUrl: row.rab.fileTorUrl,
+        createdAt: row.rab.createdAt,
+        updatedAt: row.rab.updatedAt,
         pengaju: {
-          id: userInfo?.id ?? null,
-          nama: userInfo?.fullName ?? "",
-          email: userInfo?.email ?? "",
+          id: row.pengaju.id,
+          nama: row.pengaju.fullName,
+          email: row.pengaju.email,
         },
         ormawa: {
-          id: ormawaInfo?.id ?? null,
-          nama: ormawaInfo?.nama ?? "",
-          kode: ormawaInfo?.kode ?? "",
+          id: row.ormawa.id,
+          nama: row.ormawa.nama,
+          kode: row.ormawa.kode,
         },
-        statusKegiatan: kegiatanInfo?.statusKegiatan ?? null,
+        statusKegiatan: row.kegiatan?.statusKegiatan ?? null,
         pencairan: {
           totalTagihan: tagihanInfo?.total ?? 0,
           selesaiTagihan: tagihanInfo?.selesai ?? 0,
@@ -214,22 +181,15 @@ export default defineEventHandler(async (event) => {
       };
     });
 
-    // ========== SUMMARY ==========
-    const summary = {
-      totalMasuk: activityData.length,
-      totalWaitingPPK: activityData.filter((d) => d.status === "waiting_ppk")
-        .length,
-      totalRevisiPPK: activityData.filter((d) => d.status === "revisi_ppk")
-        .length,
-      totalWaitingSPI: activityData.filter((d) => d.status === "waiting_spi")
-        .length,
-      totalSelesaiSPI: activityData.filter((d) => d.status === "selesai_spi")
-        .length,
-    };
-
     return {
       success: true,
-      summary,
+      summary: {
+        totalMasuk: activityData.length,
+        totalWaitingPPK,
+        totalRevisiPPK,
+        totalWaitingSPI,
+        totalSelesaiSPI,
+      },
       data: activityData,
     };
   } catch (error: any) {

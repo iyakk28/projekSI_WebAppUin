@@ -125,7 +125,7 @@ export default defineEventHandler(async (event) => {
 
     // 5. Ambil info ormawa & pengaju asli
     const requesterInfo = await db.query.usersTable.findFirst({
-      where: eq(usersTable.users_id, rab.usersId),
+      where: eq(usersTable.id, Number(rab.usersId)),
     });
 
     let ormawaInfo = null;

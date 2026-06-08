@@ -6,7 +6,7 @@ import {
   ormawaTable,
 } from "~~/server/db/schema";
 import { useDrizzle } from "~~/server/db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -37,19 +37,31 @@ export default defineEventHandler(async (event) => {
         ormawa: ormawaTable.nama,
         fakultas: fakultasTable.nama,
         prodi: programStudiTable.nama,
-        ormawaId: usersTable.ormawaId,
+        ormawaId: pengajuanRabTable.ormawaId,
       })
       .from(pengajuanRabTable)
-      .leftJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.id))
+      .leftJoin(
+        usersTable,
+        eq(sql`CAST(${pengajuanRabTable.usersId} AS UNSIGNED)`, usersTable.id),
+      )
       .leftJoin(
         fakultasTable,
-        eq(pengajuanRabTable.fakultasId, fakultasTable.id),
+        eq(
+          sql`CAST(${pengajuanRabTable.fakultasId} AS UNSIGNED)`,
+          fakultasTable.id,
+        ),
       )
       .leftJoin(
         programStudiTable,
-        eq(pengajuanRabTable.prodiId, programStudiTable.id),
+        eq(
+          sql`CAST(${pengajuanRabTable.prodiId} AS UNSIGNED)`,
+          programStudiTable.id,
+        ),
       )
-      .leftJoin(ormawaTable, eq(ormawaTable.id, usersTable.ormawaId))
+      .leftJoin(
+        ormawaTable,
+        eq(sql`CAST(${pengajuanRabTable.ormawaId} AS UNSIGNED)`, ormawaTable.id),
+      )
       .where(eq(pengajuanRabTable.id, Number(rabId)))
       .limit(1);
 
@@ -62,6 +74,7 @@ export default defineEventHandler(async (event) => {
       data: data[0],
     };
   } catch (error: any) {
+    console.log(error);
     return {
       success: false,
       message: error.message || "Terjadi kesalahan saat mengambil detail RAB",
