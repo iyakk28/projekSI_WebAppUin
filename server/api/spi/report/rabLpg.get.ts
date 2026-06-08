@@ -2,7 +2,7 @@ import { useDrizzle } from "~~/server/db/index";
 import { pengajuanRabTable } from "~~/server/db/schema/pengajuanRabSchema";
 import { lpgTable } from "~~/server/db/schema/lpgSchema";
 import { kegiatanTable } from "~~/server/db/schema/KegiatanSchema";
-import { approvalLogTable } from "~~/server/db/schema/approvalLogSchema";
+import { approvalLogTable } from "~~/server/db/schema/logRabSchema";
 import { usersTable } from "~~/server/db/schema/usersSchema";
 import { ormawaTable } from "~~/server/db/schema/ormawaSchema";
 import { fakultasTable } from "~~/server/db/schema/fakultasSchema";

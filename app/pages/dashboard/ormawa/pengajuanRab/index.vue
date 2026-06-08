@@ -209,7 +209,7 @@
                     </p>
                   </div>
                 </div>
-                <input type="hidden" v-model="formData.users_id" />
+                <input type="hidden" v-model="formData.id" />
               </div>
             </div>
 
@@ -261,9 +261,7 @@
                     <p class="text-sm font-medium text-slate-900">
                       Klik atau drag & drop untuk upload RAB
                     </p>
-                    <p class="text-xs text-slate-500">
-                      PDF, Excel, Word (Max 10MB)
-                    </p>
+                    <p class="text-xs text-slate-500">PDF (Max 10MB)</p>
                   </div>
                   <div v-else class="space-y-2">
                     <div
@@ -333,9 +331,7 @@
                     <p class="text-sm font-medium text-slate-900">
                       Klik atau drag & drop untuk upload TOR
                     </p>
-                    <p class="text-xs text-slate-500">
-                      PDF, Excel, Word (Max 10MB)
-                    </p>
+                    <p class="text-xs text-slate-500">PDF (Max 10MB)</p>
                   </div>
                   <div v-else class="space-y-2">
                     <div
@@ -701,7 +697,7 @@
 
   const formData = reactive({
     nomor_pengajuan: "",
-    users_id: null,
+    id: null,
     judul_kegiatan: "",
     deskripsi: "",
     file_rab: null,
@@ -728,7 +724,7 @@
   // Generate nomor otomatis
   onMounted(() => {
     generateNomorPengajuan();
-    formData.users_id = user?.id;
+    formData.id = user?.id;
   });
 
   const generateNomorPengajuan = () => {
@@ -776,15 +772,9 @@
       errors[`file_${type}`] = "Ukuran file maksimal 10MB";
       return;
     }
-    const allowedTypes = [
-      "application/pdf",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "application/vnd.ms-excel",
-      "application/msword",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    ];
+    const allowedTypes = ["application/pdf", ,];
     if (!allowedTypes.includes(file.type)) {
-      errors[`file_${type}`] = "Format file harus PDF, Word, atau Excel";
+      errors[`file_${type}`] = "Format file harus PDF";
       return;
     }
     errors[`file_${type}`] = "";
@@ -896,7 +886,7 @@
     isSubmitting.value = true;
     const formDataToSend = new FormData();
     formDataToSend.append("nomorPengajuan", formData.nomor_pengajuan);
-    formDataToSend.append("usersId", formData.users_id);
+    formDataToSend.append("usersId", formData.id);
     formDataToSend.append("judulKegiatan", formData.judul_kegiatan);
     formDataToSend.append("deskripsi", formData.deskripsi || "");
     formDataToSend.append("totalAnggaran", formData.total_anggaran);
@@ -936,7 +926,7 @@
     formData.tanggal_mulai = "";
     formData.tanggal_selesai = "";
     formData.status = "draft";
-    formData.users_id = user?.id;
+    formData.id = user?.id;
   };
 
   const goToDashboard = () => navigateTo("/dashboard/ormawa");

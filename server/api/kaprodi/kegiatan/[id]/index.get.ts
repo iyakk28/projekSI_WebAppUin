@@ -1,8 +1,8 @@
 // FILE: server/api/kaprodi/kegiatan/[id]/index.get.ts
 // Endpoint untuk mengambil detail pengajuan proposal berdasarkan ID tertentu oleh Kaprodi
-// Mengikuti pola server/api/ppk/kegiatan/[id]/index.get.ts dengan adaptasi prodiId Kaprodi
+// Dioptimalkan dengan validasi akses ormawaId dan pengambilan pengaju yang tepat dari RAB
 
-import { eq, asc, and, inArray } from "drizzle-orm";
+import { eq, asc, and } from "drizzle-orm";
 import { useDrizzle } from "~~/server/db";
 import {
   pengajuanRabTable,
@@ -15,7 +15,10 @@ export default defineEventHandler(async (event) => {
   try {
     const id = Number(getRouterParam(event, "id"));
     if (isNaN(id) || id <= 0) {
-      throw createError({ statusCode: 400, statusMessage: "ID pengajuan tidak valid" });
+      throw createError({
+        statusCode: 400,
+        statusMessage: "ID pengajuan tidak valid",
+      });
     }
 
     const db = useDrizzle();
@@ -38,73 +41,40 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // Step 1: Cari Ormawa yang terikat pada prodiId Kaprodi
-    const ormawaRows = await db
-      .select({ id: ormawaTable.id })
-      .from(ormawaTable)
-      .where(eq(ormawaTable.prodiId, prodiId));
+    // Step 1: Ambil detail RAB dan Ormawa sekaligus validasi akses prodi
+    const result = await db
+      .select({
+        rab: pengajuanRabTable,
+        ormawa: ormawaTable,
+      })
+      .from(pengajuanRabTable)
+      .innerJoin(ormawaTable, eq(pengajuanRabTable.ormawaId, ormawaTable.id))
+      .where(
+        and(
+          eq(pengajuanRabTable.id, id),
+          eq(ormawaTable.prodiId, Number(prodiId)),
+        ),
+      )
+      .limit(1);
 
-    const ormawaIds = ormawaRows.map((o) => o.id);
+    const detail = result[0];
 
-    if (ormawaIds.length === 0) {
+    if (!detail) {
       throw createError({
-        statusCode: 403,
-        statusMessage: "Tidak ada ormawa binaan yang terdaftar untuk prodi Anda",
+        statusCode: 404,
+        statusMessage:
+          "Pengajuan tidak ditemukan atau Anda tidak memiliki akses ke pengajuan ini",
       });
     }
 
-    // Step 2: Cari all user IDs (Primary Key) dari Ormawa tersebut
-    const ormawaUsers = await db
-      .select({ id: usersTable.id })
-      .from(usersTable)
-      .where(inArray(usersTable.ormawaId, ormawaIds));
+    const { rab, ormawa } = detail;
 
-    const ormawaUserIds = ormawaUsers.map((u) => String(u.id));
-
-    if (ormawaUserIds.length === 0) {
-      throw createError({
-        statusCode: 403,
-        statusMessage: "Tidak ada user ormawa terdaftar",
-      });
-    }
-
-    // Step 3: Validasi akses Kaprodi terhadap ID pengajuan ini
-    const aksesValid = await db.query.pengajuanRabTable.findFirst({
-      where: and(
-        eq(pengajuanRabTable.id, id),
-        inArray(pengajuanRabTable.usersId, ormawaUserIds)
-      ),
-    });
-
-    if (!aksesValid) {
-      throw createError({
-        statusCode: 403,
-        statusMessage: "Anda tidak memiliki akses ke pengajuan ini",
-      });
-    }
-
-    // Step 4: Ambil detail pengajuan
-    const rab = await db.query.pengajuanRabTable.findFirst({
-      where: eq(pengajuanRabTable.id, id),
-    });
-
-    if (!rab) {
-      throw createError({ statusCode: 404, statusMessage: "Pengajuan tidak ditemukan" });
-    }
-
-    // Ambil info pengaju menggunakan Primary Key ID
+    // Step 2: Ambil info pengaju asli (berdasarkan users_id yang ada di record RAB)
     const pengajuInfo = await db.query.usersTable.findFirst({
       where: eq(usersTable.id, Number(rab.usersId)),
     });
 
-    // Ambil info Ormawa
-    const ormawaInfo = pengajuInfo?.ormawaId
-      ? await db.query.ormawaTable.findFirst({
-          where: eq(ormawaTable.id, pengajuInfo.ormawaId),
-        })
-      : null;
-
-    // Ambil riwayat approval log
+    // Step 3: Ambil riwayat approval log
     const riwayat = await db
       .select({
         approvalLog: approvalLogTable,
@@ -139,10 +109,10 @@ export default defineEventHandler(async (event) => {
           email: pengajuInfo?.email ?? "",
         },
         ormawa: {
-          id: ormawaInfo?.id ?? null,
-          nama: ormawaInfo?.nama ?? "",
-          kode: ormawaInfo?.kode ?? "",
-          totalAnggaran: ormawaInfo?.totalAnggaran ?? 0,
+          id: ormawa.id,
+          nama: ormawa.nama,
+          kode: ormawa.kode,
+          totalAnggaran: ormawa.totalAnggaran,
         },
         riwayat: riwayat.map((r) => ({
           id: r.approvalLog.id,

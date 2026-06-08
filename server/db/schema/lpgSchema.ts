@@ -8,6 +8,7 @@ import {
 } from "drizzle-orm/mysql-core";
 import { kegiatanTable } from "./KegiatanSchema";
 import { usersTable } from "./usersSchema";
+import { pengajuanRabTable } from "./pengajuanRabSchema";
 
 export const StatusLpg = ["WAITING_SPI", "DISETUJUI", "REVISI_SPI"] as const;
 export type StatusLpgType = (typeof StatusLpg)[number];
@@ -17,6 +18,9 @@ export const lpgTable = mysqlTable("lpg", {
   kegiatanId: bigint("kegiatan_id", { mode: "number" })
     .notNull()
     .references(() => kegiatanTable.id, { onDelete: "cascade" }),
+  rabId: bigint("rab_id", { mode: "number" })
+    .notNull()
+    .references(() => pengajuanRabTable.id, { onDelete: "cascade" }),
   fileLpgUrl: text("file_lpg_url").notNull(),
   statusLpg: mysqlEnum("status_lpg", StatusLpg)
     .notNull()

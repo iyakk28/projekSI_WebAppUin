@@ -13,6 +13,10 @@ interface DetailRab {
   status: string;
   createdAt: string;
   updatedAt: string;
+  userName: string;
+  userEmail: string;
+  ormawaName: string;
+  ormawaKode: string;
 }
 
 export const useRabStore = defineStore("rabStore", {

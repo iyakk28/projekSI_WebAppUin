@@ -44,7 +44,6 @@ export default defineEventHandler(async (event) => {
     });
 
     // Query data Ormawa beserta kalkulasi anggaran terpakai & kegiatan via subquery SQL
-    // Menggunakan pola yang sama persis dengan ormawa-anggaran.get.ts PPK
     const ormawaList = await db
       .select({
         ormawaId: ormawaTable.id,
@@ -53,34 +52,31 @@ export default defineEventHandler(async (event) => {
         totalAnggaranOrmawa: ormawaTable.totalAnggaran,
         totalTerpakai: sql<number>`
           COALESCE((
-            SELECT SUM(pr.total_anggaran)
-            FROM pengajuan_rab pr
-            INNER JOIN users u ON pr.users_id = u.users_id
-            WHERE u.ormawa_id = ormawa.id
-            AND pr.status IN ('disetujui', 'selesai_spi')
+            SELECT SUM(total_anggaran)
+            FROM pengajuan_rab
+            WHERE ormawa_id = ${ormawaTable.id}
+            AND status IN ('disetujui', 'selesai_spi')
           ), 0)
         `,
         totalKegiatan: sql<number>`
           COALESCE((
             SELECT COUNT(*)
-            FROM pengajuan_rab pr
-            INNER JOIN users u ON pr.users_id = u.users_id
-            WHERE u.ormawa_id = ormawa.id
-            AND pr.status != 'draft'
+            FROM pengajuan_rab
+            WHERE ormawa_id = ${ormawaTable.id}
+            AND status != 'draft'
           ), 0)
         `,
         totalDisetujui: sql<number>`
           COALESCE((
             SELECT COUNT(*)
-            FROM pengajuan_rab pr
-            INNER JOIN users u ON pr.users_id = u.users_id
-            WHERE u.ormawa_id = ormawa.id
-            AND pr.status IN ('disetujui', 'selesai_spi')
+            FROM pengajuan_rab
+            WHERE ormawa_id = ${ormawaTable.id}
+            AND status IN ('disetujui', 'selesai_spi')
           ), 0)
         `,
       })
       .from(ormawaTable)
-      .where(eq(ormawaTable.prodiId, prodiId))
+      .where(eq(ormawaTable.prodiId, Number(prodiId)))
       .orderBy(ormawaTable.nama);
 
     const totalAnggaranKeseluruhan = ormawaList.reduce(

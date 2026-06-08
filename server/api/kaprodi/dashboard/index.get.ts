@@ -1,11 +1,10 @@
 // FILE: server/api/kaprodi/dashboard/index.get.ts
 // Endpoint untuk mengambil statistik pengajuan proposal milik Ormawa binaan Kaprodi
-// Mengikuti pola server/api/ppk/dashboard/index.get.ts dengan adaptasi relasi prodiId
+// Dioptimalkan sesuai skema relasi ormawaId langsung
 
 import { eq, sql, ne, and, inArray, desc } from "drizzle-orm";
 import {
   pengajuanRabTable,
-  usersTable,
   ormawaTable,
   kegiatanTable,
   tagihanPencairanTable,
@@ -13,22 +12,12 @@ import {
 import { useDrizzle } from "~~/server/db";
 
 export default defineEventHandler(async (event) => {
-  console.log("=== START GET /api/kaprodi/dashboard ===");
-
   try {
     const db = useDrizzle();
     const { user } = event.context;
 
-    console.log("Step 0: User context:", {
-      userId: user?.id,
-      role: user?.role,
-      prodiId: user?.prodiId,
-      hasUser: !!user,
-    });
-
     // Pastikan user terautentikasi dan memiliki prodiId
     if (!user || user.role !== "kaprodi") {
-      console.log("Step 1: Auth failed - user:", !!user, "role:", user?.role);
       throw createError({
         statusCode: 403,
         statusMessage: "Akses ditolak. Peran Kaprodi diperlukan.",
@@ -36,86 +25,8 @@ export default defineEventHandler(async (event) => {
     }
 
     const prodiId = user.prodiId;
-    console.log("Step 2: prodiId from user:", prodiId);
 
     if (!prodiId) {
-      console.log("Step 3: No prodiId found, returning empty result");
-      return {
-        success: true,
-        total: 0,
-        menunggu: 0,
-        disetujui: 0,
-        revisi: 0,
-        ditolak: 0,
-        data: { total: 0, menunggu: 0, disetujui: 0, revisi: 0, ditolak: 0 },
-      };
-    }
-
-    // Step 1: Cari semua ormawa yang terikat pada prodiId Kaprodi
-    console.log("Step 4: Fetching ormawa with prodiId:", prodiId);
-    const ormawaRows = await db
-      .select({ id: ormawaTable.id })
-      .from(ormawaTable)
-      .where(eq(ormawaTable.prodiId, prodiId));
-
-    console.log("Step 5: Ormawa rows found:", {
-      count: ormawaRows.length,
-      ids: ormawaRows.map((o) => o.id),
-    });
-
-    const ormawaIds = ormawaRows.map((o) => o.id);
-
-    if (ormawaIds.length === 0) {
-      console.log("Step 6: No ormawa found, returning empty result");
-      return {
-        success: true,
-        total: 0,
-        menunggu: 0,
-        disetujui: 0,
-        revisi: 0,
-        ditolak: 0,
-        data: { total: 0, menunggu: 0, disetujui: 0, revisi: 0, ditolak: 0 },
-      };
-    }
-
-    // Step 2: Cari all IDs (Primary Key) yang terikat pada ormawa tersebut
-    console.log("Step 7: Fetching user IDs with ormawaIds:", ormawaIds);
-    const ormawaUsers = await db
-      .select({ id: usersTable.id, ormawaId: usersTable.ormawaId })
-      .from(usersTable)
-      .where(inArray(usersTable.ormawaId, ormawaIds));
-
-    console.log("Step 8: Users found:", {
-      count: ormawaUsers.length,
-      ids: ormawaUsers.map((u) => u.id),
-    });
-
-    const ormawaUserIds = ormawaUsers.map((u) => u.id);
-    const userMap = new Map(ormawaUsers.map((u) => [u.id, u]));
-
-    console.log("Step 9: Fetching ormawa details for IDs:", ormawaIds);
-    const ormawaDetails = await db
-      .select({
-        id: ormawaTable.id,
-        nama: ormawaTable.nama,
-        kode: ormawaTable.kode,
-      })
-      .from(ormawaTable)
-      .where(inArray(ormawaTable.id, ormawaIds));
-
-    console.log("Step 10: Ormawa details:", {
-      count: ormawaDetails.length,
-      data: ormawaDetails.map((o) => ({
-        id: o.id,
-        nama: o.nama,
-        kode: o.kode,
-      })),
-    });
-
-    const ormawaMap = new Map(ormawaDetails.map((o) => [o.id, o]));
-
-    if (ormawaUserIds.length === 0) {
-      console.log("Step 11: No users found, returning empty result");
       return {
         success: true,
         total: 0,
@@ -128,151 +39,85 @@ export default defineEventHandler(async (event) => {
       };
     }
 
-    // Step 3: Hitung jumlah pengajuan berdasarkan status
-    console.log(
-      "Step 12: Counting pengajuan by status for userIds:",
-      ormawaUserIds,
-    );
+    // Step 1: Cari semua ormawaId yang terikat pada prodiId Kaprodi
+    const ormawaRows = await db
+      .select({ id: ormawaTable.id })
+      .from(ormawaTable)
+      .where(eq(ormawaTable.prodiId, Number(prodiId)));
 
-    const stringUserIds = ormawaUserIds.map(String);
+    const ormawaIdsArray = ormawaRows.map((o) => String(o.id));
 
-    // waiting_kaprodi -> Menunggu review
-    // revisi_kaprodi  -> Diminta revisi
-    // Selain draft, waiting_kaprodi, dan revisi_kaprodi -> Disetujui/dilanjutkan Kaprodi
-    // ditolak_spi      -> Ditolak
-    const [total, menunggu, revisi, disetujui, ditolak] = await Promise.all([
-      db
-        .select({ count: sql<number>`count(*)` })
-        .from(pengajuanRabTable)
-        .where(
-          and(
-            ne(pengajuanRabTable.status, "draft"),
-            inArray(pengajuanRabTable.usersId, stringUserIds),
-          ),
-        ),
-      db
-        .select({ count: sql<number>`count(*)` })
-        .from(pengajuanRabTable)
-        .where(
-          and(
-            eq(pengajuanRabTable.status, "waiting_kaprodi"),
-            inArray(pengajuanRabTable.usersId, stringUserIds),
-          ),
-        ),
-      db
-        .select({ count: sql<number>`count(*)` })
-        .from(pengajuanRabTable)
-        .where(
-          and(
-            eq(pengajuanRabTable.status, "revisi_kaprodi"),
-            inArray(pengajuanRabTable.usersId, stringUserIds),
-          ),
-        ),
-      db
-        .select({ count: sql<number>`count(*)` })
-        .from(pengajuanRabTable)
-        .where(
-          and(
-            inArray(pengajuanRabTable.status, [
-              "waiting_ppk",
-              "revisi_ppk",
-              "waiting_spi",
-              "disetujui",
-              "selesai_spi",
-            ]),
-            inArray(pengajuanRabTable.usersId, stringUserIds),
-          ),
-        ),
-      db
-        .select({ count: sql<number>`count(*)` })
-        .from(pengajuanRabTable)
-        .where(
-          and(
-            eq(pengajuanRabTable.status, "ditolak_spi"),
-            inArray(pengajuanRabTable.usersId, stringUserIds),
-          ),
-        ),
-    ]);
+    if (ormawaIdsArray.length === 0) {
+      return {
+        success: true,
+        total: 0,
+        menunggu: 0,
+        disetujui: 0,
+        revisi: 0,
+        ditolak: 0,
+        data: { total: 0, menunggu: 0, disetujui: 0, revisi: 0, ditolak: 0 },
+        activities: [],
+      };
+    }
 
-    console.log("Step 13: Count results:", {
-      total: total[0]?.count,
-      menunggu: menunggu[0]?.count,
-      revisi: revisi[0]?.count,
-      disetujui: disetujui[0]?.count,
-      ditolak: ditolak[0]?.count,
-    });
+    // Step 2: Hitung statistik pengajuan berdasarkan ormawaId (Sekali jalan dengan SQL Case)
+    const statsResult = await db
+      .select({
+        total: sql<number>`count(case when status != 'draft' then 1 end)`,
+        menunggu: sql<number>`count(case when status = 'waiting_kaprodi' then 1 end)`,
+        revisi: sql<number>`count(case when status = 'revisi_kaprodi' then 1 end)`,
+        disetujui: sql<number>`count(case when status IN ('waiting_ppk', 'revisi_ppk', 'waiting_spi', 'disetujui', 'selesai_spi') then 1 end)`,
+        ditolak: sql<number>`count(case when status = 'ditolak_spi' then 1 end)`,
+      })
+      .from(pengajuanRabTable)
+      .where(inArray(pengajuanRabTable.ormawaId, ormawaIdsArray));
 
     const stats = {
-      total: Number(total[0]?.count ?? 0),
-      menunggu: Number(menunggu[0]?.count ?? 0),
-      disetujui: Number(disetujui[0]?.count ?? 0),
-      revisi: Number(revisi[0]?.count ?? 0),
-      ditolak: Number(ditolak[0]?.count ?? 0),
+      total: Number(statsResult[0]?.total ?? 0),
+      menunggu: Number(statsResult[0]?.menunggu ?? 0),
+      disetujui: Number(statsResult[0]?.disetujui ?? 0),
+      revisi: Number(statsResult[0]?.revisi ?? 0),
+      ditolak: Number(statsResult[0]?.ditolak ?? 0),
     };
 
-    console.log("Step 14: Stats object:", stats);
-
-    console.log("Step 15: Fetching detailed pengajuan data");
+    // Step 3: Ambil daftar pengajuan (activities) dengan Join Ormawa & Kegiatan
     const pengajuanRows = await db
       .select({
         id: pengajuanRabTable.id,
         nomorPengajuan: pengajuanRabTable.nomorPengajuan,
-        usersId: pengajuanRabTable.usersId,
         judulKegiatan: pengajuanRabTable.judulKegiatan,
         status: pengajuanRabTable.status,
         totalAnggaran: pengajuanRabTable.totalAnggaran,
         tanggalMulai: pengajuanRabTable.tanggalMulai,
         tanggalSelesai: pengajuanRabTable.tanggalSelesai,
-        fileRabUrl: pengajuanRabTable.fileRabUrl,
-        fileTorUrl: pengajuanRabTable.fileTorUrl,
         createdAt: pengajuanRabTable.createdAt,
-        updatedAt: pengajuanRabTable.updatedAt,
+        ormawaName: ormawaTable.nama,
+        ormawaKode: ormawaTable.kode,
+        ormawaId: ormawaTable.id,
+        statusKegiatan: kegiatanTable.statusKegiatan,
+        kegiatanId: kegiatanTable.id,
       })
       .from(pengajuanRabTable)
-      .where(inArray(pengajuanRabTable.usersId, stringUserIds))
-      .orderBy(desc(pengajuanRabTable.createdAt));
+      .innerJoin(ormawaTable, eq(pengajuanRabTable.ormawaId, ormawaTable.id))
+      .leftJoin(
+        kegiatanTable,
+        eq(pengajuanRabTable.id, kegiatanTable.pengajuanRabId),
+      )
+      .where(
+        and(
+          ne(pengajuanRabTable.status, "draft"),
+          inArray(pengajuanRabTable.ormawaId, ormawaIdsArray),
+        ),
+      )
+      .orderBy(desc(pengajuanRabTable.createdAt))
+      .limit(50);
 
-    console.log("Step 16: Pengajuan rows found:", {
-      count: pengajuanRows.length,
-      sample: pengajuanRows.slice(0, 3).map((p) => ({
-        id: p.id,
-        nomorPengajuan: p.nomorPengajuan,
-        status: p.status,
-        usersId: p.usersId,
-      })),
-    });
+    const activityIds = pengajuanRows
+      .map((p) => p.kegiatanId)
+      .filter((id): id is number => id !== null);
 
-    const pengajuanIds = pengajuanRows.map((item) => item.id);
-    console.log("Step 17: Pengajuan IDs:", pengajuanIds);
-
-    const kegiatanRows = pengajuanIds.length
-      ? await db
-          .select({
-            id: kegiatanTable.id,
-            pengajuanRabId: kegiatanTable.pengajuanRabId,
-            statusKegiatan: kegiatanTable.statusKegiatan,
-          })
-          .from(kegiatanTable)
-          .where(inArray(kegiatanTable.pengajuanRabId, pengajuanIds))
-      : [];
-
-    console.log("Step 18: Kegiatan rows found:", {
-      count: kegiatanRows.length,
-      data: kegiatanRows.map((k) => ({
-        id: k.id,
-        pengajuanRabId: k.pengajuanRabId,
-        statusKegiatan: k.statusKegiatan,
-      })),
-    });
-
-    const kegiatanMap = new Map(
-      kegiatanRows.map((row) => [row.pengajuanRabId, row]),
-    );
-
-    const kegiatanIds = kegiatanRows.map((row) => row.id);
-    console.log("Step 19: Kegiatan IDs:", kegiatanIds);
-
-    const tagihanRows = kegiatanIds.length
+    // Step 4: Ambil data tagihan pencairan jika ada kegiatan
+    const tagihanRows = activityIds.length
       ? await db
           .select({
             kegiatanId: tagihanPencairanTable.kegiatanId,
@@ -280,17 +125,8 @@ export default defineEventHandler(async (event) => {
             nominal: tagihanPencairanTable.nominal,
           })
           .from(tagihanPencairanTable)
-          .where(inArray(tagihanPencairanTable.kegiatanId, kegiatanIds))
+          .where(inArray(tagihanPencairanTable.kegiatanId, activityIds))
       : [];
-
-    console.log("Step 20: Tagihan rows found:", {
-      count: tagihanRows.length,
-      sample: tagihanRows.slice(0, 3).map((t) => ({
-        kegiatanId: t.kegiatanId,
-        statusTagihan: t.statusTagihan,
-        nominal: t.nominal,
-      })),
-    });
 
     const tagihanMap = new Map<
       number,
@@ -301,64 +137,35 @@ export default defineEventHandler(async (event) => {
         statuses: Set<string>;
       }
     >();
-
-    for (const item of tagihanRows) {
-      const current = tagihanMap.get(item.kegiatanId) ?? {
+    tagihanRows.forEach((t) => {
+      const current = tagihanMap.get(t.kegiatanId) ?? {
         total: 0,
         selesai: 0,
         nominalSelesai: 0,
         statuses: new Set<string>(),
       };
-      if (item.statusTagihan) {
-        current.total += 1;
-        current.statuses.add(item.statusTagihan);
-        if (item.statusTagihan === "SELESAI") {
-          current.selesai += 1;
-          current.nominalSelesai += Number(item.nominal ?? 0);
-        }
+      current.total++;
+      if (t.statusTagihan) current.statuses.add(t.statusTagihan);
+      if (t.statusTagihan === "SELESAI") {
+        current.selesai++;
+        current.nominalSelesai += Number(t.nominal ?? 0);
       }
-      tagihanMap.set(item.kegiatanId, current);
-    }
-
-    console.log("Step 21: Tagihan map created:", {
-      size: tagihanMap.size,
-      entries: Array.from(tagihanMap.entries()).map(([k, v]) => ({
-        kegiatanId: k,
-        total: v.total,
-        selesai: v.selesai,
-        nominalSelesai: v.nominalSelesai,
-        statuses: Array.from(v.statuses),
-      })),
+      tagihanMap.set(t.kegiatanId, current);
     });
 
-    console.log("Step 22: Building activity list");
+    // Step 5: Mapping hasil akhir
     const activityList = pengajuanRows.map((row) => {
-      // row.usersId di pengajuan_rab adalah PK (id) dari usersTable
-      const userPk = Number(row.usersId);
-      const userObj = userMap.get(userPk);
-      const ormawaId = userObj?.ormawaId;
-      const ormawa = ormawaId ? ormawaMap.get(ormawaId) : null;
-      const kegiatan = kegiatanMap.get(row.id);
-      const tagihan = kegiatan ? tagihanMap.get(kegiatan.id) : undefined;
-
-      console.log(`  Processing pengajuan ${row.id}:`, {
-        userPk: userPk,
-        userFound: !!userObj,
-        ormawaFound: !!ormawa,
-        kegiatanFound: !!kegiatan,
-        tagihanFound: !!tagihan,
-      });
-
+      const tagihan = row.kegiatanId ? tagihanMap.get(row.kegiatanId) : null;
       return {
         id: row.id,
         nomorPengajuan: row.nomorPengajuan,
         judulKegiatan: row.judulKegiatan,
         status: row.status,
-        statusKegiatan: kegiatan?.statusKegiatan ?? null,
+        statusKegiatan: row.statusKegiatan,
         ormawa: {
-          id: ormawa?.id ?? null,
-          nama: ormawa?.nama ?? "",
-          kode: ormawa?.kode ?? "",
+          id: row.ormawaId,
+          nama: row.ormawaName,
+          kode: row.ormawaKode,
         },
         totalAnggaran: Number(row.totalAnggaran ?? 0),
         tanggalMulai: row.tanggalMulai,
@@ -372,22 +179,6 @@ export default defineEventHandler(async (event) => {
       };
     });
 
-    console.log("Step 23: Final response prepared:", {
-      success: true,
-      stats: stats,
-      activitiesCount: activityList.length,
-      sampleActivity: activityList[0]
-        ? {
-            id: activityList[0].id,
-            judulKegiatan: activityList[0].judulKegiatan,
-            status: activityList[0].status,
-            ormawa: activityList[0].ormawa,
-          }
-        : null,
-    });
-
-    console.log("=== END GET /api/kaprodi/dashboard (SUCCESS) ===");
-
     return {
       success: true,
       ...stats,
@@ -395,14 +186,7 @@ export default defineEventHandler(async (event) => {
       activities: activityList,
     };
   } catch (error: any) {
-    console.error("=== ERROR GET /api/kaprodi/dashboard ===");
-    console.error("Error details:", {
-      message: error.message,
-      statusCode: error.statusCode,
-      stack: error.stack,
-      data: error.data,
-    });
-
+    console.error("Error GET /api/kaprodi/dashboard:", error);
     if (error.statusCode) throw error;
     throw createError({
       statusCode: 500,

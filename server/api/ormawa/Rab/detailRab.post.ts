@@ -1,4 +1,8 @@
-import { pengajuanRabTable, usersTable } from "~~/server/db/schema";
+import {
+  pengajuanRabTable,
+  usersTable,
+  ormawaTable,
+} from "~~/server/db/schema";
 import { useDrizzle } from "~~/server/db";
 import { eq, and } from "drizzle-orm";
 
@@ -14,32 +18,45 @@ export default defineEventHandler(async (event) => {
     const { user } = event.context;
     const db = useDrizzle();
 
-    const rab = await db.query.pengajuanRabTable.findFirst({
-      where: and(
-        eq(pengajuanRabTable.id, Number(rabId)),
-        eq(pengajuanRabTable.usersId, user.id),
-      ),
-    });
+    const result = await db
+      .select({
+        id: pengajuanRabTable.id,
+        nomorPengajuan: pengajuanRabTable.nomorPengajuan,
+        judulKegiatan: pengajuanRabTable.judulKegiatan,
+        deskripsi: pengajuanRabTable.deskripsi,
+        fileRabUrl: pengajuanRabTable.fileRabUrl,
+        fileTorUrl: pengajuanRabTable.fileTorUrl,
+        totalAnggaran: pengajuanRabTable.totalAnggaran,
+        status: pengajuanRabTable.status,
+        tanggalMulai: pengajuanRabTable.tanggalMulai,
+        tanggalSelesai: pengajuanRabTable.tanggalSelesai,
+        createdAt: pengajuanRabTable.createdAt,
+        updatedAt: pengajuanRabTable.updatedAt,
+        userName: usersTable.fullName,
+        userEmail: usersTable.email,
+        ormawaName: ormawaTable.nama,
+        ormawaKode: ormawaTable.kode,
+      })
+      .from(pengajuanRabTable)
+      .innerJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.id))
+      .innerJoin(ormawaTable, eq(pengajuanRabTable.ormawaId, ormawaTable.id))
+      .where(
+        and(
+          eq(pengajuanRabTable.id, Number(rabId)),
+          eq(pengajuanRabTable.ormawaId, String(user.ormawaId)),
+        ),
+      )
+      .limit(1);
 
-    if (!rab) {
+    const data = result[0];
+
+    if (!data) {
       throw createError({ statusCode: 404, message: "RAB tidak ditemukan" });
     }
 
     return {
       success: true,
-      data: {
-        id: rab.id,
-        nomorPengajuan: rab.nomorPengajuan,
-        judulKegiatan: rab.judulKegiatan,
-        deskripsi: rab.deskripsi,
-        fileRabUrl: rab.fileRabUrl,
-        totalAnggaran: rab.totalAnggaran,
-        status: rab.status,
-        tanggalMulai: rab.tanggalMulai,
-        tanggalSelesai: rab.tanggalSelesai,
-        createdAt: rab.createdAt,
-        updatedAt: rab.updatedAt,
-      },
+      data,
     };
   } catch (error) {
     if (error.statusCode) {

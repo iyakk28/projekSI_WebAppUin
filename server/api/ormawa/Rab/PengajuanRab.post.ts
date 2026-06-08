@@ -162,6 +162,7 @@ export default defineEventHandler(async (event) => {
         fileRabUrl: relativePathRab,
         fileTorUrl: relativePathTor, // Field baru untuk menyimpan path TOR
         totalAnggaran,
+        ormawaId: user.ormawaId,
         fakultasId: user.fakultasId,
         prodiId: user.prodiId,
         status: statusRaw as StatusEnum,

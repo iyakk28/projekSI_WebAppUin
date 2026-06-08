@@ -32,6 +32,9 @@ export const tagihanPencairanTable = mysqlTable("tagihan_pencairan", {
   prodiId: varchar("prodi_id", { length: 50 }).references(
     () => programStudiTable.id,
   ),
+  userId: bigint("user_id", { mode: "number" })
+    .notNull()
+    .references(() => usersTable.id, { onDelete: "set null" }),
   skNomor: varchar("sk_nomor", { length: 255 }),
   skFileUrl: text("sk_file_url"),
 
@@ -57,7 +60,6 @@ export const tagihanPencairanTable = mysqlTable("tagihan_pencairan", {
   tokoAlamat: text("toko_alamat"),
   strukFileUrl: text("struk_file_url"),
   fotoBarangUrl: text("foto_barang_url"),
-  buktiPembayaranUrl: text("bukti_pembayaran_url"),
 
   statusTagihan: mysqlEnum("status_tagihan", tagihanStatusEnum).default(
     "WAITING_PEMBAYARAN",

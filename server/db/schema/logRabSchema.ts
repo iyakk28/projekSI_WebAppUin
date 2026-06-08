@@ -13,7 +13,7 @@ export const approvalLogTable = mysqlTable("approval_log", {
   id: bigint("id", { mode: "number" }).primaryKey().autoincrement(),
   pengajuanRabId: int("pengajuan_rab_id")
     .notNull()
-    .references(() => pengajuanRabTable.id, { onDelete: "cascade" }),
+    .references(() => pengajuanRabTable.id, { onDelete: "restrict" }),
   actorId: bigint("actor_id", { mode: "number" })
     .notNull()
     .references(() => usersTable.id, { onDelete: "restrict" }),

@@ -78,8 +78,8 @@
                 {{ rabData.judulKegiatan }}
               </h2>
               <p class="text-xs text-slate-500">
-                {{ ormawaData?.fullName || ormawaData?.nama }} ·
-                {{ ormawaData?.kode }}
+                {{ rabData.ormawaName }} ·
+                {{ rabData.ormawaKode }}
               </p>
             </div>
             <div class="ml-auto">
@@ -97,10 +97,10 @@
                 Diajukan Oleh
               </p>
               <p class="font-medium text-slate-800">
-                {{ ormawaData?.fullName || ormawaData?.nama || "-" }}
+                {{ rabData.userName || "-" }}
               </p>
               <p class="text-xs text-slate-500">
-                {{ ormawaData?.email || "-" }}
+                {{ rabData.userEmail || "-" }}
               </p>
             </div>
             <div>
@@ -108,7 +108,7 @@
                 Organisasi
               </p>
               <p class="font-medium text-slate-800">
-                {{ ormawaData?.ormawa?.nama || ormawaData?.nama || "-" }}
+                {{ rabData.ormawaName || "-" }}
               </p>
             </div>
             <div>

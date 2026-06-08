@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
   const limit = Number(row) || 10;
   const offset = (Number(page) - 1) * limit;
 
-  // Ambil data sesuai user.id
+  // Ambil data sesuai ormawaId user
 
   const data = await db
     .select({
@@ -30,15 +30,15 @@ export default defineEventHandler(async (event) => {
     })
     .from(pengajuanRabTable)
     .innerJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.id))
-    .where(eq(pengajuanRabTable.usersId, user.id)) // Filter berdasarkan user
+    .where(eq(pengajuanRabTable.ormawaId, String(user.ormawaId))) // Filter berdasarkan ormawaId
     .limit(limit) // Batas per halaman
     .offset(offset); // Lompatan halaman
 
-  // Hitung total data user
+  // Hitung total data ormawa
   const total = await db
     .select({ count: sql`COUNT(*)` })
     .from(pengajuanRabTable)
-    .where(eq(pengajuanRabTable.usersId, user.id));
+    .where(eq(pengajuanRabTable.ormawaId, String(user.ormawaId)));
 
   return {
     page,

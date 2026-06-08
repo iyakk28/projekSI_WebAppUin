@@ -9,12 +9,16 @@ import {
   text,
 } from "drizzle-orm/mysql-core";
 import { pengajuanRabTable } from "./pengajuanRabSchema";
+import { ormawaTable } from "./ormawaSchema";
 
 export const kegiatanTable = mysqlTable("kegiatan", {
   id: bigint("id", { mode: "number" }).primaryKey().autoincrement(),
   pengajuanRabId: int("pengajuan_rab_id")
     .notNull()
     .references(() => pengajuanRabTable.id, { onDelete: "cascade" }),
+  ormawaId: int("ormawa_id")
+    .notNull()
+    .references(() => ormawaTable.id, { onDelete: "set null" }),
   statusKegiatan: mysqlEnum("status_kegiatan", [
     "BELUM_DILAKSANAKAN",
     "SEDANG_DILAKSANAKAN",

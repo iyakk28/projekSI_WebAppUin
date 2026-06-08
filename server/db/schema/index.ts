@@ -5,7 +5,7 @@ import { programStudiTable } from "../schema/programStudiSchema";
 import { ormawaTable } from "../schema/ormawaSchema";
 import { usersTable } from "../schema/usersSchema";
 import { pengajuanRabTable } from "../schema/pengajuanRabSchema";
-import { approvalLogTable } from "../schema/approvalLogSchema";
+import { approvalLogTable } from "./logRabSchema";
 import { kegiatanTable } from "../schema/KegiatanSchema";
 import { dokumentasiKegiatanTable } from "../schema/dokumentasiSchema";
 import { tagihanPencairanTable } from "../schema/TagihanPencairanSchema";

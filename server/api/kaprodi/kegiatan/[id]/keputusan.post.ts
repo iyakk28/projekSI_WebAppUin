@@ -1,13 +1,12 @@
 // FILE: server/api/kaprodi/kegiatan/[id]/keputusan.post.ts
 // Endpoint untuk memproses keputusan review (Setuju / Revisi) oleh Kaprodi
-// Mengikuti pola server/api/ppk/kegiatan/[id]/keputusan.post.ts secara persis
+// Dioptimalkan dengan filter ormawaId langsung dan Join satu kali jalan
 
-import { eq, inArray, and } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { useDrizzle } from "~~/server/db";
 import {
   pengajuanRabTable,
   approvalLogTable,
-  usersTable,
   ormawaTable,
 } from "~~/server/db/schema";
 
@@ -27,7 +26,6 @@ export default defineEventHandler(async (event) => {
     }
 
     const body = await readBody(event);
-    // field: "keputusan" — value: "disetujui" | "revisi" | "tolak"
     const { keputusan, catatan } = body ?? {};
 
     if (!keputusan || !Object.keys(KEPUTUSAN_MAP).includes(keputusan)) {
@@ -64,52 +62,32 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // Step 1: Cari Ormawa yang terikat pada prodiId Kaprodi
-    const ormawaRows = await db
-      .select({ id: ormawaTable.id })
-      .from(ormawaTable)
-      .where(eq(ormawaTable.prodiId, prodiId));
+    // Step 1: Cari pengajuan sekaligus validasi akses prodi Kaprodi via ormawaId
+    const result = await db
+      .select({
+        id: pengajuanRabTable.id,
+        status: pengajuanRabTable.status,
+      })
+      .from(pengajuanRabTable)
+      .innerJoin(ormawaTable, eq(pengajuanRabTable.ormawaId, ormawaTable.id))
+      .where(
+        and(
+          eq(pengajuanRabTable.id, id),
+          eq(ormawaTable.prodiId, Number(prodiId))
+        )
+      )
+      .limit(1);
 
-    const ormawaIds = ormawaRows.map((o) => o.id);
-
-    if (ormawaIds.length === 0) {
-      throw createError({
-        statusCode: 403,
-        statusMessage: "Tidak ada ormawa binaan yang terdaftar untuk prodi Anda",
-      });
-    }
-
-    // Step 2: Cari all user IDs (Primary Key) dari Ormawa tersebut
-    const ormawaUsers = await db
-      .select({ id: usersTable.id })
-      .from(usersTable)
-      .where(inArray(usersTable.ormawaId, ormawaIds));
-
-    const ormawaUserIds = ormawaUsers.map((u) => String(u.id));
-
-    if (ormawaUserIds.length === 0) {
-      throw createError({
-        statusCode: 403,
-        statusMessage: "Tidak ada user ormawa terdaftar",
-      });
-    }
-
-    // Step 3: Cari pengajuan dan validasi akses
-    const rab = await db.query.pengajuanRabTable.findFirst({
-      where: and(
-        eq(pengajuanRabTable.id, id),
-        inArray(pengajuanRabTable.usersId, ormawaUserIds)
-      ),
-    });
+    const rab = result[0];
 
     if (!rab) {
       throw createError({
         statusCode: 404,
-        statusMessage: "Pengajuan tidak ditemukan atau Anda tidak memiliki akses",
+        statusMessage: "Pengajuan tidak ditemukan atau Anda tidak memiliki akses ke pengajuan ini",
       });
     }
 
-    // Kaprodi hanya bisa meninjau pengajuan yang berstatus "waiting_kaprodi" atau "revisi_kaprodi" (jika ormawa re-upload)
+    // Kaprodi hanya bisa meninjau pengajuan yang berstatus "waiting_kaprodi"
     if (rab.status !== "waiting_kaprodi") {
       throw createError({
         statusCode: 422,
@@ -119,7 +97,7 @@ export default defineEventHandler(async (event) => {
 
     const { statusBaru, action } = KEPUTUSAN_MAP[keputusan as Keputusan];
 
-    // Step 4: Jalankan update status & catat log persetujuan dalam satu transaksi database
+    // Step 2: Jalankan update status & catat log persetujuan dalam satu transaksi database
     await db.transaction(async (tx) => {
       await tx
         .update(pengajuanRabTable)

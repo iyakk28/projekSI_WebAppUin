@@ -1,4 +1,4 @@
-import { mysqlTable, bigint, varchar } from "drizzle-orm/mysql-core";
+import { mysqlTable, bigint, varchar, tinyint } from "drizzle-orm/mysql-core";
 import { programStudiTable } from "./programStudiSchema";
 import { fakultasTable } from "./fakultasSchema";
 
@@ -22,4 +22,5 @@ export const ormawaTable = mysqlTable("ormawa", {
       onUpdate: "cascade",
     },
   ),
+  ormawaFakultas: tinyint("ormawa_fakultas").default(0),
 });

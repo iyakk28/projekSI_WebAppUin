@@ -11,6 +11,7 @@ import {
 import { usersTable } from "./usersSchema";
 import { fakultasTable } from "./fakultasSchema";
 import { programStudiTable } from "./programStudiSchema";
+import { ormawaTable } from "./ormawaSchema";
 export const statusEnum = [
   "draft",
   "waiting_kaprodi",
@@ -33,7 +34,7 @@ export const pengajuanRabTable = mysqlTable("pengajuan_rab", {
     .notNull(),
   usersId: varchar("users_id", { length: 50 })
     .notNull()
-    .references(() => usersTable.users_id),
+    .references(() => usersTable.id),
   judulKegiatan: varchar("judul_kegiatan", { length: 500 }).notNull(),
   deskripsi: text("deskripsi"),
   fileRabUrl: text("file_rab_url").notNull(),
@@ -48,6 +49,10 @@ export const pengajuanRabTable = mysqlTable("pengajuan_rab", {
   prodiId: varchar("prodi_id", { length: 50 }).references(
     () => programStudiTable.id,
   ),
+  ormawaId: varchar("ormawa_id", { length: 50 })
+    .references(() => ormawaTable.id)
+    .notNull()
+    .default("0"),
   tanggalMulai: date("tanggal_mulai"),
   tanggalSelesai: date("tanggal_selesai"),
   status: mysqlEnum("status", statusEnum).default("draft"),

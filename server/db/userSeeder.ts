@@ -70,7 +70,7 @@ async function seed() {
   // 4. USERS
   await db.insert(usersTable).values([
     {
-      users_id: "1",
+      userName: "1",
       email: "kaprodi@univ.ac.id",
       passwordHash: "pass123",
       fullName: "Kaprodi Teknik Informatika",
@@ -81,7 +81,7 @@ async function seed() {
       fakultasId: null,
     },
     {
-      users_id: "2",
+      userName: "2",
       email: "ormawa@univ.ac.id",
       passwordHash: "pass123",
       fullName: "Ketua HIMATI",
@@ -92,7 +92,7 @@ async function seed() {
       fakultasId: null,
     },
     {
-      users_id: "3",
+      userName: "3",
       email: "ppk@univ.ac.id",
       passwordHash: "pass123",
       fullName: "PPK Fakultas Teknik",
@@ -103,7 +103,7 @@ async function seed() {
       fakultasId: fakultasTeknikId,
     },
     {
-      users_id: "4",
+      userName: "4",
       email: "spi@univ.ac.id",
       passwordHash: "pass123",
       fullName: "SPI Satu",

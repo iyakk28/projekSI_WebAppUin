@@ -81,7 +81,8 @@ export default defineEventHandler(async (event) => {
       prodiId: joinUser?.prodiId || null,
       ormawaId: joinUser?.ormawaId || null,
     };
-
+    console.log("ini adalah joinUser:", { joinUser });
+    console.log("ini adalah payload:", { payload });
     const token = createJwt(payload);
 
     if (token == null) {

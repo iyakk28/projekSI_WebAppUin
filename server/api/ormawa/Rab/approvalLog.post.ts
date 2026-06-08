@@ -27,7 +27,6 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // Cek apakah pengajuan RAB dengan id tersebut ada dan milik user yang sedang login
   const pengajuan = await db
     .select()
     .from(pengajuanRabTable)
@@ -45,7 +44,6 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // Hitung total approval log
   const [totalCount] = await db
     .select({ count: sql<number>`count(*)` })
     .from(approvalLogTable)
@@ -53,7 +51,6 @@ export default defineEventHandler(async (event) => {
 
   const total = Number(totalCount?.count || 0);
 
-  // Ambil approval log untuk RAB tersebut dengan pagination
   const applog = await db
     .select({
       approvalLog: approvalLogTable,

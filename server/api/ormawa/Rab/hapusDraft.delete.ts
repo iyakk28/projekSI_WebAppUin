@@ -55,14 +55,10 @@ export default defineEventHandler(async (event) => {
 
   const uploadsDir = path.resolve(process.cwd(), "uploads"); // pastikan ini sesuai dengan path folder uploads utama Anda
 
-  // 3. Helper function untuk memvalidasi dan menghapus file secara aman
   const deletePhysicalFile = async (filePath: string | null) => {
     if (!filePath) return;
-
     const resolvedPath = path.resolve(process.cwd(), filePath);
     const normalizedPath = path.normalize(resolvedPath);
-
-    // Keamanan: Cegah Directory Traversal
     if (!normalizedPath.startsWith(uploadsDir)) {
       console.error(
         `Security: Attempt to delete file outside uploads directory: ${normalizedPath}`,

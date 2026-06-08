@@ -1,14 +1,13 @@
 // FILE: server/api/kaprodi/kegiatan/[id]/file.post.ts
 // Endpoint untuk mengalirkan file RAB/TOR fisik ke browser Kaprodi
-// Mengikuti pola server/api/ppk/kegiatan/[id]/file.post.ts dengan adaptasi prodiId Kaprodi
+// Dioptimalkan dengan filter ormawaId langsung dan Join satu kali jalan
 
 import fs from "node:fs";
 import path from "node:path";
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { useDrizzle } from "~~/server/db";
 import {
   pengajuanRabTable,
-  usersTable,
   ormawaTable,
 } from "~~/server/db/schema";
 
@@ -49,60 +48,28 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    // Step 1: Cari Ormawa yang terikat pada prodiId Kaprodi
-    const ormawaRows = await db
-      .select({ id: ormawaTable.id })
-      .from(ormawaTable)
-      .where(eq(ormawaTable.prodiId, prodiId));
+    // Step 1: Validasi akses sekaligus ambil path file
+    const result = await db
+      .select({
+        fileRabUrl: pengajuanRabTable.fileRabUrl,
+        fileTorUrl: pengajuanRabTable.fileTorUrl,
+      })
+      .from(pengajuanRabTable)
+      .innerJoin(ormawaTable, eq(pengajuanRabTable.ormawaId, ormawaTable.id))
+      .where(
+        and(
+          eq(pengajuanRabTable.id, rabId),
+          eq(ormawaTable.prodiId, Number(prodiId))
+        )
+      )
+      .limit(1);
 
-    const ormawaIds = ormawaRows.map((o) => o.id);
-
-    if (ormawaIds.length === 0) {
-      throw createError({
-        statusCode: 403,
-        message: "Tidak ada ormawa binaan yang terdaftar untuk prodi Anda",
-      });
-    }
-
-    // Step 2: Cari all user IDs (Primary Key) dari Ormawa tersebut
-    const ormawaUsers = await db
-      .select({ id: usersTable.id })
-      .from(usersTable)
-      .where(inArray(usersTable.ormawaId, ormawaIds));
-
-    const ormawaUserIds = ormawaUsers.map((u) => String(u.id));
-
-    if (ormawaUserIds.length === 0) {
-      throw createError({
-        statusCode: 403,
-        message: "Tidak ada user ormawa terdaftar",
-      });
-    }
-
-    // Step 3: Validasi akses terhadap pengajuan ini
-    const aksesValid = await db.query.pengajuanRabTable.findFirst({
-      where: and(
-        eq(pengajuanRabTable.id, rabId),
-        inArray(pengajuanRabTable.usersId, ormawaUserIds)
-      ),
-    });
-
-    if (!aksesValid) {
-      throw createError({
-        statusCode: 403,
-        message: "Anda tidak memiliki akses ke file pengajuan ini",
-      });
-    }
-
-    // Step 4: Ambil data pengajuan untuk mendapatkan path file
-    const rab = await db.query.pengajuanRabTable.findFirst({
-      where: eq(pengajuanRabTable.id, rabId),
-    });
+    const rab = result[0];
 
     if (!rab) {
       throw createError({
-        statusCode: 404,
-        message: "Data pengajuan tidak ditemukan",
+        statusCode: 403,
+        message: "Anda tidak memiliki akses ke file pengajuan ini atau pengajuan tidak ditemukan",
       });
     }
 
@@ -121,7 +88,7 @@ export default defineEventHandler(async (event) => {
     if (!fs.existsSync(filePath)) {
       throw createError({
         statusCode: 404,
-        message: `File tidak ditemukan secara fisik: ${filePath}`,
+        message: `File tidak ditemukan secara fisik di server`,
       });
     }
 
