@@ -275,7 +275,7 @@
               <a href="#" class="social-icon">
                 <Icon name="mdi:instagram" class="h-5 w-5" />
               </a>
-              <a href="#" class="social-icon">
+              <a href="https://www.youtube.com/@uinmybsk" class="social-icon">
                 <Icon name="mdi:youtube" class="h-5 w-5" />
               </a>
               <a href="#" class="social-icon">
