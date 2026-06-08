@@ -269,18 +269,19 @@
               Ikuti Kami
             </h3>
             <div class="flex space-x-4">
-              <a href="#" class="social-icon">
+              <a href="https://www.facebook.com/IAINBsk?locale=id_ID" class="social-icon">
                 <Icon name="mdi:facebook" class="h-5 w-5" />
               </a>
-              <a href="#" class="social-icon">
+              <a href="https://www.instagram.com/uinmybatusangkar/" class="social-icon">
                 <Icon name="mdi:instagram" class="h-5 w-5" />
               </a>
-              <a href="#" class="social-icon">
+              <a href="https://www.youtube.com/@uinmybsk" class="social-icon">
                 <Icon name="mdi:youtube" class="h-5 w-5" />
               </a>
-              <a href="#" class="social-icon">
+              <a href="https://twitter.com/uinmybatusangkar" class="social-icon">
                 <Icon name="mdi:twitter" class="h-5 w-5" />
               </a>
+              
             </div>
           </div>
         </div>
@@ -361,7 +362,9 @@
   }
 
   /* Social icons */
-  .social-icon {
-    @apply rounded-full bg-white/10 p-2 inline-flex transition-all hover:bg-[rgba(201,162,39,0.5)];
-  }
+.social-icon {
+  @apply rounded-full bg-white/10 p-2 inline-flex transition-all hover:bg-[rgba(201,162,39,0.5)] hover:-translate-y-1;
+}
+
+  
 </style>
