@@ -272,13 +272,13 @@
               <a href="https://www.facebook.com/IAINBsk?locale=id_ID" class="social-icon">
                 <Icon name="mdi:facebook" class="h-5 w-5" />
               </a>
-              <a href="#" class="social-icon">
+              <a href="https://www.instagram.com/uinmybatusangkar/" class="social-icon">
                 <Icon name="mdi:instagram" class="h-5 w-5" />
               </a>
               <a href="https://www.youtube.com/@uinmybsk" class="social-icon">
                 <Icon name="mdi:youtube" class="h-5 w-5" />
               </a>
-              <a href="#" class="social-icon">
+              <a href="https://twitter.com/uinmybatusangkar" class="social-icon">
                 <Icon name="mdi:twitter" class="h-5 w-5" />
               </a>
             </div>
