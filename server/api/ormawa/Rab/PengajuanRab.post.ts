@@ -7,7 +7,27 @@ import {
   statusEnum,
   type StatusEnum,
 } from "../../../db/schema/pengajuanRabSchema";
+import { ormawaTable, usersTable } from "../../../db/schema";
+import { eq } from "drizzle-orm";
 import { createFilePath } from "#imports";
+
+const allowedUploadTypes = new Set([
+  "application/pdf",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/msword",
+]);
+
+const allowedUploadExtensions = new Set([".pdf", ".xlsx", ".xls", ".docx", ".doc"]);
+
+const isAllowedUploadFile = (filename = "", type = "") => {
+  const dotIndex = filename.lastIndexOf(".");
+  const extension =
+    dotIndex >= 0 ? filename.slice(dotIndex).toLowerCase() : "";
+
+  return allowedUploadTypes.has(type) || allowedUploadExtensions.has(extension);
+};
 
 export default defineEventHandler(async (event) => {
   try {
@@ -25,7 +45,29 @@ export default defineEventHandler(async (event) => {
         message: "Anda harus login terlebih dahulu",
       });
     }
-    if (!user.ormawaId || !user.fakultasId) {
+
+    const db = useDrizzle();
+    const [profile] = await db
+      .select({
+        id: usersTable.id,
+        fakultasId: usersTable.fakultasId,
+        prodiId: usersTable.prodiId,
+        ormawaId: usersTable.ormawaId,
+        ormawaFakultasId: ormawaTable.fakultasId,
+        ormawaProdiId: ormawaTable.prodiId,
+      })
+      .from(usersTable)
+      .leftJoin(ormawaTable, eq(usersTable.ormawaId, ormawaTable.id))
+      .where(eq(usersTable.id, Number(user.id)))
+      .limit(1);
+
+    const userId = profile?.id ?? Number(user.id);
+    const ormawaId = profile?.ormawaId ?? user.ormawaId;
+    const fakultasId =
+      profile?.fakultasId ?? profile?.ormawaFakultasId ?? user.fakultasId;
+    const prodiId = profile?.prodiId ?? profile?.ormawaProdiId ?? user.prodiId;
+
+    if (!ormawaId || !fakultasId) {
       throw createError({
         statusCode: 400,
         message:
@@ -115,10 +157,12 @@ export default defineEventHandler(async (event) => {
         message: "File RAB wajib diupload",
       });
     }
-    if (fileRabField.type !== "application/pdf") {
+    if (
+      !isAllowedUploadFile(fileRabField.filename || "", fileRabField.type || "")
+    ) {
       throw createError({
         statusCode: 400,
-        message: "File RAB wajib berformat PDF",
+        message: "File RAB wajib berformat PDF, Excel, atau Word",
       });
     }
     if (fileRabField.data.length > 10 * 1024 * 1024) {
@@ -135,10 +179,12 @@ export default defineEventHandler(async (event) => {
         message: "File TOR wajib diupload",
       });
     }
-    if (fileTorField.type !== "application/pdf") {
+    if (
+      !isAllowedUploadFile(fileTorField.filename || "", fileTorField.type || "")
+    ) {
       throw createError({
         statusCode: 400,
-        message: "File TOR wajib berformat PDF",
+        message: "File TOR wajib berformat PDF, Excel, atau Word",
       });
     }
     if (fileTorField.data.length > 10 * 1024 * 1024) {
@@ -181,13 +227,11 @@ export default defineEventHandler(async (event) => {
     // ==========================================
     // INSERT KE DATABASE
     // ==========================================
-    const db = useDrizzle();
-
     const result = await db
       .insert(pengajuanRabTable)
       .values({
         nomorPengajuan,
-        usersId: String(user.id),
+        usersId: String(userId),
         judulKegiatan,
         tanggalMulai,
         tanggalSelesai,
@@ -195,9 +239,9 @@ export default defineEventHandler(async (event) => {
         fileRabUrl: relativePathRab,
         fileTorUrl: relativePathTor,
         totalAnggaran: totalAnggaranNumber.toFixed(2),
-        ormawaId: String(user.ormawaId),
-        fakultasId: String(user.fakultasId),
-        prodiId: user.prodiId ? String(user.prodiId) : null,
+        ormawaId: String(ormawaId),
+        fakultasId: String(fakultasId),
+        prodiId: prodiId ? String(prodiId) : null,
         status: statusRaw as StatusEnum,
       })
       .$returningId();

@@ -261,7 +261,9 @@
                     <p class="text-sm font-medium text-slate-900">
                       Klik atau drag & drop untuk upload RAB
                     </p>
-                    <p class="text-xs text-slate-500">PDF (Max 10MB)</p>
+                    <p class="text-xs text-slate-500">
+                      PDF, Excel, Word (Max 10MB)
+                    </p>
                   </div>
                   <div v-else class="space-y-2">
                     <div
@@ -331,7 +333,9 @@
                     <p class="text-sm font-medium text-slate-900">
                       Klik atau drag & drop untuk upload TOR
                     </p>
-                    <p class="text-xs text-slate-500">PDF (Max 10MB)</p>
+                    <p class="text-xs text-slate-500">
+                      PDF, Excel, Word (Max 10MB)
+                    </p>
                   </div>
                   <div v-else class="space-y-2">
                     <div
@@ -772,9 +776,15 @@
       errors[`file_${type}`] = "Ukuran file maksimal 10MB";
       return;
     }
-    const allowedTypes = ["application/pdf", ,];
+    const allowedTypes = [
+      "application/pdf",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "application/vnd.ms-excel",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/msword",
+    ];
     if (!allowedTypes.includes(file.type)) {
-      errors[`file_${type}`] = "Format file harus PDF";
+      errors[`file_${type}`] = "Format file harus PDF, Excel, atau Word";
       return;
     }
     errors[`file_${type}`] = "";
@@ -905,6 +915,11 @@
       showSuccessModal.value = true;
     } catch (error) {
       console.error("Error:", error);
+      alert(
+        error?.data?.message ||
+          error?.message ||
+          "Gagal mengirim pengajuan RAB",
+      );
     } finally {
       isSubmitting.value = false;
     }
