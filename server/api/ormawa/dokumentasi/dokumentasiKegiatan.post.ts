@@ -1,8 +1,9 @@
+import { defineEventHandler, readMultipartFormData, createError } from "h3";
 import { useDrizzle } from "~~/server/db";
 import { dokumentasiKegiatanTable } from "~~/server/db/schema";
 import { createFilePath } from "#imports"; // import util nuxt js
 import { writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 
 export default defineEventHandler(async (event) => {
   console.log("dokumentasi kegiatan di jalanlkan");
@@ -47,11 +48,12 @@ export default defineEventHandler(async (event) => {
   }
 
   // insert ke database
-  const [hasil] = await db.insert(dokumentasiKegiatanTable).values({
+  const relativeFilePath = relative(process.cwd(), filePath).replace(/\\/g, "/");
+  const hasil = await db.insert(dokumentasiKegiatanTable).values({
     kegiatanId: Number(kegiatanId),
     deskripsi,
     tipeDokumen,
-    fileUrl: filePath,
+    fileUrl: relativeFilePath,
     fakultasId: String(user.fakultasId),
     prodiId: user.prodiId ? String(user.prodiId) : null,
     uploadedBy: user.id,
@@ -61,6 +63,9 @@ export default defineEventHandler(async (event) => {
   return {
     success: true,
     message: "Dokumentasi berhasil diupload",
-    data: hasil.insertId,
+    data: {
+      id: hasil.insertId,
+      fileName: fileName,
+    },
   };
 });
