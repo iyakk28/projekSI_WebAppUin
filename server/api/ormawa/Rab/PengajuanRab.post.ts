@@ -19,15 +19,27 @@ export default defineEventHandler(async (event) => {
       });
     }
     const { user } = event.context;
+    if (!user?.id) {
+      throw createError({
+        statusCode: 401,
+        message: "Anda harus login terlebih dahulu",
+      });
+    }
+    if (!user.ormawaId || !user.fakultasId) {
+      throw createError({
+        statusCode: 400,
+        message:
+          "Data profil ormawa belum lengkap. Hubungi admin untuk melengkapi ormawa dan fakultas.",
+      });
+    }
+
     const getField = (name: string): string => {
       const field = formData.find((f) => f.name === name);
       return field && field.data
         ? Buffer.from(field.data).toString("utf-8")
         : "";
     };
-    console.log(user);
     const nomorPengajuan = getField("nomorPengajuan");
-    const usersId = getField("usersId");
     const judulKegiatan = getField("judulKegiatan");
     const tanggalMulai = getField("tanggalMulai");
     const tanggalSelesai = getField("tanggalSelesai");
@@ -41,8 +53,6 @@ export default defineEventHandler(async (event) => {
         statusCode: 400,
         message: "Nomor pengajuan wajib diisi",
       });
-    if (!usersId)
-      throw createError({ statusCode: 400, message: "User ID wajib diisi" });
     if (!judulKegiatan)
       throw createError({
         statusCode: 400,
@@ -72,9 +82,31 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const users_id = parseInt(usersId);
-    if (isNaN(users_id))
-      throw createError({ statusCode: 400, message: "User ID tidak valid" });
+    const totalAnggaranNumber = Number(totalAnggaran);
+    if (!Number.isFinite(totalAnggaranNumber) || totalAnggaranNumber <= 0) {
+      throw createError({
+        statusCode: 400,
+        message: "Total anggaran tidak valid",
+      });
+    }
+
+    const tanggalMulaiDate = new Date(tanggalMulai);
+    const tanggalSelesaiDate = new Date(tanggalSelesai);
+    if (
+      Number.isNaN(tanggalMulaiDate.getTime()) ||
+      Number.isNaN(tanggalSelesaiDate.getTime())
+    ) {
+      throw createError({
+        statusCode: 400,
+        message: "Tanggal kegiatan tidak valid",
+      });
+    }
+    if (tanggalSelesaiDate < tanggalMulaiDate) {
+      throw createError({
+        statusCode: 400,
+        message: "Tanggal selesai tidak boleh lebih awal dari tanggal mulai",
+      });
+    }
 
     const fileRabField = formData.find((f) => f.name === "file_rab");
     if (!fileRabField || !fileRabField.data || fileRabField.data.length === 0) {
@@ -150,32 +182,33 @@ export default defineEventHandler(async (event) => {
     // INSERT KE DATABASE
     // ==========================================
     const db = useDrizzle();
+
     const result = await db
       .insert(pengajuanRabTable)
       .values({
         nomorPengajuan,
-        usersId: String(users_id),
+        usersId: String(user.id),
         judulKegiatan,
-        tanggalMulai: new Date(tanggalMulai), // Pastikan format schema Drizzle mendukung Date
-        tanggalSelesai: new Date(tanggalSelesai),
+        tanggalMulai,
+        tanggalSelesai,
         deskripsi: deskripsi || null,
         fileRabUrl: relativePathRab,
-        fileTorUrl: relativePathTor, // Field baru untuk menyimpan path TOR
-        totalAnggaran,
-        ormawaId: user.ormawaId,
-        fakultasId: user.fakultasId,
-        prodiId: user.prodiId,
+        fileTorUrl: relativePathTor,
+        totalAnggaran: totalAnggaranNumber.toFixed(2),
+        ormawaId: String(user.ormawaId),
+        fakultasId: String(user.fakultasId),
+        prodiId: user.prodiId ? String(user.prodiId) : null,
         status: statusRaw as StatusEnum,
-        createdAt: new Date(),
-        updatedAt: new Date(),
       })
       .$returningId();
+
+    const insertedId = result[0]?.id;
 
     return {
       success: true,
       message: "Pengajuan RAB dan TOR berhasil disimpan",
       data: {
-        id: result,
+        id: insertedId,
         nomorPengajuan,
         fileRab: uniqueFilenameRab,
         fileTor: uniqueFilenameTor,
@@ -185,6 +218,19 @@ export default defineEventHandler(async (event) => {
   } catch (error: any) {
     console.error("Error upload RAB & TOR:", error);
     if (error.statusCode) throw error;
+    if (error.code === "ER_DUP_ENTRY") {
+      throw createError({
+        statusCode: 409,
+        message: "Nomor pengajuan sudah digunakan, silakan coba submit ulang",
+      });
+    }
+    if (error.code === "ER_NO_REFERENCED_ROW_2") {
+      throw createError({
+        statusCode: 400,
+        message:
+          "Data relasi user/ormawa/fakultas tidak valid. Hubungi admin untuk memperbarui profil akun.",
+      });
+    }
     throw createError({
       statusCode: 500,
       message: "Terjadi kesalahan server: " + error.message,

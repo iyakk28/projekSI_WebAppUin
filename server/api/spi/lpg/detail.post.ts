@@ -1,6 +1,6 @@
 import { defineEventHandler, readBody, createError } from "h3";
 import { useDrizzle } from "../../../db/index";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 import { lpgTable } from "../../../db/schema/lpgSchema";
 import { kegiatanTable } from "../../../db/schema/KegiatanSchema";
 import { pengajuanRabTable } from "../../../db/schema/pengajuanRabSchema";
@@ -32,7 +32,7 @@ export default defineEventHandler(async (event) => {
       .from(lpgTable)
       .innerJoin(kegiatanTable, eq(lpgTable.kegiatanId, kegiatanTable.id))
       .innerJoin(pengajuanRabTable, eq(kegiatanTable.pengajuanRabId, pengajuanRabTable.id))
-      .innerJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.users_id))
+      .innerJoin(usersTable, eq(sql`CAST(${pengajuanRabTable.usersId} AS UNSIGNED)`, usersTable.id))
       .where(eq(lpgTable.id, lpgId))
       .limit(1);
 

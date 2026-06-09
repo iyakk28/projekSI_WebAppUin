@@ -9,7 +9,8 @@ export default defineEventHandler(async (event) => {
 
   if (!token) return;
   try {
-    const decoded = jwt.verify(token, process.env.SecretJwtKey!) as User;
+    const config = useRuntimeConfig(event);
+    const decoded = jwt.verify(token, config.SecretJwtKey) as User;
 
     const db = useDrizzle();
     const user = await db.query.usersTable.findFirst({
@@ -22,9 +23,14 @@ export default defineEventHandler(async (event) => {
 
     const transformedUser = {
       ...decoded,
-      fakultasId: decoded.fakultasId ?? decoded.fakultas,
-      prodiId: decoded.prodiId ?? decoded.prodi,
-      ormawaId: decoded.ormawaId ?? decoded.ormawa,
+      id: user?.id ?? decoded.id,
+      role: user?.role ?? decoded.role,
+      email: user?.email ?? decoded.email,
+      username: user?.userName ?? decoded.username,
+      fullName: user?.fullName ?? decoded.fullName,
+      fakultasId: user?.fakultasId ?? decoded.fakultasId ?? decoded.fakultas,
+      prodiId: user?.prodiId ?? decoded.prodiId ?? decoded.prodi,
+      ormawaId: user?.ormawaId ?? decoded.ormawaId ?? decoded.ormawa,
     };
 
     event.context.user = transformedUser;

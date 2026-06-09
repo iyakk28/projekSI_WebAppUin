@@ -38,6 +38,9 @@ export default defineEventHandler(async (event) => {
 
   const db = useDrizzle();
   const { user } = event.context;
+  if (!user || user.role !== "ppk") {
+    throw createError({ statusCode: 401, message: "Unauthorized" });
+  }
   console.log("User context:", {
     userId: user?.id,
     role: user?.role,
@@ -59,8 +62,8 @@ export default defineEventHandler(async (event) => {
   console.log("Mencari daftar Kaprodi dengan fakultasId:", fakultasId);
   const kaprodiList = await db
     .select({ prodiId: programStudiTable.id })
-    .from(usersTable)
-    .where(eq(programStudiTable, fakultasId));
+    .from(programStudiTable)
+    .where(eq(programStudiTable.fakultasId, fakultasId));
 
   console.log("Jumlah Kaprodi ditemukan:", kaprodiList.length);
   console.log(
@@ -95,7 +98,7 @@ export default defineEventHandler(async (event) => {
     if (ormawaIds.length > 0) {
       console.log("Mencari users yang terkait dengan ORMAWA IDs:", ormawaIds);
       const ormawaUsers = await db
-        .select({ usersId: usersTable.users_id })
+        .select({ usersId: usersTable.id })
         .from(usersTable)
         .where(inArray(usersTable.ormawaId, ormawaIds));
 
@@ -105,7 +108,7 @@ export default defineEventHandler(async (event) => {
         ormawaUsers.map((u) => u.usersId),
       );
 
-      const ormawaUserIds = ormawaUsers.map((u) => u.usersId);
+      const ormawaUserIds = ormawaUsers.map((u) => String(u.usersId));
       console.log("ORMawa UserIds:", ormawaUserIds);
       console.log("Mengecek akses untuk rabId:", rabId);
 
