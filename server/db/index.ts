@@ -1,9 +1,11 @@
 import * as schema from "./schema/index";
 import "dotenv/config";
-import { mysqlSchema } from "drizzle-orm/mysql-core";
 import { drizzle } from "drizzle-orm/mysql2";
+import { createPool } from "mysql2";
 
-const db = drizzle(process.env.DATABASE_URL!, {
+const pool = createPool(process.env.DATABASE_URL!);
+
+const db = drizzle(pool.promise(), {
   schema,
   mode: "default",
 });
