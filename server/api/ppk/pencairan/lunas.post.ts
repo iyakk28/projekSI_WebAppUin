@@ -71,7 +71,7 @@ export default defineEventHandler(async (event) => {
       .update(kegiatanTable)
       .set({
         statusKegiatan: "LUNAS",
-        updatedAt: new Date(), // Langsung kirim Date object, Drizzle akan mengkonversinya
+        updatedAt: sql`NOW()`,
       })
       .where(eq(kegiatanTable.id, kegiatanId));
 

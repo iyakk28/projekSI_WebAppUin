@@ -149,6 +149,7 @@ export default defineEventHandler(async (event) => {
       data: {
         kegiatan: {
           ...dataKegiatan,
+          totalAnggaran: Number(dataKegiatan.totalAnggaran),
           fileRabUrl: getSecureUrl(dataKegiatan.fileRabUrl),
           fileTorUrl: getSecureUrl(dataKegiatan.fileTorUrl),
         },

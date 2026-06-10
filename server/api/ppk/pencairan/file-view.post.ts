@@ -40,20 +40,18 @@ export default defineEventHandler(async (event) => {
         throw createError({ statusCode: 404, message: "Tagihan tidak ditemukan atau akses ditolak" });
     }
 
-    // 2. Cek apakah ada record pembayaran (struk yang sah sekarang ada di sini)
-    const pembayaran = await db.query.pembayaranTable.findFirst({
-        where: eq(pembayaranTable.tagihanId, BigInt(id))
-    });
-
-    if (pembayaran) {
-        fileUrl = pembayaran.buktiTransferUrl;
+    // 2. Tentukan file yang akan diambil
+    if (field && (tagihan as any)[field]) {
+        fileUrl = (tagihan as any)[field];
     } else {
-        // Jika belum ada pembayaran, mungkin yang diminta adalah lampiran asli ormawa (misal skFileUrl, npwpFileUrl, dll)
-        // Jika parameter 'field' dikirim, gunakan itu.
-        if (field && (tagihan as any)[field]) {
-            fileUrl = (tagihan as any)[field];
+        // Jika tidak ada field spesifik, coba ambil bukti pembayaran
+        const pembayaran = await db.query.pembayaranTable.findFirst({
+            where: eq(pembayaranTable.tagihanId, Number(id))
+        });
+        if (pembayaran) {
+            fileUrl = pembayaran.buktiTransferUrl;
         } else {
-            throw createError({ statusCode: 404, message: "Bukti pembayaran belum tersedia" });
+            throw createError({ statusCode: 404, message: "File atau bukti pembayaran tidak ditemukan" });
         }
     }
 

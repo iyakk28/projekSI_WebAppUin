@@ -76,8 +76,9 @@ export default defineEventHandler(async (event) => {
 
           // Insert ke table pembayaran
           await tx.insert(pembayaranTable).values({
-              tagihanId: BigInt(docId),
-              ppkId: BigInt(user.id),
+              tagihanId: docId,
+              ppkId: Number(user.id),
+              fakultasId: Number(user.fakultasId),
               buktiTransferUrl: relativePath,
               catatanPembayaran: komentar || "Pembayaran dikonfirmasi oleh PPK",
           });

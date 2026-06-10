@@ -1219,25 +1219,30 @@
   const handleViewBukti = async (doc: any) => {
     try {
       const res: any = await $fetch(
-        "/api/ormawa/dokumentasi/getBuktiPembayaran",
+        "/api/ormawa/tagihan/getBukti",
         {
           method: "POST",
           body: { tagihanId: doc.realId },
         },
       );
 
-      // if (res.success && res.data.id) {
-      //   // Use fileView to stream the proof of payment
-      //   const blobRes: any = await $fetch("/api/ormawa/dokumentasi/fileView", {
-      //     method: "POST",
-      //     body: { id: `pembayaran_${res.data.id}` },
-      //     responseType: "blob",
-      //   });
+      if (res.success && res.data.id) {
+        // Use fileView to stream the proof of payment
+        const blobRes: any = await $fetch("/api/ormawa/tagihan/fileView", {
+          method: "POST",
+          body: { id: res.data.id },
+          responseType: "blob",
+        });
 
-      //   const blob = blobRes as Blob;
-      //   const url = URL.createObjectURL(blob);
-      //   window.open(url, "_blank");
-      // }
+        const blob = blobRes as Blob;
+        const url = URL.createObjectURL(blob);
+        window.open(url, "_blank");
+      } else {
+        showPopupNotification(
+          res.message || "Bukti pembayaran belum tersedia",
+          "error",
+        );
+      }
     } catch (error) {
       showPopupNotification(
         "Bukti pembayaran belum tersedia atau gagal dimuat",
