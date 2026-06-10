@@ -13,8 +13,6 @@ import {
   lpgTable,
   revisiLpgLogTable,
   approvalLogTable,
-  auditLogTable,
-  logDokumentasiTagihanTable,
 } from "./schema/index";
 
 const db = useDrizzle();
@@ -172,7 +170,7 @@ async function seed() {
       .values({
         nama: o.nama,
         kode: o.kode,
-        totalAnggaran: 100000000, // 100 million budget each
+        totalAnggaran: 100000000,
         prodiId: prodiFebiIds[o.prodiKode],
         fakultasId: fakultasFebiId,
       })
@@ -196,6 +194,7 @@ async function seed() {
     fakultasId: null,
   }).$returningId();
 
+  // FIX 1: Melengkapi prodiId dan fakultasId untuk Ketua HIMATI
   const [userOrmawaHimati] = await db.insert(usersTable).values({
     userName: "2",
     email: "ormawa@univ.ac.id",
@@ -203,9 +202,9 @@ async function seed() {
     fullName: "Ketua HIMATI",
     role: "ormawa",
     isActive: true,
-    prodiId: null,
+    prodiId: prodiTiId,
     ormawaId: ormawaHimatiId,
-    fakultasId: null,
+    fakultasId: fakultasTeknikId,
   }).$returningId();
 
   const [userPpkFt] = await db.insert(usersTable).values({
@@ -279,6 +278,7 @@ async function seed() {
     }).$returningId();
     kaprodiUsers[o.prodiKode] = uKaprodi.id;
 
+    // FIX 2: Melengkapi prodiId dan fakultasId untuk semua Ketua HMPS di bawah FEBI
     const [uOrmawa] = await db.insert(usersTable).values({
       userName: `ormawa_${o.prodiKode.toLowerCase()}`,
       email: `ormawa.${o.prodiKode.toLowerCase()}@univ.ac.id`,
@@ -286,9 +286,9 @@ async function seed() {
       fullName: `Ketua ${o.nama}`,
       role: "ormawa",
       isActive: true,
-      prodiId: null,
+      prodiId: prodiId,
       ormawaId: ormawaId,
-      fakultasId: null,
+      fakultasId: fakultasFebiId,
     }).$returningId();
     ormawaUsers[o.prodiKode] = uOrmawa.id;
   }
@@ -318,8 +318,8 @@ async function seed() {
     "ditolak_spi",
     "disetujui",
     "lunas_ppk",
-    "waiting_spi_lpj", // Special status to trigger LPJ waiting
-    "revisi_spi_lpj",  // Special status to trigger LPJ revision
+    "waiting_spi_lpj", 
+    "revisi_spi_lpj",  
     "selesai_spi",
   ];
 
@@ -339,10 +339,9 @@ async function seed() {
     const nomorPengajuan = `REQ-FEBI-${ormawaConfig.prodiKode}-${String(i).padStart(4, "0")}`;
     const budget = 3000000 + (i * 350000);
 
-    // Map to exact enum values of Drizzle table
     let dbStatus: any = statusType;
     if (statusType === "waiting_spi_lpj" || statusType === "revisi_spi_lpj") {
-      dbStatus = "lunas_ppk"; // In database, RAB is marked as lunas_ppk when LPJ is in progress
+      dbStatus = "lunas_ppk"; 
     }
 
     const [rab] = await db.insert(pengajuanRabTable).values({
@@ -364,7 +363,6 @@ async function seed() {
     const rabId = rab.id;
     pengajuanCount++;
 
-    // Write approval logs based on status
     if (statusType === "revisi_kaprodi") {
       await db.insert(approvalLogTable).values({
         pengajuanRabId: rabId,
@@ -423,7 +421,6 @@ async function seed() {
       }
     }
 
-    // Handle approved or completed stages
     const hasKegiatan = [
       "disetujui",
       "lunas_ppk",
@@ -448,9 +445,7 @@ async function seed() {
 
       const kegiatanId = kegiatan.id;
 
-      // Handle tagihan and pembayaran
       if (isLunas) {
-        // Tagihan Jasa
         const [tagihanJasa] = await db.insert(tagihanPencairanTable).values({
           kegiatanId: kegiatanId,
           tipeTagihan: "JASA",
@@ -458,7 +453,7 @@ async function seed() {
           prodiId: String(prodiId),
           userId: ormawaUserId,
           namaPenerima: `Narasumber ${activity.title}`,
-          rekeningPenerima: "0099887766", // encrypted or plain depending on app, let's keep simple
+          rekeningPenerima: "0099887766",
           nominal: String(budget * 0.4),
           statusTagihan: "SELESAI",
           createdBy: ormawaUserId,
@@ -472,7 +467,6 @@ async function seed() {
           catatanPembayaran: "Lunas transfer narasumber.",
         });
 
-        // Tagihan Barang
         const [tagihanBarang] = await db.insert(tagihanPencairanTable).values({
           kegiatanId: kegiatanId,
           tipeTagihan: "BARANG",
@@ -494,7 +488,6 @@ async function seed() {
           catatanPembayaran: "Lunas transfer belanja ATK.",
         });
 
-        // Handle LPJ / LPG
         const hasLpg = [
           "waiting_spi_lpj",
           "revisi_spi_lpj",
@@ -539,4 +532,3 @@ seed().catch((err) => {
   console.error("❌ Seeding failed:", err);
   process.exit(1);
 });
-
