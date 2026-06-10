@@ -36,7 +36,7 @@ export default defineEventHandler(async (event) => {
         tanggalPengajuan: pengajuanRabTable.createdAt
       })
       .from(pengajuanRabTable)
-      .leftJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.users_id))
+      .leftJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.id))
       .leftJoin(ormawaTable, eq(usersTable.ormawaId, ormawaTable.id))
       .leftJoin(fakultasTable, eq(pengajuanRabTable.fakultasId, fakultasTable.id))
       .leftJoin(kegiatanTable, eq(pengajuanRabTable.id, kegiatanTable.pengajuanRabId))

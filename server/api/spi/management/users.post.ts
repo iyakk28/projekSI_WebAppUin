@@ -13,6 +13,7 @@ export default defineEventHandler(async (event) => {
     let {
       email,
       userName,
+      users_id, // Alias for userName from frontend
       password,
       fullName,
       role,
@@ -20,6 +21,11 @@ export default defineEventHandler(async (event) => {
       ormawaId,
       fakultasId,
     } = body;
+
+    // Use users_id as fallback for userName
+    if (!userName && users_id) {
+      userName = users_id;
+    }
 
     if (
       !email?.trim() ||
@@ -71,32 +77,41 @@ export default defineEventHandler(async (event) => {
     }
 
     // 3. Resolve IDs based on role
-    if (role === "ormawa" && ormawaId) {
+    let finalProdiId = prodiId ? Number(prodiId) : null;
+    let finalOrmawaId = ormawaId ? Number(ormawaId) : null;
+    let finalFakultasId = fakultasId ? Number(fakultasId) : null;
+
+    if (role === "ormawa" && finalOrmawaId) {
       const ormawa = await db
         .select()
         .from(ormawaTable)
-        .where(eq(ormawaTable.id, Number(ormawaId)))
+        .where(eq(ormawaTable.id, finalOrmawaId))
         .limit(1);
 
       if (ormawa.length > 0) {
-        prodiId = ormawa[0].prodiId;
-        const prodi = await db
-          .select()
-          .from(programStudiTable)
-          .where(eq(programStudiTable.id, Number(prodiId)))
-          .limit(1);
-        if (prodi.length > 0) {
-          fakultasId = prodi[0].fakultasId;
+        finalProdiId = ormawa[0].prodiId;
+        if (finalProdiId) {
+          const prodi = await db
+            .select()
+            .from(programStudiTable)
+            .where(eq(programStudiTable.id, finalProdiId))
+            .limit(1);
+          if (prodi.length > 0) {
+            finalFakultasId = prodi[0].fakultasId;
+          }
+        } else {
+          // Ormawa fakultas direct join
+          finalFakultasId = ormawa[0].fakultasId;
         }
       }
-    } else if (role === "kaprodi" && prodiId) {
+    } else if (role === "kaprodi" && finalProdiId) {
       const prodi = await db
         .select()
         .from(programStudiTable)
-        .where(eq(programStudiTable.id, Number(prodiId)))
+        .where(eq(programStudiTable.id, finalProdiId))
         .limit(1);
       if (prodi.length > 0) {
-        fakultasId = prodi[0].fakultasId;
+        finalFakultasId = prodi[0].fakultasId;
       }
     }
 
@@ -106,9 +121,9 @@ export default defineEventHandler(async (event) => {
       passwordHash: password, // Note: Assuming password is pre-hashed or will be handled by a hook
       fullName: fullName.trim(),
       role,
-      prodiId: prodiId ? Number(prodiId) : null,
-      ormawaId: ormawaId ? Number(ormawaId) : null,
-      fakultasId: fakultasId ? Number(fakultasId) : null,
+      prodiId: finalProdiId,
+      ormawaId: finalOrmawaId,
+      fakultasId: finalFakultasId,
       isActive: true,
     });
 
@@ -120,7 +135,8 @@ export default defineEventHandler(async (event) => {
     console.error("Error creating user:", error);
     throw createError({
       statusCode: error.statusCode || 500,
-      statusMessage: error.statusMessage || error.message || "Gagal menambahkan user",
+      statusMessage:
+        error.statusMessage || error.message || "Gagal menambahkan user",
     });
   }
 });

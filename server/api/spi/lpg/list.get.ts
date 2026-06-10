@@ -29,7 +29,7 @@ export default defineEventHandler(async (event) => {
       })
       .from(pengajuanRabTable)
       .innerJoin(kegiatanTable, eq(pengajuanRabTable.id, kegiatanTable.pengajuanRabId))
-      .innerJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.users_id))
+      .innerJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.id))
       .leftJoin(lpgTable, eq(kegiatanTable.id, lpgTable.kegiatanId))
       .where(
         or(

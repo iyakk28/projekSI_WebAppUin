@@ -58,7 +58,7 @@
             <div class="space-y-1">
               <label class="text-sm font-medium text-slate-700">User ID (NIM/NIP)</label>
               <input
-                v-model="form.users_id"
+                v-model="form.userName"
                 @input="errorMessage = ''"
                 type="text"
                 placeholder="ID User"
@@ -188,7 +188,7 @@ const errorMessage = ref('');
 const form = ref({
   fullName: '',
   email: '',
-  users_id: '',
+  userName: '',
   password: '',
   role: 'ormawa',
   prodiId: '',
@@ -209,7 +209,7 @@ const handleSubmit = async () => {
     form.value = {
       fullName: '',
       email: '',
-      users_id: '',
+      userName: '',
       password: '',
       role: 'ormawa',
       prodiId: '',

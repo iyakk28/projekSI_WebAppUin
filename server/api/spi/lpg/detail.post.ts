@@ -6,6 +6,7 @@ import { kegiatanTable } from "../../../db/schema/KegiatanSchema";
 import { pengajuanRabTable } from "../../../db/schema/pengajuanRabSchema";
 import { usersTable } from "../../../db/schema/usersSchema";
 import { revisiLpgLogTable } from "../../../db/schema/revisiLpgLogSchema";
+import { ormawaTable } from "../../../db/schema/ormawaSchema";
 
 export default defineEventHandler(async (event) => {
   const user = event.context.user;
@@ -28,11 +29,13 @@ export default defineEventHandler(async (event) => {
         lpg: lpgTable,
         rab: pengajuanRabTable,
         ormawa: usersTable,
+        ormawaDetail: ormawaTable,
       })
       .from(lpgTable)
       .innerJoin(kegiatanTable, eq(lpgTable.kegiatanId, kegiatanTable.id))
       .innerJoin(pengajuanRabTable, eq(kegiatanTable.pengajuanRabId, pengajuanRabTable.id))
-      .innerJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.users_id))
+      .innerJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.id))
+      .leftJoin(ormawaTable, eq(usersTable.ormawaId, ormawaTable.id))
       .where(eq(lpgTable.id, lpgId))
       .limit(1);
 

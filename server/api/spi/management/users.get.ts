@@ -14,9 +14,9 @@ export default defineEventHandler(async (event) => {
 
     const search = (query.search as string) || "";
     const role = (query.role as string) || "";
-    const fakultasId = query.fakultasId ? parseInt(query.fakultasId as string) : null;
-    const prodiId = query.prodiId ? parseInt(query.prodiId as string) : null;
-    const ormawaId = query.ormawaId ? parseInt(query.ormawaId as string) : null;
+    const fakultasId = query.fakultasId ? Number(query.fakultasId) : null;
+    const prodiId = query.prodiId ? Number(query.prodiId) : null;
+    const ormawaId = query.ormawaId ? Number(query.ormawaId) : null;
 
     const db = useDrizzle();
 
