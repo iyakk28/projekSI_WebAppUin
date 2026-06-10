@@ -1,12 +1,16 @@
 import { defineEventHandler, readBody, createError } from "h3";
 import { useDrizzle } from "../../../db/index";
-import { eq, desc } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { lpgTable } from "../../../db/schema/lpgSchema";
 import { kegiatanTable } from "../../../db/schema/KegiatanSchema";
-import { revisiLpgLogTable } from "../../../db/schema/revisiLpgLogSchema";
-import { usersTable } from "../../../db/schema/usersSchema";
+import { pengajuanRabTable } from "../../../db/schema/pengajuanRabSchema";
 
 export default defineEventHandler(async (event) => {
+  const user = event.context.user;
+  if (!user) {
+    throw createError({ statusCode: 401, message: "Unauthorized" });
+  }
+
   try {
     const body = await readBody(event);
     const { rabId } = body;
@@ -17,22 +21,29 @@ export default defineEventHandler(async (event) => {
 
     const db = useDrizzle();
 
-    // Get kegiatanId
-    const kegiatan = await db.query.kegiatanTable.findFirst({
-      where: eq(kegiatanTable.pengajuanRabId, Number(rabId)),
-    });
+    // Get LPG data and check access
+    const result = await db
+      .select({
+        lpg: lpgTable,
+        ormawaId: pengajuanRabTable.ormawaId,
+        usersId: pengajuanRabTable.usersId,
+      })
+      .from(pengajuanRabTable)
+      .innerJoin(kegiatanTable, eq(pengajuanRabTable.id, kegiatanTable.pengajuanRabId))
+      .innerJoin(lpgTable, eq(kegiatanTable.id, lpgTable.kegiatanId))
+      .where(eq(pengajuanRabTable.id, Number(rabId)))
+      .limit(1);
 
-    if (!kegiatan) {
+    if (result.length === 0) {
       return { success: true, data: null };
     }
 
-    // Get LPG
-    const lpg = await db.query.lpgTable.findFirst({
-      where: eq(lpgTable.kegiatanId, kegiatan.id),
-    });
+    const { lpg, ormawaId, usersId } = result[0];
+    const isOwner = user.role === "ormawa" && (String(usersId) === String(user.id) || String(ormawaId) === String(user.ormawaId));
+    const isStaff = ["spi", "ppk", "kaprodi"].includes(user.role);
 
-    if (!lpg) {
-      return { success: true, data: null };
+    if (!isOwner && !isStaff) {
+      throw createError({ statusCode: 403, message: "Forbidden" });
     }
 
     return {
@@ -41,6 +52,7 @@ export default defineEventHandler(async (event) => {
     };
   } catch (error: any) {
     console.error("Error fetching LPJ:", error);
+    if (error.statusCode) throw error;
     throw createError({
       statusCode: 500,
       message: "Terjadi kesalahan server: " + error.message,

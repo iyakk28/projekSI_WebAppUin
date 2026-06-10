@@ -2,7 +2,7 @@
 // Endpoint untuk mengambil detail pengajuan proposal berdasarkan ID tertentu oleh Kaprodi
 // Dioptimalkan dengan validasi akses ormawaId dan pengambilan pengaju yang tepat dari RAB
 
-import { eq, asc, and } from "drizzle-orm";
+import { eq, asc, and, desc } from "drizzle-orm";
 import { useDrizzle } from "~~/server/db";
 import {
   pengajuanRabTable,
@@ -86,7 +86,7 @@ export default defineEventHandler(async (event) => {
       .from(approvalLogTable)
       .innerJoin(usersTable, eq(usersTable.id, approvalLogTable.actorId))
       .where(eq(approvalLogTable.pengajuanRabId, id))
-      .orderBy(asc(approvalLogTable.createdAt));
+      .orderBy(desc(approvalLogTable.createdAt));
 
     return {
       success: true,

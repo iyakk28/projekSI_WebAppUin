@@ -1,4 +1,4 @@
-import { eq, sum, and, inArray } from "drizzle-orm";
+import { eq, sum, and, sql } from "drizzle-orm";
 import { useDrizzle } from "~~/server/db";
 import {
   kegiatanTable,
@@ -58,22 +58,36 @@ export default defineEventHandler(async (event) => {
     const totalAnggaran = Number(kegiatan.totalAnggaran || 0);
 
     // 3. Validasi: Total yang dibayar harus sama dengan Total Anggaran
-    // Kita gunakan pembulatan atau toleransi kecil jika perlu, tapi biasanya desimal presisi
     if (totalDibayar < totalAnggaran) {
       throw createError({
         statusCode: 400,
-        statusMessage: `Gagal Melunasi: Total dibayar (${totalDibayar}) masih kurang dari total anggaran (${totalAnggaran}).`,
+        statusMessage: `Gagal Melunasi: Total dibayar (${totalDibayar.toLocaleString("id-ID")}) masih kurang dari total anggaran (${totalAnggaran.toLocaleString("id-ID")}).`,
       });
     }
 
-    // 4. Update status kegiatan menjadi LUNAS dengan format MySQL datetime
-    await db
-      .update(kegiatanTable)
-      .set({
-        statusKegiatan: "LUNAS",
-        updatedAt: sql`NOW()`,
-      })
-      .where(eq(kegiatanTable.id, kegiatanId));
+    // 4. Update status kegiatan menjadi LUNAS dan update pengajuan_rab menjadi lunas_ppk
+    // Menggunakan transaction untuk memastikan kedua update berhasil
+    await db.transaction(async (tx) => {
+      // Update di tabel kegiatan
+      await tx
+        .update(kegiatanTable)
+        .set({
+          statusKegiatan: "LUNAS",
+          updatedAt: sql`CURRENT_TIMESTAMP`,
+        })
+        .where(eq(kegiatanTable.id, kegiatanId));
+
+      // Update di tabel pengajuan_rab sesuai dengan StatusEnum (lunas_ppk)
+      if (kegiatan.pengajuanRabId) {
+        await tx
+          .update(pengajuanRabTable)
+          .set({
+            status: "lunas_ppk",
+            updatedAt: sql`CURRENT_TIMESTAMP`,
+          })
+          .where(eq(pengajuanRabTable.id, kegiatan.pengajuanRabId));
+      }
+    });
 
     return {
       success: true,
@@ -92,3 +106,4 @@ export default defineEventHandler(async (event) => {
     });
   }
 });
+

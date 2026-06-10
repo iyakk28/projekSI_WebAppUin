@@ -1,6 +1,6 @@
 import { defineEventHandler, createError } from "h3";
 import { useDrizzle } from "../../../db/index";
-import { eq, and, or, isNull } from "drizzle-orm";
+import { eq, and, or, isNull, desc } from "drizzle-orm";
 import { pengajuanRabTable } from "../../../db/schema/pengajuanRabSchema";
 import { kegiatanTable } from "../../../db/schema/KegiatanSchema";
 import { lpgTable } from "../../../db/schema/lpgSchema";
@@ -14,6 +14,7 @@ export default defineEventHandler(async (event) => {
   const db = useDrizzle();
 
   try {
+    // Ready for LPG: RAB is approved/lunas, activity is LUNAS, and LPG is either not yet uploaded or needs revision
     const readyResults = await db
       .select({
         rabId: pengajuanRabTable.id,
@@ -36,12 +37,16 @@ export default defineEventHandler(async (event) => {
       .leftJoin(lpgTable, eq(kegiatanTable.id, lpgTable.kegiatanId))
       .where(
         and(
-          eq(pengajuanRabTable.usersId, user.id),
+          or(
+            eq(pengajuanRabTable.usersId, String(user.id)),
+            eq(pengajuanRabTable.ormawaId, String(user.ormawaId))
+          ),
           eq(kegiatanTable.statusKegiatan, "LUNAS"),
           or(isNull(lpgTable.id), eq(lpgTable.statusLpg, "REVISI_SPI")),
         ),
       );
 
+    // LPG History: All LPGs submitted by this Ormawa
     const historyResults = await db
       .select({
         rabId: pengajuanRabTable.id,
@@ -63,12 +68,18 @@ export default defineEventHandler(async (event) => {
         pengajuanRabTable,
         eq(kegiatanTable.pengajuanRabId, pengajuanRabTable.id),
       )
-      .where(eq(pengajuanRabTable.usersId, user.id));
+      .where(
+        or(
+          eq(pengajuanRabTable.usersId, String(user.id)),
+          eq(pengajuanRabTable.ormawaId, String(user.ormawaId))
+        )
+      )
+      .orderBy(desc(lpgTable.submittedAt));
 
     return {
       success: true,
       data: {
-        ready: [...readyResults],
+        ready: readyResults,
         history: historyResults,
       },
     };
