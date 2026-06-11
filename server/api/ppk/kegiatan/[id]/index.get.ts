@@ -2,7 +2,7 @@
 // Endpoint untuk mengambil detail pengajuan proposal oleh PPK
 // Dioptimalkan dengan join langsung dan validasi fakultasId
 
-import { eq, asc, and } from "drizzle-orm";
+import { eq, asc, and, desc } from "drizzle-orm";
 import { useDrizzle } from "~~/server/db";
 import {
   pengajuanRabTable,
@@ -63,8 +63,8 @@ export default defineEventHandler(async (event) => {
       .where(
         and(
           eq(pengajuanRabTable.id, id),
-          eq(pengajuanRabTable.fakultasId, String(fakultasId))
-        )
+          eq(pengajuanRabTable.fakultasId, String(fakultasId)),
+        ),
       )
       .limit(1);
 
@@ -73,7 +73,8 @@ export default defineEventHandler(async (event) => {
     if (!detail) {
       throw createError({
         statusCode: 404,
-        statusMessage: "Pengajuan tidak ditemukan atau Anda tidak memiliki akses ke fakultas ini",
+        statusMessage:
+          "Pengajuan tidak ditemukan atau Anda tidak memiliki akses ke fakultas ini",
       });
     }
 
@@ -91,7 +92,7 @@ export default defineEventHandler(async (event) => {
       .from(approvalLogTable)
       .innerJoin(usersTable, eq(usersTable.id, approvalLogTable.actorId))
       .where(eq(approvalLogTable.pengajuanRabId, id))
-      .orderBy(asc(approvalLogTable.createdAt));
+      .orderBy(desc(approvalLogTable.createdAt));
 
     return {
       success: true,

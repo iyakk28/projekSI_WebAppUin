@@ -1,12 +1,17 @@
 import fs from "node:fs";
 import path from "node:path";
 import { useDrizzle } from "~~/server/db";
-import { eq } from "drizzle-orm";
+import { eq, and, or } from "drizzle-orm";
 import { lpgTable } from "../../../db/schema/lpgSchema";
 import { kegiatanTable } from "../../../db/schema/KegiatanSchema";
 import { pengajuanRabTable } from "../../../db/schema/pengajuanRabSchema";
 
 export default defineEventHandler(async (event) => {
+  const { user } = event.context;
+  if (!user) {
+    throw createError({ statusCode: 401, message: "Unauthorized" });
+  }
+
   const body = await readBody(event);
   const { rabId } = body;
 
@@ -14,13 +19,15 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: "ID RAB tidak valid" });
   }
 
-  const { user } = event.context;
   const db = useDrizzle();
 
   // Validate access and get the file URL
+  // Ormawa can only access their own RAB's LPG
+  // SPI and PPK can access any LPG
   const result = await db
     .select({
       fileLpgUrl: lpgTable.fileLpgUrl,
+      ormawaId: pengajuanRabTable.ormawaId,
       usersId: pengajuanRabTable.usersId,
     })
     .from(lpgTable)
@@ -41,7 +48,16 @@ export default defineEventHandler(async (event) => {
 
   const lpgData = result[0];
 
-  // Access control: only the owner Ormawa or SPI/Admin can view it
+  // Access control
+  const isOwner = user.role === "ormawa" && (String(lpgData.usersId) === String(user.id) || String(lpgData.ormawaId) === String(user.ormawaId));
+  const isStaff = ["spi", "ppk", "kaprodi"].includes(user.role);
+
+  if (!isOwner && !isStaff) {
+    throw createError({
+      statusCode: 403,
+      message: "Anda tidak memiliki akses ke file ini",
+    });
+  }
 
   if (!lpgData.fileLpgUrl) {
     throw createError({
@@ -51,7 +67,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const filePath = path.resolve(process.cwd(), lpgData.fileLpgUrl.trim());
-  console.log(filePath);
+  
   if (!fs.existsSync(filePath)) {
     throw createError({
       statusCode: 404,

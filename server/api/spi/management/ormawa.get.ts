@@ -12,8 +12,8 @@ export default defineEventHandler(async (event) => {
     const offset = (page - 1) * limit;
 
     const search = (query.search as string) || "";
-    const fakultasId = query.fakultasId ? parseInt(query.fakultasId as string) : null;
-    const prodiId = query.prodiId ? parseInt(query.prodiId as string) : null;
+    const fakultasId = query.fakultasId ? Number(query.fakultasId) : null;
+    const prodiId = query.prodiId ? Number(query.prodiId) : null;
 
     const db = useDrizzle();
 

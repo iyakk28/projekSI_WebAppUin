@@ -85,7 +85,7 @@ export default defineEventHandler(async (event) => {
       .select({ count: sql<number>`count(*)` })
       .from(pengajuanRabTable)
       .innerJoin(kegiatanTable, eq(pengajuanRabTable.id, kegiatanTable.pengajuanRabId))
-      .innerJoin(usersTable, eq(sql`CAST(${pengajuanRabTable.usersId} AS UNSIGNED)`, usersTable.id))
+      .innerJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.id))
       .leftJoin(ormawaTable, eq(usersTable.ormawaId, ormawaTable.id))
       .leftJoin(lpgTable, eq(kegiatanTable.id, lpgTable.kegiatanId))
       .where(whereClause);
@@ -110,7 +110,7 @@ export default defineEventHandler(async (event) => {
       })
       .from(pengajuanRabTable)
       .innerJoin(kegiatanTable, eq(pengajuanRabTable.id, kegiatanTable.pengajuanRabId))
-      .innerJoin(usersTable, eq(sql`CAST(${pengajuanRabTable.usersId} AS UNSIGNED)`, usersTable.id))
+      .innerJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.users_id))
       .leftJoin(ormawaTable, eq(usersTable.ormawaId, ormawaTable.id))
       .leftJoin(fakultasTable, eq(pengajuanRabTable.fakultasId, fakultasTable.id))
       .leftJoin(programStudiTable, eq(pengajuanRabTable.prodiId, programStudiTable.id))

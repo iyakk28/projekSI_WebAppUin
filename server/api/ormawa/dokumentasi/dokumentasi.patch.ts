@@ -5,12 +5,21 @@ import { tagihanPencairanTable } from "~~/server/db/schema/TagihanPencairanSchem
 import { kegiatanTable } from "~~/server/db/schema/KegiatanSchema";
 import { createFilePath } from "~~/server/utils/CreateFilePath";
 import { writeFile, unlink } from "node:fs/promises";
-import { join } from "node:path";
+import { join, resolve, isAbsolute } from "node:path";
 import fs from "node:fs";
 import { createEnkripsi } from "~~/server/utils/enkripsiData";
 
 export default defineEventHandler(async (event) => {
   const db = useDrizzle();
+  const { user } = event.context;
+
+  if (!user) {
+    throw createError({
+      statusCode: 401,
+      message: "User tidak terautentikasi",
+    });
+  }
+
   const formData = await readMultipartFormData(event);
 
   if (!formData) {
@@ -36,6 +45,10 @@ export default defineEventHandler(async (event) => {
   const isTagihan = idStr.startsWith("tagihan_");
   const realId = Number(idStr.replace("doc_", "").replace("tagihan_", ""));
 
+  if (isNaN(realId)) {
+    throw createError({ statusCode: 400, message: "ID tidak valid" });
+  }
+
   if (isTagihan) {
     return await handleUpdateTagihan(db, realId, formData, getField);
   } else {
@@ -52,13 +65,8 @@ async function handleUpdateTagihan(
   const results = await db
     .select({
       tagihan: tagihanPencairanTable,
-      statusKegiatan: kegiatanTable.statusKegiatan,
     })
     .from(tagihanPencairanTable)
-    .innerJoin(
-      kegiatanTable,
-      eq(tagihanPencairanTable.kegiatanId, kegiatanTable.id),
-    )
     .where(eq(tagihanPencairanTable.id, id))
     .limit(1);
 
@@ -70,10 +78,9 @@ async function handleUpdateTagihan(
 
   const updateData: any = {
     updatedAt: new Date().toISOString().slice(0, 19).replace("T", " "),
+    statusTagihan: "WAITING_PEMBAYARAN", // Reset status agar bisa di-review kembali
   };
 
-  // Text fields processing
-  // ...
   const textFields = [
     { name: "namaPenerima", encrypt: true },
     { name: "rekeningPenerima", encrypt: true },
@@ -90,14 +97,15 @@ async function handleUpdateTagihan(
   for (const tf of textFields) {
     const val = getField(tf.name);
     if (val !== undefined) {
-      updateData[tf.name] = tf.encrypt ? createEnkripsi(val) : val;
+      updateData[tf.name] = (tf.encrypt && val) ? createEnkripsi(val) : val;
     }
   }
 
   const nominal = getField("nominal");
-  if (nominal !== undefined) updateData.nominal = nominal;
+  if (nominal !== undefined && nominal !== "") {
+    updateData.nominal = nominal;
+  }
 
-  // File fields processing
   const fileFields = [
     { name: "fotoStruk", dbField: "strukFileUrl", category: "barang" as const },
     {
@@ -120,20 +128,20 @@ async function handleUpdateTagihan(
   for (const f of fileFields) {
     const fileData = formData.find((formField) => formField.name === f.name);
     if (fileData && fileData.data && fileData.filename) {
-      // Delete old file if exists
+      // Hapus file lama jika ada
       const oldPath = (oldDoc as any)[f.dbField];
       if (oldPath) {
-        const fullOldPath = join(process.cwd(), oldPath);
+        const fullOldPath = isAbsolute(oldPath) ? oldPath : resolve(process.cwd(), oldPath);
         if (fs.existsSync(fullOldPath)) {
           await unlink(fullOldPath).catch(() => {});
         }
       }
 
-      // Save new file
+      // Simpan file baru
       const targetDir = await createFilePath("dokumentasi", f.category, "");
       const newFileName = `${Date.now()}_${f.name}_${fileData.filename}`;
       const newPath = join(targetDir, newFileName);
-      await writeFile(join(process.cwd(), newPath), fileData.data);
+      await writeFile(newPath, fileData.data);
       updateData[f.dbField] = newPath;
     }
   }
@@ -155,13 +163,8 @@ async function handleUpdateDokumentasi(
   const results = await db
     .select({
       dokumentasi: dokumentasiKegiatanTable,
-      statusKegiatan: kegiatanTable.statusKegiatan,
     })
     .from(dokumentasiKegiatanTable)
-    .innerJoin(
-      kegiatanTable,
-      eq(dokumentasiKegiatanTable.kegiatanId, kegiatanTable.id),
-    )
     .where(eq(dokumentasiKegiatanTable.id, id))
     .limit(1);
 
@@ -174,31 +177,34 @@ async function handleUpdateDokumentasi(
 
   const oldDoc = res.dokumentasi;
 
-  const updateData: any = {};
+  const updateData: any = {
+    updatedAt: new Date().toISOString().slice(0, 19).replace("T", " "),
+    status: "MENUNGGU", // Reset status agar bisa di-review kembali
+  };
 
   const deskripsi = getField("deskripsi");
   if (deskripsi !== undefined) updateData.deskripsi = deskripsi;
 
   const fileData = formData.find((f) => f.name === "file");
   if (fileData && fileData.data && fileData.filename) {
-    // Delete old file
+    // Hapus file lama
     if (oldDoc.fileUrl) {
-      const fullOldPath = join(process.cwd(), oldDoc.fileUrl);
+      const fullOldPath = isAbsolute(oldDoc.fileUrl) ? oldDoc.fileUrl : resolve(process.cwd(), oldDoc.fileUrl);
       if (fs.existsSync(fullOldPath)) {
         await unlink(fullOldPath).catch(() => {});
       }
     }
-    // Save new file
 
+    // Simpan file baru
     const targetDir = await createFilePath("dokumentasi", "kegiatan", "");
     const newFileName = `${Date.now()}_file_${fileData.filename}`;
     const newPath = join(targetDir, newFileName);
 
-    await writeFile(join(newPath), fileData.data);
+    await writeFile(newPath, fileData.data);
     updateData.fileUrl = newPath;
   }
 
-  if (Object.keys(updateData).length > 0) {
+  if (Object.keys(updateData).length > 2) { // 2 because of updatedAt and status
     await db
       .update(dokumentasiKegiatanTable)
       .set(updateData)
@@ -207,3 +213,4 @@ async function handleUpdateDokumentasi(
 
   return { success: true, message: "Dokumentasi berhasil diperbarui" };
 }
+

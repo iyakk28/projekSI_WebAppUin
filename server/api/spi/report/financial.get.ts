@@ -66,7 +66,7 @@ export default defineEventHandler(async (event) => {
         totalProposed: sql<number>`sum(${pengajuanRabTable.totalAnggaran})`,
       })
       .from(pengajuanRabTable)
-      .leftJoin(usersTable, eq(sql`CAST(${pengajuanRabTable.usersId} AS UNSIGNED)`, usersTable.id))
+      .leftJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.id))
       .where(rabWhere);
 
     const totalProposed = proposedResult[0]?.totalProposed || 0;
@@ -108,7 +108,7 @@ export default defineEventHandler(async (event) => {
         quota: ormawaTable.totalAnggaran,
         proposed: sql<number>`(
           select sum(r.total_anggaran) from pengajuan_rab r 
-          join users u on cast(r.users_id as unsigned) = u.id 
+          join users u on r.users_id = u.users_id 
           where u.ormawa_id = ormawa.id 
           and r.status IN ('disetujui', 'lunas_ppk', 'selesai_spi')
         )`,
@@ -116,7 +116,7 @@ export default defineEventHandler(async (event) => {
           select sum(t.nominal) from tagihan_pencairan t
           join kegiatan k on t.kegiatan_id = k.id
           join pengajuan_rab r on k.pengajuan_rab_id = r.id
-          join users u on cast(r.users_id as unsigned) = u.id
+          join users u on r.users_id = u.users_id
           where u.ormawa_id = ormawa.id
           and t.status_tagihan = 'SELESAI'
         )`,

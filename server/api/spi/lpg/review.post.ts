@@ -20,6 +20,8 @@ export default defineEventHandler(async (event) => {
   }
 
   const db = useDrizzle();
+  const idLpg = Number(lpgId);
+  const idUser = Number(user.id);
 
   try {
     const status = action === "approve" ? "DISETUJUI" : "REVISI_SPI";
@@ -38,21 +40,21 @@ export default defineEventHandler(async (event) => {
       };
 
       if (action === "approve") {
-        updateData.approvedBy = Number(user.id);
+        updateData.approvedBy = idUser;
         updateData.approvedAt = new Date().toISOString().slice(0, 19).replace('T', ' ');
       } else {
-        updateData.lastRevisedBy = Number(user.id);
+        updateData.lastRevisedBy = idUser;
       }
 
       await tx.update(lpgTable)
         .set(updateData)
-        .where(eq(lpgTable.id, lpgId));
+        .where(eq(lpgTable.id, idLpg));
 
       // If revision, add to log
       if (action === "revision") {
         await tx.insert(revisiLpgLogTable).values({
-          lpgId,
-          requesterId: Number(user.id),
+          lpgId: idLpg,
+          requesterId: idUser,
           catatanRevisi: finalNotes,
         });
       }
@@ -60,7 +62,7 @@ export default defineEventHandler(async (event) => {
       // If approved, update RAB status to 'selesai_spi'
       if (action === "approve") {
         const lpg = await tx.query.lpgTable.findFirst({
-            where: eq(lpgTable.id, lpgId)
+            where: eq(lpgTable.id, idLpg)
         });
 
         if (lpg) {

@@ -59,7 +59,7 @@ export default defineEventHandler(async (event) => {
         count: sql<number>`count(*)`,
       })
       .from(pengajuanRabTable)
-      .leftJoin(usersTable, eq(sql`CAST(${pengajuanRabTable.usersId} AS UNSIGNED)`, usersTable.id))
+      .leftJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.id))
       .where(rabWhere)
       .groupBy(pengajuanRabTable.status);
 
@@ -71,7 +71,7 @@ export default defineEventHandler(async (event) => {
         pengajuanRabTable,
         eq(approvalLogTable.pengajuanRabId, pengajuanRabTable.id),
       )
-      .leftJoin(usersTable, eq(sql`CAST(${pengajuanRabTable.usersId} AS UNSIGNED)`, usersTable.id))
+      .leftJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.users_id))
       .where(and(rabWhere, like(approvalLogTable.action, "%revisi%")));
 
     // Summary LPG by status
@@ -97,7 +97,7 @@ export default defineEventHandler(async (event) => {
         pengajuanRabTable,
         eq(kegiatanTable.pengajuanRabId, pengajuanRabTable.id),
       )
-      .innerJoin(usersTable, eq(sql`CAST(${pengajuanRabTable.usersId} AS UNSIGNED)`, usersTable.id))
+      .innerJoin(usersTable, eq(pengajuanRabTable.usersId, usersTable.users_id))
       .innerJoin(ormawaTable, eq(usersTable.ormawaId, ormawaTable.id))
       .where(lpgWhere)
       .groupBy(lpgTable.statusLpg);
@@ -116,7 +116,7 @@ export default defineEventHandler(async (event) => {
       .leftJoin(usersTable, eq(ormawaTable.id, usersTable.ormawaId))
       .leftJoin(
         pengajuanRabTable,
-        eq(usersTable.id, sql`CAST(${pengajuanRabTable.usersId} AS UNSIGNED)`),
+        eq(usersTable.users_id, pengajuanRabTable.usersId),
       )
       .leftJoin(
         approvalLogTable,

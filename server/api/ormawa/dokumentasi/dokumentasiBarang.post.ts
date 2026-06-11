@@ -1,5 +1,5 @@
 import { useDrizzle } from "~~/server/db";
-import { tagihanPencairanTable } from "~~/server/db/schema/TagihanPencairanSchema";
+import { tagihanPencairanTable } from "~~/server/db/schema";
 import { createFilePath } from "#imports";
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -76,6 +76,7 @@ export default defineEventHandler(async (event) => {
     fotoBarangUrl: fotoBarangPath,
     fakultasId: String(user.fakultasId),
     prodiId: user.prodiId ? String(user.prodiId) : null,
+    userId: user.id,
     createdBy: user.id,
   });
 

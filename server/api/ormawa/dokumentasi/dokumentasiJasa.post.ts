@@ -115,6 +115,7 @@ export default defineEventHandler(async (event) => {
     statusTagihan: "WAITING_PEMBAYARAN",
     fakultasId: String(user.fakultasId),
     prodiId: user.prodiId ? String(user.prodiId) : null,
+    userId: user.id,
     createdBy: user.id,
   };
 

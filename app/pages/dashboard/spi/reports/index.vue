@@ -39,7 +39,7 @@
             <select
               v-model="filters.prodiId"
               class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500/20"
-              @change="onFilterChange"
+              @change="onProdiChange"
             >
               <option value="">Semua Prodi</option>
               <option v-for="p in filteredProdi" :key="p.id" :value="p.id">{{ p.nama }}</option>
@@ -389,13 +389,20 @@ const lpgStatuses = ["WAITING_SPI", "DISETUJUI", "REVISI_SPI"];
 
 const filteredProdi = computed(() => {
   if (!filters.value.fakultasId) return prodiStore.prodi;
-  return prodiStore.prodi.filter(p => p.fakultasId === parseInt(filters.value.fakultasId));
+  const fId = Number(filters.value.fakultasId);
+  return prodiStore.prodi.filter(p => p.fakultasId === fId);
 });
 
 const filteredOrmawa = computed(() => {
-  if (!filters.value.fakultasId) return ormawaStore.ormawa;
-  let list = ormawaStore.ormawa.filter(o => o.fakultasId === parseInt(filters.value.fakultasId));
-  if (filters.value.prodiId) list = list.filter(o => o.prodiId === parseInt(filters.value.prodiId));
+  let list = ormawaStore.ormawa;
+  if (filters.value.fakultasId) {
+    const fId = Number(filters.value.fakultasId);
+    list = list.filter(o => o.fakultasId === fId);
+  }
+  if (filters.value.prodiId) {
+    const pId = Number(filters.value.prodiId);
+    list = list.filter(o => o.prodiId === pId);
+  }
   return list;
 });
 
@@ -459,6 +466,11 @@ const financialSummaryCards = computed(() => {
 
 const onFakultasChange = () => {
   filters.value.prodiId = "";
+  filters.value.ormawaId = "";
+  onFilterChange();
+};
+
+const onProdiChange = () => {
   filters.value.ormawaId = "";
   onFilterChange();
 };
